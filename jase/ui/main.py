@@ -5,9 +5,8 @@ Copyright (c) 2014, Jason Jacobs
 """
 
 # System Imports
-import os, sys
+import os, sys, logging
 from pdb import set_trace as db
-import glob
 
 # Third party imports
 from PySide import QtCore, QtGui
@@ -15,29 +14,7 @@ from PySide.QtCore import Qt
 
 # Local Imports
 from ..schematic import Schematic
-
-class App(QtGui.QApplication):
-    """
-    """
-    def __init__(self):
-        super().__init__(sys.argv)
-        self.setApplicationName('Jase')
-        self.setApplicationVersion('0.1 - Beta')
-
-        # self.setWindowIcon()
-        self.icons = {}
-        self.load_icons()
-
-    def load_icons(self):
-        icons = glob.glob("../icons/*.png")
-        pixmap = QtGui.QPixmap(100,100)
-        pixmap.fill(QtGui.QColor("blue"))
-        self.icons[''] = QtGui.QIcon(pixmap)
-        for path in icons:
-            dir, file_name = os.path.split(path)
-            name = file_name.split('.')[0]
-            self.icons[name] = QtGui.QIcon(path)
-
+from ..core.logging import WidgetHandler
 # ----------------------------------------------
 #
 # ----------------------------------------------
@@ -58,7 +35,6 @@ class Main(QtGui.QMainWindow):
         """
         super().__init__(parent=parent)
 
-
         self.icons = QtGui.qApp.icons
 
         # ----------------------------------------------------
@@ -76,17 +52,39 @@ class Main(QtGui.QMainWindow):
         # ----------------------------------------------------
         #         Editor Area
         # ----------------------------------------------------
+
+        """
+        QSplitter *parent = new QSplitter();
+        QWidget *widget = new QWidget();
+        QHBoxLayout *parentLayout = new QHBoxLayout();
+        widget->setLayout(parentLayout);
+        parent->addWidget(widget);
+        QTabWidget *tabWidget = new QTabWidget();
+        parentLayout->addWidget(tabWidget);
+
+        setCentralWidget(parent);
+        """
+
         # The main widget will be a tabbed widget where various editors
         # will be kept.  For now, just include a Canvas
-        self.tabWidget = QtGui.QTabWidget()
-        self.setCentralWidget(self.tabWidget)
+
+        self.tabWidgetLeft = QtGui.QTabWidget()
+        self.tabWidgetRight = QtGui.QTabWidget()
+
+
+        splitter = QtGui.QSplitter(Qt.Horizontal)
+        splitter.addWidget(self.tabWidgetLeft)
+        splitter.addWidget(self.tabWidgetRight)
+
         sch = Schematic(width=1200, height=800)
-        self.tabWidget.insertTab(0, sch, "New Schematic")
+        self.tabWidgetLeft.insertTab(0, sch, "Design - Old")
+        sch = Schematic(width=1200, height=800)
+        self.tabWidgetRight.insertTab(0, sch, "Design - New")
 
-        #self.tabWidget.insertTab(1, Schematic(), "New Schematic")
-        self.editorWidget = QtGui.QTabWidget()
+        sch = Schematic(width=1200, height=800)
+        self.tabWidgetRight.insertTab(0, sch, "Opamp")
 
-        self.setCentralWidget(self.tabWidget)
+        self.setCentralWidget(splitter)
 
         # ----------------------------------------------------
         #         Device Selector Widget
@@ -109,14 +107,6 @@ class Main(QtGui.QMainWindow):
         self.propertiesWidget = QtGui.QTableWidget()
         propertiesDockWidget.setWidget(self.propertiesWidget)
 
-        # ----------------------------------------------------
-        #         Log Widget (ToDo:  Create actual log widget)
-        # ----------------------------------------------------
-        self.logDockWidget = QtGui.QDockWidget("Log", self)
-        self.logDockWidget.setObjectName("ListDockWidget")
-        self.logWidget = QtGui.QListWidget()
-        self.logDockWidget.setWidget(self.logWidget)
-        self.addDockWidget(Qt.BottomDockWidgetArea, self.logDockWidget)
 
         # ----------------------------------------------------
         #         Console Window
@@ -126,7 +116,20 @@ class Main(QtGui.QMainWindow):
         self.console = QtGui.QListWidget()
         self.consoleDockWidget.setWidget(self.console)
         self.addDockWidget(Qt.BottomDockWidgetArea, self.consoleDockWidget)
-        self.tabifyDockWidget(self.logDockWidget, self.consoleDockWidget)
+
+
+        # ----------------------------------------------------
+        #         Log Widget
+        # ----------------------------------------------------
+        self.logDockWidget = QtGui.QDockWidget("Log", self)
+        self.logDockWidget.setObjectName("ListDockWidget")
+        self.logWidget = QtGui.QTextEdit()
+        self.logDockWidget.setWidget(self.logWidget)
+        self.addDockWidget(Qt.BottomDockWidgetArea, self.logDockWidget)
+        self.setup_logging(self.logWidget)
+
+
+        self.tabifyDockWidget(self.consoleDockWidget, self.logDockWidget)
 
         # ----------------------------------------------------
         #         Hierarchy Widget
@@ -144,9 +147,27 @@ class Main(QtGui.QMainWindow):
         # ----------------------------------------------------
         self.statusBar()
 
+        self.info("JASE is now ready.")
+        self.status("Ready.")
+
     def status(self, txt):
         self.statusBar().showMessage(txt)
 
+
+    def debug(self, msg):
+        self.logger.debug(msg)
+
+    def info(self, msg):
+        self.logger.info(msg)
+
+    def warning(self, msg):
+        self.logger.warning(msg)
+
+    def error(self, msg):
+        self.logger.error(msg)
+
+    def critical(self, msg):
+        self.logger.critical(msg)
 
     def define_actions(self):
 
@@ -220,3 +241,15 @@ class Main(QtGui.QMainWindow):
 
     def file_save_as(self):
         raise NotImplementedError
+
+    def setup_logging(self, widget):
+        logger = logging.getLogger(QtGui.qApp.applicationName())
+        logger.setLevel(logging.DEBUG)
+
+        handler = WidgetHandler(widget)
+        handler.setLevel(logging.DEBUG)
+        formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+        handler.setFormatter(formatter)
+        logger.addHandler(handler)
+
+        self.logger = logger

@@ -3,7 +3,8 @@ import sys
 
 from PySide import  QtCore, QtGui, QtTest
 from jase.schematic.schematic import Schematic
-from jase.ui.main import App, Main
+from jase.ui.main import Main
+from jase.ui.app import App
 app = App()
 
 
