@@ -15,6 +15,8 @@ from PySide.QtCore import Qt
 # Local Imports
 from ..schematic import Schematic
 from ..core.logging import WidgetHandler
+from ..ui.console import Console
+
 # ----------------------------------------------
 #
 # ----------------------------------------------
@@ -34,6 +36,8 @@ class Main(QtGui.QMainWindow):
         * Status Bar
         """
         super().__init__(parent=parent)
+        app = QtGui.qApp
+        self.setWindowTitle("{} - v{}".format(app.applicationName(), app.applicationVersion()))
 
         self.icons = QtGui.qApp.icons
 
@@ -113,7 +117,7 @@ class Main(QtGui.QMainWindow):
         # ----------------------------------------------------
         self.consoleDockWidget = QtGui.QDockWidget("Console", self)
         self.consoleDockWidget.setObjectName("ConsoleWidget")
-        self.console = QtGui.QListWidget()
+        self.console = Console()
         self.consoleDockWidget.setWidget(self.console)
         self.addDockWidget(Qt.BottomDockWidgetArea, self.consoleDockWidget)
 
@@ -170,7 +174,6 @@ class Main(QtGui.QMainWindow):
         self.logger.critical(msg)
 
     def define_actions(self):
-
         # ----------------------------------------------------
         #        Exit Application
         # ----------------------------------------------------
