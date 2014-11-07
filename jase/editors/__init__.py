@@ -1,4 +1,4 @@
-from .schematic_editor import Schematic
+from .schematic_editor import SchematicEditor
 
 
 
