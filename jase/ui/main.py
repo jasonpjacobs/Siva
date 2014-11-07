@@ -13,9 +13,10 @@ from PySide import QtCore, QtGui
 from PySide.QtCore import Qt
 
 # Local Imports
-from ..schematic import Schematic
+from ..editors import SchematicEditor
 from ..core.logging import WidgetHandler
 from ..ui.console import Console
+from ..ui.tab_widget import TabWidget
 
 # ----------------------------------------------
 #
@@ -50,8 +51,8 @@ class Main(QtGui.QMainWindow):
 
         # ----------------------------------------------------
         #         Button Bar
-
         # ----------------------------------------------------
+        self.create_toolbars()
 
         # ----------------------------------------------------
         #         Editor Area
@@ -72,21 +73,14 @@ class Main(QtGui.QMainWindow):
         # The main widget will be a tabbed widget where various editors
         # will be kept.  For now, just include a Canvas
 
-        self.tabWidgetLeft = QtGui.QTabWidget()
-        self.tabWidgetRight = QtGui.QTabWidget()
-
+        self.tabWidgetLeft = TabWidget()
+        self.tabWidgetRight =TabWidget()
 
         splitter = QtGui.QSplitter(Qt.Horizontal)
         splitter.addWidget(self.tabWidgetLeft)
         splitter.addWidget(self.tabWidgetRight)
 
-        sch = Schematic(width=1200, height=800)
-        self.tabWidgetLeft.insertTab(0, sch, "Design - Old")
-        sch = Schematic(width=1200, height=800)
-        self.tabWidgetRight.insertTab(0, sch, "Design - New")
 
-        sch = Schematic(width=1200, height=800)
-        self.tabWidgetRight.insertTab(0, sch, "Opamp")
 
         self.setCentralWidget(splitter)
 
@@ -152,6 +146,7 @@ class Main(QtGui.QMainWindow):
         self.statusBar()
 
         self.info("JASE is now ready.")
+        self.error("No libraries loaded.")
         self.status("Ready.")
 
     def status(self, txt):
@@ -194,6 +189,7 @@ class Main(QtGui.QMainWindow):
         newAction.setStatusTip('New design')
         newAction.triggered.connect(self.file_new)
         fileMenu.addAction(newAction)
+        self.newAction = newAction
 
         # ----------------------------------------------------
         #        Open
@@ -203,24 +199,35 @@ class Main(QtGui.QMainWindow):
         openAction.setStatusTip('Open design')
         openAction.triggered.connect(self.file_open)
         fileMenu.addAction(openAction)
+        self.openAction = openAction
 
         # ----------------------------------------------------
         #        Save
         # ----------------------------------------------------
-        saveAction = QtGui.QAction(self.icons[''], '&Save...', self)
+        saveAction = QtGui.QAction(self.icons['disk'], '&Save...', self)
         saveAction.setShortcut('Ctrl+S')
-        saveAction.setStatusTip('Save design')
+        saveAction.setStatusTip('Save')
         saveAction.triggered.connect(self.file_save)
         fileMenu.addAction(saveAction)
+        self.saveAction = saveAction
 
         # ----------------------------------------------------
         #        Save As
         # ----------------------------------------------------
-        saveAsAction = QtGui.QAction(self.icons[''], '&Save As...', self)
-        saveAsAction.setStatusTip('Save design as..')
+        saveAsAction = QtGui.QAction(self.icons['disk_multiple'], '&Save As...', self)
+        saveAsAction.setStatusTip('Save as...')
         saveAsAction.triggered.connect(self.file_save_as)
         fileMenu.addAction(saveAsAction)
-
+        self.saveAsAction = saveAsAction
+        
+        # ----------------------------------------------------
+        #        Close
+        # ----------------------------------------------------
+        closeAction = QtGui.QAction(self.icons['folder_delete'], '&Close', self)
+        closeAction.setStatusTip('Close')
+        closeAction.triggered.connect(self.file_close)
+        fileMenu.addAction(closeAction)
+        self.closeAction = closeAction        
 
         # ----------------------------------------------------
         #        Exit
@@ -230,11 +237,12 @@ class Main(QtGui.QMainWindow):
         exitAction.setStatusTip('Exit application')
         exitAction.triggered.connect(QtGui.qApp.quit)
         fileMenu.addAction(exitAction)
+        self.exitAction = exitAction
 
         self.fileMenu = fileMenu
 
     def file_new(self):
-        raise NotImplementedError
+        self.new_view(editor=SchematicEditor)
 
     def file_open(self):
         raise NotImplementedError
@@ -243,6 +251,9 @@ class Main(QtGui.QMainWindow):
         raise NotImplementedError
 
     def file_save_as(self):
+        raise NotImplementedError
+
+    def file_close(self):
         raise NotImplementedError
 
     def setup_logging(self, widget):
@@ -256,3 +267,29 @@ class Main(QtGui.QMainWindow):
         logger.addHandler(handler)
 
         self.logger = logger
+
+    def create_toolbars(self):
+        self.file_toolbar = self.addToolBar("File")
+        self.file_toolbar.addAction(self.newAction)
+        self.file_toolbar.addAction(self.saveAction)
+        self.file_toolbar.addAction(self.saveAsAction)
+        self.file_toolbar.addAction(self.closeAction)
+
+    def new_view(self, editor = None):
+        """Loads a view into the central widget"""
+
+        """
+        sch = SchematicEditor(width=1200, height=800)
+        self.tabWidgetLeft.insertTab(0, sch, "Design - Old")
+        sch = SchematicEditor(width=1200, height=800)
+        self.tabWidgetRight.insertTab(0, sch, "Design - New")
+
+        sch = SchematicEditor(width=1200, height=800)
+        self.tabWidgetRight.insertTab(0, sch, "Opamp")
+        """
+        inst = editor(width=1200, height=800)
+        if hasattr(inst,'install_menu'):
+            inst.install_menu(self.menubar)
+        i = self.tabWidgetLeft.count()
+        self.tabWidgetLeft.insertTab(0, inst, inst.icon, "New schematic: {}".format(i+1))
+
