@@ -16,7 +16,7 @@ class App(QtGui.QApplication):
         self.setApplicationVersion(version)
 
         self.configureFont()
-
+        self.setStyle('cleanlooks')
         # self.setWindowIcon()
         self.icons = {}
         self.load_icons()
