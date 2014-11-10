@@ -17,6 +17,7 @@ from ..editors import SchematicEditor
 from ..core.logging import WidgetHandler
 from ..ui.console import Console
 from ..ui.tab_widget import TabWidget
+from ..ui.design_hierarchy_widget import DesignHierarchyWidget
 
 # ----------------------------------------------
 #
@@ -78,9 +79,7 @@ class Main(QtGui.QMainWindow):
 
         splitter = QtGui.QSplitter(Qt.Horizontal)
         splitter.addWidget(self.tabWidgetLeft)
-        splitter.addWidget(self.tabWidgetRight)
-
-
+        #splitter.addWidget(self.tabWidgetRight)
 
         self.setCentralWidget(splitter)
 
@@ -100,7 +99,7 @@ class Main(QtGui.QMainWindow):
         # ----------------------------------------------------
         propertiesDockWidget = QtGui.QDockWidget("Properties", self)
         propertiesDockWidget.setObjectName("propertiesDockWidget")
-        propertiesDockWidget.setAllowedAreas(Qt.LeftDockWidgetArea|Qt.RightDockWidgetArea)
+        #propertiesDockWidget.setAllowedAreas(Qt.LeftDockWidgetArea|Qt.RightDockWidgetArea)
         self.addDockWidget(Qt.LeftDockWidgetArea, propertiesDockWidget)
         self.propertiesWidget = QtGui.QTableWidget()
         propertiesDockWidget.setWidget(self.propertiesWidget)
@@ -132,11 +131,12 @@ class Main(QtGui.QMainWindow):
         # ----------------------------------------------------
         #         Hierarchy Widget
         # ----------------------------------------------------
-        self.hierarchyDockWidget = QtGui.QDockWidget("Hierarchy", self)
+        self.hierarchyDockWidget = QtGui.QDockWidget("Design Hierarchy", self)
         self.hierarchyDockWidget.setObjectName("hierarchyDockWidget")
         #logDockWidget.setAllowedAreas(Qt.LeftDockWidgetArea|Qt.RightDockWidgetArea)
         #self.hierarchyWidget = HierarchyWidget()
-        #self.hierarchyDockWidget.setWidget(self.hierarchyWidget)
+        self.hierarchyWidget = DesignHierarchyWidget()
+        self.hierarchyDockWidget.setWidget(self.hierarchyWidget)
         self.addDockWidget(Qt.RightDockWidgetArea, self.hierarchyDockWidget)
 
 
@@ -184,7 +184,7 @@ class Main(QtGui.QMainWindow):
         # ----------------------------------------------------
         #        New
         # ----------------------------------------------------
-        newAction = QtGui.QAction(self.icons['folder_add'], '&New', self)
+        newAction = QtGui.QAction(self.icons['folder_add'], '&New...', self)
         newAction.setShortcut('Ctrl+N')
         newAction.setStatusTip('New design')
         newAction.triggered.connect(self.file_new)
@@ -232,7 +232,7 @@ class Main(QtGui.QMainWindow):
         # ----------------------------------------------------
         #        Exit
         # ----------------------------------------------------
-        exitAction = QtGui.QAction(self.icons[''], '&Exit', self)
+        exitAction = QtGui.QAction('&Exit', self)
         exitAction.setShortcut('Ctrl+Q')
         exitAction.setStatusTip('Exit application')
         exitAction.triggered.connect(QtGui.qApp.quit)
