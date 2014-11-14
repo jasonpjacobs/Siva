@@ -1,11 +1,57 @@
-
+from PySide import QtGui
+import logging
 import sys, os
+import types
 import glob
 
-class Lib(dict):
+import importlib
+from .cell import Cell
+
+class LibDefs(dict):
     """
 
     """
+    def __init__(self, libs=None, path=None):
+        if libs is None:
+            libs = {}
+        super().__init__(libs)
+        self.logger = logging.getLogger(QtGui.qApp.applicationName())
+
+        if path is not None and os.path.isdir(path):
+            self._read_libs_in_path(path)
+        else:
+            self.logger.warn("Invalid path to LibraryDefinitions: {}".format(path))
+
+
+
+    def _read_libs_in_path(self, path):
+        self.logger.info("Reading libraries from {}".format(path))
+        dirs = os.listdir(path)
+        for dir in dirs:
+            if dir.startswith('_') or dir.startswith('.'):
+                continue
+            full_path = os.path.join(path, dir)
+            if os.path.isdir(full_path):
+                try:
+                    self.logger.info("Reading library {}".format(dir))
+                    lib = Library(path=full_path, name=dir)
+                    self[lib.name] = lib
+                except ValueError as e:
+                    self.logger.error("Could not read library {}: {}".format(dir, sys.exc_info()[0]))
+
+class LazyLoad(dict):
+    pass
+
+
+class Library(types.ModuleType):
+    """
+
+    """
+
+    class Placeholder:
+        def __init__(self, path):
+            self.path = path
+
     def __init__(self, name, full_name=None, path=None, desc=None, version=None, tags=None):
         """
 
@@ -17,6 +63,8 @@ class Lib(dict):
         :param tags:
         :return:
         """
+        super().__init__(name)
+
         self.name = name
         self.full_name = full_name
         self.desc = desc
@@ -28,12 +76,17 @@ class Lib(dict):
         else:
             self.tags = tags
 
-    def __getattr__(self, item):
-        try:
-            return dict.__getattr__(self, item)
-        except AttributeError:
-            if item in self:
-                return self[item]
+        self.__cells__ = {}
+
+        if os.path.isdir(path):
+            self._load_cells()
+
+
+    def __getattr__(self, attr):
+        if attr in self.__cells__:
+            return self.__cells__[attr]
+        else:
+            raise AttributeError
 
     def _load_cells(self):
         """Loads cell definitions from the file system.
@@ -43,12 +96,7 @@ class Lib(dict):
 
         subdirs = os.listdir(self.path)
         for subdir in subdirs:
-            c = Cell(path=subdir)
-
-l = Lib(name="analog_lib", path = ".")
-l["nmos"] = 2
-
-
-print(l["nmos"])
-print(l.name)
-print(l.nmos)
+            full_path = os.path.join(self.path, subdir)
+            if os.path.isdir(full_path):
+                c = Library.Placeholder(path=full_path)
+                self.__cells__[subdir] = c
