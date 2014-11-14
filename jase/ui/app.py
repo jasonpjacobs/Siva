@@ -32,7 +32,8 @@ class App(QtGui.QApplication):
         self.setFont(font)
 
     def load_icons(self):
-        icons = glob.glob("../icons/*.png")
+        icon_path = os.path.join(jase.__path__[0],'icons')
+        icons = glob.glob(icon_path + "\*.png")
         pixmap = QtGui.QPixmap(100,100)
         pixmap.fill(QtGui.QColor("blue"))
         self.icons[''] = QtGui.QIcon(pixmap)
