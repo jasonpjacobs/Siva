@@ -1,2 +1,4 @@
 *.pyc
 .idea/*
+jase.log
+jase/test/jase.log
