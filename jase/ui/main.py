@@ -5,11 +5,12 @@ Copyright (c) 2014, Jason Jacobs
 """
 
 # System Imports
-import os, sys, logging
-from pdb import set_trace as db
+import os
+import sys
+import logging
 
 # Third party imports
-from PySide import QtCore, QtGui
+from PySide import QtGui
 from PySide.QtCore import Qt
 
 # Local Imports
@@ -18,6 +19,8 @@ from ..core.logging import WidgetHandler
 from ..ui.console import Console
 from ..ui.tab_widget import TabWidget
 from ..ui.design_hierarchy_widget import DesignHierarchyWidget
+from ..design.library import LibDefs
+from ..ui.device_selector_widget import DeviceSelectorWidget
 
 # ----------------------------------------------
 #
@@ -89,9 +92,8 @@ class Main(QtGui.QMainWindow):
         part_selector_dock_widget = QtGui.QDockWidget("Device Selector", self)
         part_selector_dock_widget.setObjectName("devselDockWidget")
         part_selector_dock_widget.setAllowedAreas(Qt.LeftDockWidgetArea|Qt.RightDockWidgetArea)
-        self.part_selector_widget = QtGui.QTableWidget()
 
-        part_selector_dock_widget.setWidget(self.part_selector_widget)
+
         self.addDockWidget(Qt.LeftDockWidgetArea, part_selector_dock_widget)
 
         # ----------------------------------------------------
@@ -104,7 +106,6 @@ class Main(QtGui.QMainWindow):
         self.propertiesWidget = QtGui.QTableWidget()
         propertiesDockWidget.setWidget(self.propertiesWidget)
 
-
         # ----------------------------------------------------
         #         Console Window
         # ----------------------------------------------------
@@ -113,7 +114,6 @@ class Main(QtGui.QMainWindow):
         self.console = Console()
         self.consoleDockWidget.setWidget(self.console)
         self.addDockWidget(Qt.BottomDockWidgetArea, self.consoleDockWidget)
-
 
         # ----------------------------------------------------
         #         Log Widget
@@ -124,8 +124,6 @@ class Main(QtGui.QMainWindow):
         self.logDockWidget.setWidget(self.logWidget)
         self.addDockWidget(Qt.BottomDockWidgetArea, self.logDockWidget)
         self.setup_logging(self.logWidget)
-
-
         self.tabifyDockWidget(self.consoleDockWidget, self.logDockWidget)
 
         # ----------------------------------------------------
@@ -144,10 +142,34 @@ class Main(QtGui.QMainWindow):
         #         Status Bar
         # ----------------------------------------------------
         self.statusBar()
-
-        self.info("JASE is now ready.")
-        self.error("No libraries loaded.")
         self.status("Ready.")
+
+        self.read_libdefs()
+        self.part_selector_widget = DeviceSelectorWidget(self.lib_defs)
+        part_selector_dock_widget.setWidget(self.part_selector_widget)
+
+    def read_libdefs(self,):
+        from ..design.importer import DesignLoader
+
+        import db_root
+        root = db_root.__path__[0]
+
+
+        lib_defs = {'analog_lib' : os.path.join(root, 'analog_lib')}
+        loader = DesignLoader(lib_defs)
+        loader.install()
+
+
+
+        self.info("Reading library definitions")
+        import analog_lib
+        print("analog_lib:...")
+        print(dir(analog_lib))
+
+        import analog_lib.nmos
+        self.lib_defs = defs = LibDefs(path=os.path.abspath(db_root.__path__[0]))
+
+        self.info("{} libraries read.".format(len(defs)))
 
     def status(self, txt):
         self.statusBar().showMessage(txt)
