@@ -1,5 +1,5 @@
 import sys
-from .view import View
+from ..design import View
 
 
 class Symbol(View):
