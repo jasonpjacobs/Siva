@@ -1,4 +1,5 @@
 import os
+import types
 
 from PySide import QtGui
 
@@ -7,11 +8,10 @@ from .view import View
 
 class Cell(Typed):
     name = Str()
-    library = Str()
-
-    def __init__(self, name=None, path=None):
+    def __init__(self, name=None, path=None, library=None):
         self.name = name
         self.path = path
+        self.library = library
 
         if path is not None:
             self._load_views_from_path(path)
