@@ -88,6 +88,40 @@ class Library(types.ModuleType):
         else:
             raise AttributeError
 
+
+    # ------------------------------------------------------------------
+    #   Dictionary interface
+    # ------------------------------------------------------------------
+    def __len__(self):
+        return self.__cells__.__len__()
+
+    def __getitem__(self, key   ):
+        return self.__cells__.__getitem__(key)
+
+    def __setitem__(self, key, value):
+        # I can't think of a reason where a library (or cell) would need to
+        # be modified.
+        raise NotImplementedError("The cell dictionaries of a library are read only.")
+
+        # But in case this changes in the future, we'll do this:
+        #return self.__cells__.__setitem__(key, value)
+
+    def __delitem__(self, key):
+        return self.__cells__.__delitem__(self, key)
+
+    def __iter__(self):
+        return self.__cells__.__iter__()
+
+    def keys(self):
+        return self.__cells__.keys()
+
+    def values(self):
+        return self.__cells__.values()
+
+    def items(self):
+        return self.__cells__.items()
+
+
     def _load_cells(self):
         """Loads cell definitions from the file system.
         """
@@ -98,5 +132,6 @@ class Library(types.ModuleType):
         for subdir in subdirs:
             full_path = os.path.join(self.path, subdir)
             if os.path.isdir(full_path):
-                c = Library.Placeholder(path=full_path)
+                c = Cell(name=subdir, path=full_path)
                 self.__cells__[subdir] = c
+
