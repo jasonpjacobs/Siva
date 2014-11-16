@@ -1,12 +1,9 @@
 """
-Copyright (c) 2014, Jason Jacobs
-
 @License
 """
 
 # System Imports
 import os
-import sys
 import logging
 
 # Third party imports
@@ -22,6 +19,7 @@ from ..ui.design_hierarchy_widget import DesignHierarchyWidget
 from ..design.library import LibDefs
 from ..ui.device_selector_widget import DeviceSelectorWidget
 
+
 # ----------------------------------------------
 #
 # ----------------------------------------------
@@ -29,9 +27,8 @@ class Main(QtGui.QMainWindow):
     """
     """
 
-    def __init__(self, parent=None, icons=[]):
+    def __init__(self, parent=None):
         """
-
         The main window will have
 
         * Menubar
@@ -78,7 +75,7 @@ class Main(QtGui.QMainWindow):
         # will be kept.  For now, just include a Canvas
 
         self.tabWidgetLeft = TabWidget()
-        self.tabWidgetRight =TabWidget()
+        self.tabWidgetRight = TabWidget()
 
         splitter = QtGui.QSplitter(Qt.Horizontal)
         splitter.addWidget(self.tabWidgetLeft)
@@ -91,9 +88,7 @@ class Main(QtGui.QMainWindow):
         # ----------------------------------------------------
         part_selector_dock_widget = QtGui.QDockWidget("Device Selector", self)
         part_selector_dock_widget.setObjectName("devselDockWidget")
-        part_selector_dock_widget.setAllowedAreas(Qt.LeftDockWidgetArea|Qt.RightDockWidgetArea)
-
-
+        part_selector_dock_widget.setAllowedAreas(Qt.LeftDockWidgetArea | Qt.RightDockWidgetArea)
         self.addDockWidget(Qt.LeftDockWidgetArea, part_selector_dock_widget)
 
         # ----------------------------------------------------
@@ -118,6 +113,7 @@ class Main(QtGui.QMainWindow):
         # ----------------------------------------------------
         #         Log Widget
         # ----------------------------------------------------
+        self.logger = None
         self.logDockWidget = QtGui.QDockWidget("Log", self)
         self.logDockWidget.setObjectName("ListDockWidget")
         self.logWidget = QtGui.QTextEdit()
@@ -137,7 +133,6 @@ class Main(QtGui.QMainWindow):
         self.hierarchyDockWidget.setWidget(self.hierarchyWidget)
         self.addDockWidget(Qt.RightDockWidgetArea, self.hierarchyDockWidget)
 
-
         # ----------------------------------------------------
         #         Status Bar
         # ----------------------------------------------------
@@ -148,32 +143,18 @@ class Main(QtGui.QMainWindow):
         self.part_selector_widget = DeviceSelectorWidget(self.lib_defs)
         part_selector_dock_widget.setWidget(self.part_selector_widget)
 
-    def read_libdefs(self,):
+    def read_libdefs(self):
         from ..design.importer import DesignLoader
-
         import db_root
-        root = db_root.__path__[0]
-
-
-        lib_defs = {'analog_lib' : os.path.join(root, 'analog_lib')}
-        loader = DesignLoader(lib_defs)
-        loader.install()
-
-
 
         self.info("Reading library definitions")
-        import analog_lib
-        print("analog_lib:...")
-        print(dir(analog_lib))
-
-        import analog_lib.nmos
-        self.lib_defs = defs = LibDefs(path=os.path.abspath(db_root.__path__[0]))
-
-        self.info("{} libraries read.".format(len(defs)))
+        self.lib_defs = lib_defs = LibDefs(path=os.path.abspath(db_root.__path__[0]))
+        loader = DesignLoader(lib_defs)
+        loader.install()
+        self.info("{} libraries read.".format(len(lib_defs)))
 
     def status(self, txt):
         self.statusBar().showMessage(txt)
-
 
     def debug(self, msg):
         self.logger.debug(msg)
@@ -194,7 +175,7 @@ class Main(QtGui.QMainWindow):
         # ----------------------------------------------------
         #        Exit Application
         # ----------------------------------------------------
-        exitAction = QtGui.QAction(Icons["filequit"], '&Exit', self)
+        exitAction = QtGui.QAction(self.icons["filequit"], '&Exit', self)
         exitAction.setShortcut('Ctrl+Q')
         exitAction.setStatusTip('Exit application')
         exitAction.triggered.connect(QtGui.qApp.quit)
