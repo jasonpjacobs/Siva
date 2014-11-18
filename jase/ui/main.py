@@ -77,11 +77,16 @@ class Main(QtGui.QMainWindow):
 
         self.tabWidgetLeft = TabWidget()
         self.tabWidgetRight = TabWidget()
+        self.tabWidgetBottom = TabWidget()
 
-        splitter = QtGui.QSplitter(Qt.Horizontal)
-        splitter.addWidget(self.tabWidgetLeft)
-        #splitter.addWidget(self.tabWidgetRight)
+        splitter = QtGui.QSplitter(Qt.Vertical)
 
+        hsplitter = QtGui.QSplitter(Qt.Horizontal)
+        hsplitter.addWidget(self.tabWidgetLeft)
+        hsplitter.addWidget(self.tabWidgetRight)
+
+        splitter.addWidget(hsplitter)
+        splitter.addWidget(self.tabWidgetBottom)
         self.setCentralWidget(splitter)
 
         # ----------------------------------------------------
@@ -129,7 +134,6 @@ class Main(QtGui.QMainWindow):
         self.hierarchyDockWidget = QtGui.QDockWidget("Design Hierarchy", self)
         self.hierarchyDockWidget.setObjectName("hierarchyDockWidget")
         #logDockWidget.setAllowedAreas(Qt.LeftDockWidgetArea|Qt.RightDockWidgetArea)
-        #self.hierarchyWidget = HierarchyWidget()
         self.hierarchyWidget = DesignHierarchyWidget()
         self.hierarchyDockWidget.setWidget(self.hierarchyWidget)
         self.addDockWidget(Qt.RightDockWidgetArea, self.hierarchyDockWidget)
