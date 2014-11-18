@@ -1,7 +1,11 @@
+import sys
+
 from PySide import QtCore, QtGui
 
 from IPython.qt.console.rich_ipython_widget import RichIPythonWidget
 from IPython.qt.inprocess import QtInProcessKernelManager
+
+import jase
 
 
 class Console(RichIPythonWidget):
@@ -12,6 +16,9 @@ class Console(RichIPythonWidget):
         self.kernel_manager.start_kernel()
         self.kernel = self.kernel_manager.kernel
         #self.kernel.shell.user_ns.update(kwargs)
+
+
+
         self.kernel.gui = 'qt4'
         self.kernel.shell.push(kwarg)
         self.kernel_client = self.kernel_manager.client()
@@ -28,3 +35,13 @@ class Console(RichIPythonWidget):
 
     def sizeHint(self):
         return QtCore.QSize(20,120)
+
+    @property
+    def banner(self):
+        return '\n'.join([
+            u"JASE version {} - \N{copyright sign} 2014".format(jase.__version__),
+            "",
+            80*"=",
+            "Python: {}".format(sys.version)
+
+        ])
