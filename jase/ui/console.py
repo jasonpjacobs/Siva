@@ -39,9 +39,7 @@ class Console(RichIPythonWidget):
     @property
     def banner(self):
         return '\n'.join([
-            u"JASE version {} - \N{copyright sign} 2014".format(jase.__version__),
-            "",
-            80*"=",
-            "Python: {}".format(sys.version)
+            u"JASE v{}, \N{copyright sign} 2014, Juliet Design Automation".format(jase.__version__),
+            "on Python {}".format(sys.version[:5])
 
         ])
