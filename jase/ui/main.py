@@ -18,6 +18,7 @@ from ..ui.tab_widget import TabWidget
 from ..ui.design_hierarchy_widget import DesignHierarchyWidget
 from ..design.library import LibDefs
 from ..ui.device_selector_widget import DeviceSelectorWidget
+from ..ui.properties_widget import PropertiesWidget
 
 
 # ----------------------------------------------
@@ -98,7 +99,7 @@ class Main(QtGui.QMainWindow):
         propertiesDockWidget.setObjectName("propertiesDockWidget")
         #propertiesDockWidget.setAllowedAreas(Qt.LeftDockWidgetArea|Qt.RightDockWidgetArea)
         self.addDockWidget(Qt.LeftDockWidgetArea, propertiesDockWidget)
-        self.propertiesWidget = QtGui.QTableWidget()
+        self.propertiesWidget = PropertiesWidget()
         propertiesDockWidget.setWidget(self.propertiesWidget)
 
         # ----------------------------------------------------
@@ -106,7 +107,7 @@ class Main(QtGui.QMainWindow):
         # ----------------------------------------------------
         self.consoleDockWidget = QtGui.QDockWidget("Console", self)
         self.consoleDockWidget.setObjectName("ConsoleWidget")
-        self.console = Console()
+        self.console = Console(main=self)
         self.consoleDockWidget.setWidget(self.console)
         self.addDockWidget(Qt.BottomDockWidgetArea, self.consoleDockWidget)
 
@@ -120,7 +121,7 @@ class Main(QtGui.QMainWindow):
         self.logDockWidget.setWidget(self.logWidget)
         self.addDockWidget(Qt.BottomDockWidgetArea, self.logDockWidget)
         self.setup_logging(self.logWidget)
-        self.tabifyDockWidget(self.consoleDockWidget, self.logDockWidget)
+        #self.tabifyDockWidget(self.consoleDockWidget, self.logDockWidget)
 
         # ----------------------------------------------------
         #         Hierarchy Widget
