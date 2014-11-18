@@ -2,12 +2,15 @@ from PySide import QtGui
 import logging
 import sys, os
 import types
-import glob
+import collections
 
-import importlib
+
+from jtypes import Typed, Str
+
 from .cell import Cell
 
-class LibDefs(dict):
+
+class LibDefs(collections.OrderedDict):
     """
 
     """
@@ -27,6 +30,7 @@ class LibDefs(dict):
     def _read_libs_in_path(self, path):
         self.logger.info("Reading libraries from {}".format(path))
         dirs = os.listdir(path)
+        dirs.sort()
         for dir in dirs:
             if dir.startswith('_') or dir.startswith('.'):
                 continue
@@ -39,19 +43,11 @@ class LibDefs(dict):
                 except ValueError as e:
                     self.logger.error("Could not read library {}: {}".format(dir, sys.exc_info()[0]))
 
-class LazyLoad(dict):
-    pass
-
-
-class Library(types.ModuleType):
+class Library(types.ModuleType, Typed):
     """
 
     """
-
-    class Placeholder:
-        def __init__(self, path):
-            self.path = path
-
+    name = Str()
     def __init__(self, name, full_name=None, path=None, desc=None, version=None, tags=None):
         """
 
@@ -76,7 +72,7 @@ class Library(types.ModuleType):
         else:
             self.tags = tags
 
-        self.__cells__ = {}
+        self.__cells__ = collections.OrderedDict()
 
         if os.path.isdir(path):
             self._load_cells()
@@ -128,8 +124,10 @@ class Library(types.ModuleType):
         assert self.path is not None
         assert os.path.isdir(self.path)
 
-        subdirs = os.listdir(self.path)
-        for subdir in subdirs:
+        dirs = [name for name in os.listdir(self.path) if not name.startswith('_')]
+        dirs.sort()
+
+        for subdir in dirs:
             full_path = os.path.join(self.path, subdir)
             if os.path.isdir(full_path):
                 c = Cell(name=subdir, path=full_path)
