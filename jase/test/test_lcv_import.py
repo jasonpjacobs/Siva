@@ -17,12 +17,12 @@ def finder():
 
     assert os.path.exists(root)
 
-    lib_defs = {
+    library_paths = {
         "lib_a" : os.path.join(root, 'lib_a'),
         "lib_b" : os.path.join(root, 'lib_b'),
         "lib_c" : os.path.join(root, 'lib_c')
     }
-    finder = DesignFinder(lib_defs=lib_defs)
+    finder = DesignFinder(library_paths=library_paths)
     return finder
 
 
@@ -45,7 +45,6 @@ def test_basics(finder):
     assert lib_a.__author__ == "Jase"
     assert lib_a.__file__ is not None
     assert lib_a.__file__ != ''
-    assert lib_a.__file__ == '<Library>'
     assert os.path.exists(lib_a.__path__[0])
     assert True
 
@@ -63,24 +62,25 @@ def test_cell_import():
     import lib_a
     assert 'cell_a' in lib_a
 
-def test_cell_attributes():
-    import lib_a.cell_a
+def test_cell_attributes(finder):
+    finder.install()
+
     from lib_a import cell_a
 
-    #assert(isinstance(cell_a, Cell))
+    assert 'lib_a.cell_a' in sys.modules
+
     assert(cell_a.__doc__[0:9] == 'A cell-ba')
     assert(cell_a.__version__ ==  "1.0.1")
     assert(cell_a.__author__ == "Jase")
-    assert(cell_a.__file__ is None)
+    assert(cell_a.__file__ is not None)
     assert(os.path.exists(cell_a.__path__[0]))
     assert(cell_a.__name__ == 'lib_a.cell_a')
-    assert(cell_a.__package__ == 'lib_a')
-
+    assert(cell_a.__package__ == 'lib_a.cell_a')
     assert len(cell_a.__views__) == 0
 
 
 def cell_access():
-    #assert 'cell_a' in lib_a.__dict__
+    assert 'cell_a' in lib_a.__dict__
     from lib_a.cell_a import CellA
     from cell_a import CellA
 
