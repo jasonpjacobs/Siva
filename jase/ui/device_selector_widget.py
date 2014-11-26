@@ -1,4 +1,5 @@
 from PySide import QtCore, QtGui
+from PySide.QtCore import Qt
 
 from jtypes.list_model import ListModel, ListView
 
@@ -10,7 +11,7 @@ class DeviceSelectorWidget(QtGui.QWidget):
     '''
     classdocs
     '''
-    def __init__(self, lib_defs=None):
+    def __init__(self, libraries=None):
         '''
         Constructor
         '''
@@ -30,9 +31,11 @@ class DeviceSelectorWidget(QtGui.QWidget):
         self.deviceCanvas = DeviceCanvas()
 
         # Configure the device canvas
-        self.deviceCanvas.setIconSize(QtCore.QSize(100,100))
+        self.deviceCanvas.setIconSize(QtCore.QSize(30,30))
         self.deviceCanvas.setDragDropMode(QtGui.QAbstractItemView.DragOnly)
         #self.deviceCanvas.setViewMode(QtGui.QListView.IconMode)
+        #self.deviceCanvas.setFlow(QtGui.QListView.TopToBottom)
+
 
         #self.setGeometry(300, 300, 350, 250)
 
@@ -50,8 +53,8 @@ class DeviceSelectorWidget(QtGui.QWidget):
         layout.addLayout(grid)
         self.setLayout(layout)
 
-        self.lib_defs = lib_defs
-        if lib_defs:
+        self.libraries = libraries
+        if libraries:
             self.populateLib()
 
         # Signals/slots
@@ -66,15 +69,13 @@ class DeviceSelectorWidget(QtGui.QWidget):
         return QtCore.QSize(10,600)
 
     def populateLib(self):
-        for lib in self.lib_defs:
+        for lib in self.libraries:
             self.libEntry.addItem(lib)
-        model = ListModel(data=[], columns=['name'])
-        self.deviceCanvas.setModel(model)
         self.onLibChange()
 
     def onLibChange(self):
         lib_name = str(self.libEntry.currentText())
-        assert lib_name in self.lib_defs
-        lib = self.lib_defs[lib_name]
+        assert lib_name in self.libraries
+        lib = self.libraries[lib_name]
         self.deviceCanvas.set_model_data(list(lib.values()))
 
