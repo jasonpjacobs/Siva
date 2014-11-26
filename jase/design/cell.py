@@ -2,31 +2,36 @@ import os
 import types
 import collections
 
-from PySide import QtGui
+from PySide import QtGui, QtCore
+from PySide.QtCore import Qt
 from jtypes import Typed, Str
+
+
 from .view import View
+from .package import Package, PlaceHolder
 
-class Cell(Typed):
-    name = Str()
-    def __init__(self, name=None, path=None, library=None):
-        self.name = name
-        self.path = path
-        self.library = library
-        self.views = collections.OrderedDict()
-        if path is not None:
-            self._load_views_from_path(path)
+class CellName(Str):
+    def getIcon(self, obj):
+        return obj.icon
 
-    def _load_views_from_path(self, path):
-        dirs = [name for name in os.listdir(path) if not name.startswith('_')]
+class Cell(Package):
+    def _load_items(self):
+        dirs = [name for name in os.listdir(self.path) if not name.startswith('_')]
         dirs.sort()
         for dir_name in dirs:
-            # Look for available views
-            if os.path.isdir(os.path.join(path, dir_name)):
-                view = View(name=dir_name, path=os.path.join(path, dir_name))
-                self.views[dir_name] = View
-
-            # Check for an icon
             if os.path.exists( os.path.join(self.path, 'icon.png')):
                 self.icon = QtGui.QIcon(os.path.join(self.path, 'icon.png'))
             else:
-                self.icon = None
+                if hasattr(QtGui.qApp, 'icons'):
+                    self.icon = QtGui.qApp.icons['plugin']
+                else:
+                    self.icon = None
+
+    @property
+    def __views__(self):
+        return self._items
+
+    @__views__.setter
+    def __view__(self, value):
+        self._items = value
+
