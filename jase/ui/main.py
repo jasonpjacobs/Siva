@@ -84,9 +84,11 @@ class Main(QtGui.QMainWindow):
         hsplitter = QtGui.QSplitter(Qt.Horizontal)
         hsplitter.addWidget(self.tabWidgetLeft)
         hsplitter.addWidget(self.tabWidgetRight)
+        hsplitter.setSizes([600,100])
 
         splitter.addWidget(hsplitter)
         splitter.addWidget(self.tabWidgetBottom)
+        splitter.setSizes([600,100])
         self.setCentralWidget(splitter)
 
         # ----------------------------------------------------
@@ -145,7 +147,7 @@ class Main(QtGui.QMainWindow):
         self.status("Ready.")
 
         self.read_libdefs()
-        self.part_selector_widget = DeviceSelectorWidget(self.lib_defs)
+        self.part_selector_widget = DeviceSelectorWidget(self.libraries)
         part_selector_dock_widget.setWidget(self.part_selector_widget)
 
     def read_libdefs(self):
@@ -156,6 +158,11 @@ class Main(QtGui.QMainWindow):
         self.lib_defs = lib_defs = LibDefs(path=os.path.abspath(db_root.__path__[0]))
         loader = DesignLoader(lib_defs)
         loader.install()
+        self.libraries = {}
+        for libname in lib_defs:
+            print("Loading library {}".format(libname))
+            lib = __import__(libname, globals(), locals())
+            self.libraries[libname] = lib
         self.info("{} libraries read.".format(len(lib_defs)))
 
     def status(self, txt):
