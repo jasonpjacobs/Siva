@@ -1,7 +1,6 @@
-from PySide import QtGui, QtCore
+from ..api import Qt, QtCore, QtGui
 
 class PropertiesWidget(QtGui.QTableWidget):
-
     def __init__(self):
         super().__init__()
         policy = QtGui.QSizePolicy()

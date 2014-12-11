@@ -2,12 +2,11 @@ import os
 import types
 import collections
 
-from PySide import QtGui, QtCore
-from PySide.QtCore import Qt
+from ..api import Qt, QtCore, QtGui
+
 from jtypes import Typed, Str
-
-
 from .view import View
+
 from .package import Package, PlaceHolder
 
 class CellName(Str):

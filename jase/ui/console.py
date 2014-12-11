@@ -1,7 +1,7 @@
 import sys
 
-from PySide import QtCore, QtGui
 
+from ..api import Qt, QtCore, QtGui
 from IPython.qt.console.rich_ipython_widget import RichIPythonWidget
 from IPython.qt.inprocess import QtInProcessKernelManager
 

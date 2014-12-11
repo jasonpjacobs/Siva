@@ -3,13 +3,13 @@ import sys, os
 import glob
 import jase
 
-from PySide import QtCore, QtGui
-from PySide.QtCore import Qt
+from ..api import Qt, QtCore, QtGui
 
 
 class App(QtGui.QApplication):
     """
     """
+    current = None
     def __init__(self, name="Jase", version = jase.__version__):
         super().__init__(sys.argv)
         self.setApplicationName(name)
@@ -23,6 +23,7 @@ class App(QtGui.QApplication):
         loger = logging.getLogger(name)
         logging.basicConfig(filename='jase.log',level=logging.DEBUG)
         loger.info("Starting JASE.")
+        App.current = self
 
     def configureFont(self):
         font = self.font()

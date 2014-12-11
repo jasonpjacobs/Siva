@@ -1,5 +1,5 @@
 import pytest
-from PySide import  QtCore, QtGui, QtTest
+from ..api import Qt, QtCore, QtGui
 
 from jase.ui.main import Main
 

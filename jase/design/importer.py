@@ -62,9 +62,11 @@ class Loader(SourceFileLoader):
             module.__package__ = fullname
         else:
             module.__package__ = fullname.rpartition('.')[0]
+
+        sys.modules[fullname] = module
         code = self.get_code(fullname)
         exec(code, module.__dict__)
-        sys.modules[fullname] = module
+
         return module
 
 

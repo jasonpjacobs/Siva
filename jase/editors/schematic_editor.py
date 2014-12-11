@@ -1,6 +1,5 @@
 from jcanvas.canvas_widget import CanvasWidget
-from PySide import QtCore, QtGui
-from PySide.QtCore import Qt
+from ..api import Qt, QtCore, QtGui
 
 from .editor import Editor
 
@@ -15,9 +14,10 @@ class SchematicEditor(CanvasWidget, Editor):
 
         self.setContextMenuPolicy(Qt.ActionsContextMenu)
 
+        self.setAcceptDrops(True)
 
     def createActions(self):
-        icons = QtGui.qApp.icons
+        icons = QtGui.QApplication.instance().icons
         action = QtGui.QAction('Add instance...', self)
         action.setIcon(icons["plugin_add"])
         self.add_instance_action = action
@@ -27,6 +27,10 @@ class SchematicEditor(CanvasWidget, Editor):
         menu = menubar.addMenu('Schematic')
         menu.addAction(self.add_instance_action)
 
+
     @property
     def icon(self):
-        return QtGui.qApp.icons['plugin']
+        return QtGui.QApplication.instance().icons['plugin']
+
+    def dragEnterEvent(self, event):
+        event.acceptProposedAction()

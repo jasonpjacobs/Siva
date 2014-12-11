@@ -5,10 +5,10 @@
 # System Imports
 import os
 import logging
+import pdb
 
 # Third party imports
-from PySide import QtGui
-from PySide.QtCore import Qt
+from ..api import Qt, QtCore, QtGui
 
 # Local Imports
 from ..editors import SchematicEditor
@@ -19,6 +19,7 @@ from ..ui.design_hierarchy_widget import DesignHierarchyWidget
 from ..design.library import LibDefs
 from ..ui.device_selector_widget import DeviceSelectorWidget
 from ..ui.properties_widget import PropertiesWidget
+from .app import App
 
 
 # ----------------------------------------------
@@ -39,10 +40,11 @@ class Main(QtGui.QMainWindow):
         * Status Bar
         """
         super().__init__(parent=parent)
-        app = QtGui.qApp
+        app = QtGui.QApplication.instance()
         self.setWindowTitle("{} - v{}".format(app.applicationName(), app.applicationVersion()))
 
-        self.icons = QtGui.qApp.icons
+        self.icons = app.icons
+
 
         # ----------------------------------------------------
         #         Menu Bar
@@ -59,18 +61,6 @@ class Main(QtGui.QMainWindow):
         # ----------------------------------------------------
         #         Editor Area
         # ----------------------------------------------------
-
-        """
-        QSplitter *parent = new QSplitter();
-        QWidget *widget = new QWidget();
-        QHBoxLayout *parentLayout = new QHBoxLayout();
-        widget->setLayout(parentLayout);
-        parent->addWidget(widget);
-        QTabWidget *tabWidget = new QTabWidget();
-        parentLayout->addWidget(tabWidget);
-
-        setCentralWidget(parent);
-        """
 
         # The main widget will be a tabbed widget where various editors
         # will be kept.  For now, just include a Canvas
@@ -118,6 +108,7 @@ class Main(QtGui.QMainWindow):
         self.consoleDockWidget.setWidget(self.console)
         self.addDockWidget(Qt.BottomDockWidgetArea, self.consoleDockWidget)
 
+
         # ----------------------------------------------------
         #         Log Widget
         # ----------------------------------------------------
@@ -150,13 +141,14 @@ class Main(QtGui.QMainWindow):
         self.part_selector_widget = DeviceSelectorWidget(self.libraries)
         part_selector_dock_widget.setWidget(self.part_selector_widget)
 
+
     def read_libdefs(self):
-        from ..design.importer import DesignLoader
+        from ..design.importer import DesignFinder
         import db_root
 
         self.info("Reading library definitions")
         self.lib_defs = lib_defs = LibDefs(path=os.path.abspath(db_root.__path__[0]))
-        loader = DesignLoader(lib_defs)
+        loader = DesignFinder(lib_defs)
         loader.install()
         self.libraries = {}
         for libname in lib_defs:

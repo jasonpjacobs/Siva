@@ -1,5 +1,4 @@
-from PySide import QtGui, QtCore
-from PySide.QtCore import Qt
+from ..api import Qt, QtGui, QtCore
 
 class TabWidget(QtGui.QTabWidget):
 
@@ -14,7 +13,7 @@ class TabWidget(QtGui.QTabWidget):
         self.tabBar().setMovable(True)
 
     def create_context_menu(self):
-        icons = QtGui.qApp.icons
+        icons = QtGui.QApplication.instance().icons
         menu = QtGui.QMenu()
 
         action = QtGui.QAction(icons[""], 'Close me', self)

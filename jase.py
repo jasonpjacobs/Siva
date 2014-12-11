@@ -1,4 +1,6 @@
 import sys
+import os
+os.environ['QT_API'] = 'pyqt'
 import jase
 app = jase.App()
 

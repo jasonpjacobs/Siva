@@ -71,7 +71,6 @@ class Package(types.ModuleType, Typed):
         if isinstance(item, PlaceHolder):
             item = item.load()
             self._items[key] = item
-
         return item
 
     def __setitem__(self, key, value):

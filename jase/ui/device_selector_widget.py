@@ -1,5 +1,4 @@
-from PySide import QtCore, QtGui
-from PySide.QtCore import Qt
+from ..api import Qt, QtCore, QtGui
 
 from jtypes.list_model import ListModel, ListView
 

@@ -69,6 +69,9 @@ def test_cell_attributes(finder):
 
     assert 'lib_a.cell_a' in sys.modules
 
+    assert isinstance(cell_a, Cell)
+
+
     assert(cell_a.__doc__[0:9] == 'A cell-ba')
     assert(cell_a.__version__ ==  "1.0.1")
     assert(cell_a.__author__ == "Jase")
@@ -76,7 +79,7 @@ def test_cell_attributes(finder):
     assert(os.path.exists(cell_a.__path__[0]))
     assert(cell_a.__name__ == 'lib_a.cell_a')
     assert(cell_a.__package__ == 'lib_a.cell_a')
-    assert len(cell_a.__views__) == 0
+    assert len(cell_a.__views__) == 1
 
 
 def cell_access():
@@ -100,7 +103,7 @@ def t_db_root():
     lib_defs = {
         "analog_lib" : os.path.join(root, 'analog_lib'),
     }
-    loader = DesignFinder(lib_defs=lib_defs)
+    loader = DesignFinder(library_paths=lib_defs)
     loader.install()
 
     import analog_lib
