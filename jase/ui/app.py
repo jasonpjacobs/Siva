@@ -34,7 +34,7 @@ class App(QtGui.QApplication):
 
     def load_icons(self):
         icon_path = os.path.join(jase.__path__[0],'icons')
-        icons = glob.glob(icon_path + "\*.png")
+        icons = glob.glob(icon_path + "/*.png")
         pixmap = QtGui.QPixmap(100,100)
         pixmap.fill(QtGui.QColor("blue"))
         self.icons[''] = QtGui.QIcon(pixmap)
