@@ -1,4 +1,1 @@
-
-from .design import Nmos
-from .symbol import Symbol
-
+from .symbol import Symbol as symbol
