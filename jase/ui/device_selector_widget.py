@@ -1,12 +1,38 @@
+import pdb
+
 from ..api import Qt, QtCore, QtGui
 
 from jtypes.list_model import ListModel, ListView
+from jtypes.types import Typed, Str
+
+from ..views.symbol import Symbol
+
+class NameType(Str):
+    def getIcon(self, obj):
+        return obj.icon
+
+    def flags(self, obj):
+        flags = super().flags(obj)
+        flags |= Qt.ItemIsDragEnabled
+        return flags
+
+class CellProxy(Typed):
+    name = NameType()
+
+    def __init__(self, name, icon):
+        self.name = name
+        self.icon = icon
+
+    def getIcon(self, name, obj):
+        print("Getting icon from", obj, obj.icon)
+        return obj.icon
 
 class DeviceCanvas(ListView):
-    def __init__(self, data=None):
-        super().__init__(columns=['name'])
+        def __init__(self, data=None):
+            super().__init__(columns=['name'], descriptors=CellProxy._descriptors)
 
 class DeviceSelectorWidget(QtGui.QWidget):
+    symbol_types = (Symbol,)
     '''
     classdocs
     '''
@@ -32,10 +58,10 @@ class DeviceSelectorWidget(QtGui.QWidget):
         # Configure the device canvas
         self.deviceCanvas.setIconSize(QtCore.QSize(30,30))
         self.deviceCanvas.setDragDropMode(QtGui.QAbstractItemView.DragOnly)
-        #self.deviceCanvas.setViewMode(QtGui.QListView.IconMode)
+        self.deviceCanvas.setViewMode(QtGui.QListView.ListMode)
+        self.deviceCanvas.setMovement(QtGui.QListView.Static)
+
         #self.deviceCanvas.setFlow(QtGui.QListView.TopToBottom)
-
-
         #self.setGeometry(300, 300, 350, 250)
 
         grid = QtGui.QGridLayout()
@@ -68,13 +94,21 @@ class DeviceSelectorWidget(QtGui.QWidget):
         return QtCore.QSize(10,600)
 
     def populateLib(self):
-        for lib in self.libraries:
-            self.libEntry.addItem(lib)
+        lib_names = [k for k in self.libraries.keys()]
+        for lib_name in sorted(lib_names):
+            self.libEntry.addItem(lib_name)
         self.onLibChange()
 
     def onLibChange(self):
         lib_name = str(self.libEntry.currentText())
         assert lib_name in self.libraries
         lib = self.libraries[lib_name]
-        self.deviceCanvas.set_model_data(list(lib.values()))
+
+        values = []
+        for cell_name in lib:
+            cell = lib[cell_name]
+            for view in cell.__views__.values():
+                if issubclass(view, self.symbol_types):
+                    values.append(CellProxy(name=cell.name, icon=cell.icon))
+        self.deviceCanvas.set_model_data(values)
 
