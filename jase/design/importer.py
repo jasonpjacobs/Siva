@@ -49,12 +49,13 @@ class Loader(SourceFileLoader):
         return path
 
     def load_module(self, fullname):
+        name = fullname.rpartition('.')[-1]
         ispkg = self.is_package(fullname)
         if fullname in sys.modules:
             module = sys.modules[fullname]
         else:
             path = self.path
-            module = self.module_cls(name=fullname, path=path)
+            module = self.module_cls(name=name, path=path)
 
         module.__file__ = self.get_filename(fullname)
         if ispkg:
@@ -64,9 +65,13 @@ class Loader(SourceFileLoader):
             module.__package__ = fullname.rpartition('.')[0]
 
         sys.modules[fullname] = module
-        code = self.get_code(fullname)
-        exec(code, module.__dict__)
-
+        try:
+            code = self.get_code(fullname)
+            exec(code, module.__dict__)
+        except FileNotFoundError:
+            #raise ImportError("{} is not a package.".format(fullname))
+            pass
+        module._load_items()
         return module
 
 

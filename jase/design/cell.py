@@ -4,27 +4,27 @@ import collections
 
 from ..api import Qt, QtCore, QtGui
 
-from jtypes import Typed, Str
 from .view import View
-
-from .package import Package, PlaceHolder
-
-class CellName(Str):
-    def getIcon(self, obj):
-        return obj.icon
+from .package import Package
 
 class Cell(Package):
+    def __init__(self, name, full_name=None, path=None, desc=None, version=None, tags=None):
+        super().__init__(name, full_name=None, path=None, desc=None, version=None, tags=None)
+
+        if path is not None and os.path.exists(path):
+            if os.path.exists(os.path.join(path, 'icon.png')):
+                self.icon = QtGui.QIcon(os.path.join(path, 'icon.png'))
+        else:
+            self.icon = QtGui.QApplication.instance().icons['processor']
+
+
     def _load_items(self):
-        dirs = [name for name in os.listdir(self.path) if not name.startswith('_')]
-        dirs.sort()
-        for dir_name in dirs:
-            if os.path.exists( os.path.join(self.path, 'icon.png')):
-                self.icon = QtGui.QIcon(os.path.join(self.path, 'icon.png'))
-            else:
-                if hasattr(QtGui.qApp, 'icons'):
-                    self.icon = QtGui.qApp.icons['plugin']
-                else:
-                    self.icon = None
+        for k,v in self.__dict__.items():
+            try:
+                if issubclass(v, View):
+                    self._items[k] = v
+            except TypeError:
+                pass
 
     @property
     def __views__(self):

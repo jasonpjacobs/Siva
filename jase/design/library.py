@@ -6,7 +6,6 @@ import collections
 from jtypes import Typed, Str
 from ..api import Qt, QtCore, QtGui
 
-
 from .package import Package, PlaceHolder
 from .cell import Cell
 

@@ -1,6 +1,7 @@
 import os
 import collections
 import types
+import importlib
 
 from jtypes import Str, Typed
 
@@ -10,8 +11,8 @@ class PlaceHolder:
         self.parent = parent
 
     def load(self):
-        print("Loading {}.{}".format(self.parent, self.name))
-        item = __import__(self.parent + "." + self.name)
+        item = importlib.import_module(self.parent + "." + self.name)
+        return item
 
 class Package(types.ModuleType, Typed):
     """ Base class definition for Libraries and Cells.  These are module types, but have a custom importer to support
@@ -45,9 +46,6 @@ class Package(types.ModuleType, Typed):
             self.tags = tags
 
         self._items = collections.OrderedDict()
-
-        if os.path.isdir(path):
-            self._load_items()
 
     def _load_items(self):
         return None
@@ -95,18 +93,4 @@ class Package(types.ModuleType, Typed):
 
     def items(self):
         return self._items.items()
-
-    def _load_cells(self):
-        """Loads cell definitions from the file system.
-        """
-        assert self.path is not None
-        assert os.path.isdir(self.path)
-
-        dirs = [name for name in os.listdir(self.path) if not name.startswith('_')]
-        dirs.sort()
-
-        for subdir in dirs:
-            full_path = os.path.join(self.path, subdir)
-            if os.path.isdir(full_path):
-                self._items[subdir] = PlaceHolder(name=subdir, parent = self.name)
 

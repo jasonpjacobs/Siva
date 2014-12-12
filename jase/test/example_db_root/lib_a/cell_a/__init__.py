@@ -6,6 +6,3 @@ __author__ = "Jase"
 
 
 from .symbol import Symbol
-
-__views__ = {}
-__views__['symbol'] = Symbol

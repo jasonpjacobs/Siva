@@ -70,8 +70,6 @@ def test_cell_attributes(finder):
     assert 'lib_a.cell_a' in sys.modules
 
     assert isinstance(cell_a, Cell)
-
-
     assert(cell_a.__doc__[0:9] == 'A cell-ba')
     assert(cell_a.__version__ ==  "1.0.1")
     assert(cell_a.__author__ == "Jase")
@@ -79,7 +77,9 @@ def test_cell_attributes(finder):
     assert(os.path.exists(cell_a.__path__[0]))
     assert(cell_a.__name__ == 'lib_a.cell_a')
     assert(cell_a.__package__ == 'lib_a.cell_a')
+
     assert len(cell_a.__views__) == 1
+    assert 'Symbol' in cell_a.__views__
 
 
 def cell_access():
