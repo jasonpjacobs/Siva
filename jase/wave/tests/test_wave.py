@@ -1,7 +1,7 @@
 import unittest
 import numpy as np
 
-from jwave.wave import Wave
+from jase.wave.wave import Wave
 
 import pdb
 class TestWave(unittest.TestCase):
