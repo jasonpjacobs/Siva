@@ -1,7 +1,7 @@
 import os
 import types
 
-from PySide import QtGui
+from ..qt_bindings import QtGui, QtCore
 
 from jtypes import Typed, Str
 from .view import View

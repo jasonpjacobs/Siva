@@ -7,12 +7,10 @@ import os
 import logging
 
 # Third party imports
-from PySide import QtGui
-from PySide.QtCore import Qt
-
+from ..qt_bindings import QtCore, QtGui, Qt
 # Local Imports
 from ..editors import SchematicEditor
-from ..core.logging import WidgetHandler
+from ..utilities.logging import WidgetHandler
 from ..ui.console import Console
 from ..ui.tab_widget import TabWidget
 from ..ui.design_hierarchy_widget import DesignHierarchyWidget
@@ -27,7 +25,7 @@ class Main(QtGui.QMainWindow):
     """
     """
 
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, app=None):
         """
         The main window will have
 
@@ -38,10 +36,9 @@ class Main(QtGui.QMainWindow):
         * Status Bar
         """
         super().__init__(parent=parent)
-        app = QtGui.qApp
         self.setWindowTitle("{} - v{}".format(app.applicationName(), app.applicationVersion()))
 
-        self.icons = QtGui.qApp.icons
+        self.icons = app.icons
 
         # ----------------------------------------------------
         #         Menu Bar
@@ -187,6 +184,7 @@ class Main(QtGui.QMainWindow):
         # ----------------------------------------------------
         #        New
         # ----------------------------------------------------
+
         newAction = QtGui.QAction(self.icons['folder_add'], '&New...', self)
         newAction.setShortcut('Ctrl+N')
         newAction.setStatusTip('New design')

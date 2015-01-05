@@ -1,5 +1,5 @@
 import os
-print("Chosing qt bindig")
+print("Choosing qt binding")
 if 'QT_API' in os.environ:
     qt_api = os.environ['QT_API']
 else:

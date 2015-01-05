@@ -1,6 +1,5 @@
-from PySide import QtCore, QtGui
-
-from jtypes.table_model import TableModel, TableView
+from ..qt_bindings import QtGui, QtCore, Qt
+from ..types.table_model import TableModel, TableView
 
 class DeviceCanvas(TableView):
     pass

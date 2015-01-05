@@ -1,7 +1,6 @@
-from jcanvas.canvas_widget import CanvasWidget
-from PySide import QtCore, QtGui
-from PySide.QtCore import Qt
-
+from ..canvas.canvas_widget import CanvasWidget
+from ..qt_bindings import QtCore, QtGui, Qt
+from ..icons import ICONS
 from .editor import Editor
 
 class SchematicEditor(CanvasWidget, Editor):
@@ -17,7 +16,7 @@ class SchematicEditor(CanvasWidget, Editor):
 
 
     def createActions(self):
-        icons = QtGui.qApp.icons
+        icons = ICONS
         action = QtGui.QAction('Add instance...', self)
         action.setIcon(icons["plugin_add"])
         self.add_instance_action = action
@@ -29,4 +28,4 @@ class SchematicEditor(CanvasWidget, Editor):
 
     @property
     def icon(self):
-        return QtGui.qApp.icons['plugin']
+        return ICONS['plugin']

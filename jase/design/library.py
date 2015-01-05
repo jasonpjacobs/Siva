@@ -1,4 +1,4 @@
-from PySide import QtGui
+from ..qt_bindings import QtGui, QtCore
 import logging
 import sys, os
 import types
