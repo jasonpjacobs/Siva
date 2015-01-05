@@ -5,11 +5,11 @@ os.environ['QT_API'] = 'pyside'
 print(os.environ['QT_API'])
 
 
-from ..qt_bindings import QtGui, QtCore, QTest
-from jcanvas.canvas_widget import CanvasWidget
-from jcanvas.items import Circle, Ellipse, Rect, Line, Polyline, Text, Polygon
+from ...qt_bindings import QtGui, QtCore, QTest
+from ..canvas_widget import CanvasWidget
+from jase.canvas.items import Circle, Ellipse, Rect, Line, Polyline, Text, Polygon
 
-from jcanvas.test.canvas_test_helper import CanvasTestHelper
+from jase.canvas.test.canvas_test_helper import CanvasTestHelper
 
 PALETTE = ["red","blue", "green", "cyan", "magenta", "indigo",
            "#AAAAAA", "#999999", "#777777", "#555555", "#333333"
@@ -184,7 +184,7 @@ def test_items(helper):
     c = helper.canvas
     v = helper.view
 
-    from jcanvas.items import Circle, Ellipse, Rect, Line, Polyline, Text
+    from ..items import Circle, Ellipse, Rect, Line, Polyline, Text
     for i in range(4):
         y0 = 750 - i*100
         x0 = 100

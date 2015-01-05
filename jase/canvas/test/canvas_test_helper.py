@@ -1,6 +1,6 @@
-from ..qt_bindings import QtCore, QtGui, Qt
-from jcanvas.items import Circle, Ellipse, Rect, Line, Polyline, Text, Polygon
-from jcanvas.canvas_widget import CanvasWidget
+from ...qt_bindings import QtCore, QtGui, Qt, QTest
+from ..items import Circle, Ellipse, Rect, Line, Polyline, Text, Polygon
+from ..canvas_widget import CanvasWidget
 
 class CanvasTestHelper(object):
     """ A helper class to simplify sending events to a Canvas in scene coordinates
