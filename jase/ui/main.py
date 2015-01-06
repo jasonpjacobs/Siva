@@ -14,8 +14,10 @@ from ..utilities.logging import WidgetHandler
 from ..ui.console import Console
 from ..ui.tab_widget import TabWidget
 from ..ui.design_hierarchy_widget import DesignHierarchyWidget
-from ..design.library import LibDefs
 from ..ui.device_selector_widget import DeviceSelectorWidget
+
+from ..design.library import LibDefs
+from ..icons import ICONS
 
 
 # ----------------------------------------------
@@ -38,7 +40,7 @@ class Main(QtGui.QMainWindow):
         super().__init__(parent=parent)
         self.setWindowTitle("{} - v{}".format(app.applicationName(), app.applicationVersion()))
 
-        self.icons = app.icons
+        self.icons = ICONS
 
         # ----------------------------------------------------
         #         Menu Bar
