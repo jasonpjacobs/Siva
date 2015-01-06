@@ -1,6 +1,7 @@
 import pytest
-from PySide import  QtCore, QtGui, QtTest
+from ..qt_bindings import QtCore, QtGui, QTest
 
+from jase.ui.app import App
 from jase.ui.main import Main
 
 
@@ -11,13 +12,13 @@ def app():
         app = QtGui.QApplication.instance()
         app.quit()
 
-    app = QtGui.QApplication([])
+    app = App()
     return app
 
-def test_test(app):
+def test_test():
 
-
-    main = Main()
+    app = App()
+    main = Main(app=app)
     main.show()
 
     #app.exec_()
