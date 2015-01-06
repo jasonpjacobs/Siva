@@ -5,6 +5,7 @@ import collections
 from ..qt_bindings import QtGui, QtCore
 
 from .package import Package
+from ..design.view import View
 
 class Cell(Package):
     def __init__(self, name, full_name=None, path=None, desc=None, version=None, tags=None):
