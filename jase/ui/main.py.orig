@@ -8,7 +8,12 @@ import logging
 import pdb
 
 # Third party imports
+<<<<<<< HEAD
 from ..qt_bindings import QtCore, QtGui, Qt
+=======
+from ..api import Qt, QtCore, QtGui
+
+>>>>>>> origin/develop
 # Local Imports
 from ..editors import SchematicEditor
 from ..utilities.logging import WidgetHandler
@@ -41,10 +46,17 @@ class Main(QtGui.QMainWindow):
         * Status Bar
         """
         super().__init__(parent=parent)
+<<<<<<< HEAD
         self.setWindowTitle("{} - v{}".format(app.applicationName(), app.applicationVersion()))
 
         self.icons = ICONS
+=======
+        app = QtGui.QApplication.instance()
+        self.setWindowTitle("{} - v{}".format(app.applicationName(), app.applicationVersion()))
 
+        self.icons = app.icons
+
+>>>>>>> origin/develop
 
         # ----------------------------------------------------
         #         Menu Bar

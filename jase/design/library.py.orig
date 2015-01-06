@@ -1,4 +1,7 @@
+<<<<<<< HEAD
 from ..qt_bindings import QtGui, QtCore
+=======
+>>>>>>> origin/develop
 import logging
 import sys, os
 import types

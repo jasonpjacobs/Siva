@@ -1,5 +1,11 @@
+<<<<<<< HEAD
 from ..qt_bindings import QtGui, QtCore, Qt
 from ..types.table_model import TableModel, TableView
+=======
+import pdb
+
+from ..api import Qt, QtCore, QtGui
+>>>>>>> origin/develop
 
 from jtypes.list_model import ListModel, ListView
 from jtypes.types import Typed, Str

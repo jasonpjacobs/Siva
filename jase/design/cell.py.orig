@@ -2,8 +2,13 @@ import os
 import types
 import collections
 
+<<<<<<< HEAD
 from ..qt_bindings import QtGui, QtCore
+=======
+from ..api import Qt, QtCore, QtGui
+>>>>>>> origin/develop
 
+from .view import View
 from .package import Package
 
 class Cell(Package):

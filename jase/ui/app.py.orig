@@ -3,8 +3,13 @@ import sys, os
 import glob
 import jase
 
+<<<<<<< HEAD
 from ..qt_bindings import QtCore, QtGui, Qt
 from ..icons import load_icons
+=======
+from ..api import Qt, QtCore, QtGui
+
+>>>>>>> origin/develop
 
 class App(QtGui.QApplication):
     """
