@@ -11,7 +11,7 @@ def load_icons():
     import glob
     from ..qt_bindings import QtGui, QtCore
 
-    icons = glob.glob(__path__[0] + "\*.png")
+    icons = glob.glob(os.path.join(__path__[0], "*.png"))
     pixmap = QtGui.QPixmap(100,100)
     pixmap.fill(QtGui.QColor("blue"))
     ICONS[''] = QtGui.QIcon(pixmap)
