@@ -2,7 +2,6 @@ import types
 import sys
 import os
 import importlib.abc
-import imp
 from jase.design.library import Library
 from jase.design.cell import Cell
 class DB:

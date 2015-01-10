@@ -1,14 +1,9 @@
 from ..qt_bindings import QtGui, QtCore
 import logging
 import sys, os
-import types
 import collections
 
-from jtypes import Typed, Str
-from ..api import Qt, QtCore, QtGui
-
 from .package import Package, PlaceHolder
-from .cell import Cell
 
 
 class LibDefs(collections.OrderedDict):

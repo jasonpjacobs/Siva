@@ -3,7 +3,7 @@ import collections
 import types
 import importlib
 
-from jtypes import Str, Typed
+from ..types import Str, Typed
 
 class PlaceHolder:
     def __init__(self, parent, name):
