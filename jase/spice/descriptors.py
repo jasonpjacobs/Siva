@@ -28,7 +28,6 @@ class Int(Type):
         self.data[instance] = int(value)
 
 class FloatType(Type):
-
     si_units = {
         "f" : "e-15",
         "p" : "e-12",
@@ -102,8 +101,6 @@ class EnumType(Type):
             raise ValueError("Value must be one of {}".format(self.choices))
         self.data[instance] = cast(value)
 
-
-
 class NodeType(Type):
     def __init__(self, default=None):
         self.default=default
@@ -111,7 +108,6 @@ class NodeType(Type):
 
     def __get__(self, instance, owner):
         return self.data.get(instance, self.default)
-
 
     def __set__(self, instance, value):
         assert value is not None, "Nodes must be defined"

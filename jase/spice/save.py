@@ -4,7 +4,7 @@ import pdb
 
 
 class Save(Command):
-    toekn = ""
+    token = ""
     def __init__(self, *items, analysis=None):
         self.items = items
         self.analysis = analysis

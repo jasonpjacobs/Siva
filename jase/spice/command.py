@@ -2,9 +2,6 @@
 import inspect
 import collections
 
-
-
-
 class Command:
 
     _props = []
