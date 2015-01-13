@@ -1,0 +1,5 @@
+
+
+
+class Stimulus(Typed):
+    pass

@@ -9,7 +9,7 @@ from collections import OrderedDict
 # Third party imports
 
 # ==============================================================
-#    HasHierarchy
+#    A Node object for a tree
 # ============================================================== 
 class Node(object):
     """ 
@@ -22,11 +22,15 @@ class Node(object):
     """
     
     def __init__(self, parent=None, children=None, obj=None):
+
         self.set_parent(parent)
-        if children is None:
-            self._children = OrderedDict()
+        self._children = OrderedDict()
         self.has_children = False
-        
+
+        if children is not None:
+            self._children.update(children)
+            self.has_children = True
+
         # If not a mix-in, the actual node object is 'obj'
         self.obj = obj
 

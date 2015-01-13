@@ -1,0 +1,4 @@
+
+
+class Save(Typed):
+    pass
