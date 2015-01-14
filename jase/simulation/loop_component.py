@@ -11,15 +11,20 @@ class LoopVariable:
 
         #Calculate n, so we can use lin/logspace functions
         if step is not None and n is None:
-            n = int((stop - start)/step)
             if endpoint:
-                n += 1
-
-
-        if space == "linear":
-            values = np.linspace(start, stop, n, endpoint)
-        elif space == "log":
-            values = np.logpace(start, stop, n, endpoint)
+                # Arange normally exludes the endpoint.  In order to capture
+                # it, we'll extend it by an amount smaller than the step size
+                stop = stop + step/2
+            if space == "linear":
+                values = np.arange(start=start, stop=stop, step=step)
+                n = len(values)
+            if space == "log":
+                raise NotImplementedError
+        else:
+            if space == "linear":
+                values = np.linspace(start, stop, n, endpoint)
+            elif space == "log":
+                values = np.logpace(start, stop, n, endpoint)
 
         self.name = name
         self.target = target

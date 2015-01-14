@@ -1,5 +1,6 @@
 import pytest
 
+import numpy as np
 from ..loop_component import LoopVariable, LoopComponent
 
 class Mock:
@@ -22,7 +23,31 @@ def simple_loop(mock):
     return loop
 
 
+
+def test_loop_creation(mock):
+    var = LoopVariable('int',mock.int_var, start=1, stop=9, step=2)
+    assert len(var) == 5
+    assert (var.values == np.array([1, 3, 5, 7, 9])).all()
+
+
+    var = LoopVariable('int',mock.int_var, start=1, stop=10, step=2)
+    assert len(var) == 5
+    assert (var.values == np.array([1, 3, 5, 7, 9])).all()
+
+    var = LoopVariable('int',mock.int_var, start=9, stop=1, step=-2)
+    assert len(var) == 5
+    assert (var.values == np.array([9., 7., 5., 3., 1.])).all()
+
+    var = LoopVariable('int',mock.int_var, start=10, stop=1, step=-2)
+    assert len(var) == 5
+    assert (var.values == np.array([10., 8., 6., 4., 2.])).all()
+
+
 def test_simple_loop(simple_loop):
     assert len(simple_loop) == 5
+
+    for value in simple_loop:
+        target = simple_loop.target
+
 
 
