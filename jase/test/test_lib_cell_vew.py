@@ -2,7 +2,7 @@ import pytest
 import os
 
 import db_root
-from jase import Design
+from jase import Component
 from jase.design.library import LibDefs
 
 @pytest.fixture
