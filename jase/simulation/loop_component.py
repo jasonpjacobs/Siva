@@ -62,7 +62,6 @@ class LoopVariable:
     def reset(self):
         self.i = -1
 
-
 class LoopComponent(AnalysisComponent):
     def __init__(self, parent=None, vars=None):
         if isinstance(vars, LoopVariable):
@@ -71,6 +70,13 @@ class LoopComponent(AnalysisComponent):
 
     def __len__(self):
         return np.sum([len(var) for var in self.vars.values()])
+
+    def __iter__(self):
+        self._iterator = itertools.product(self.vars.values())
+        return self
+
+    def __next__(self):
+        self._iterator.__next__()
 
     @property
     def vars(self):
