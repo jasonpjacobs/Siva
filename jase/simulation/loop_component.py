@@ -1,5 +1,6 @@
 
 import numpy as np
+import itertools
 
 from .component import AnalysisComponent
 
@@ -39,10 +40,17 @@ class LoopVariable:
         return self
 
     def __next__(self):
+        self.i += 1
+        if callable(self.target):
+            pass
+        else:
+            print("{}: Setting target {} to {}".format(self.i, self.target, self.values[self.i]))
+            self.target = self.values[self.i]
+
         if self.i == self.n:
             raise StopIteration
 
-        self.i += 1
+
         return self.values[self.i]
 
     def __len__(self):
@@ -67,3 +75,11 @@ class LoopComponent(AnalysisComponent):
     @property
     def vars(self):
         return self._children
+
+    def __iter__(self):
+        self.values = itertools.product(self.vars.values())
+        return self
+
+    def __next__(self):
+        return self.values.__next__()
+

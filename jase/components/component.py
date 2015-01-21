@@ -10,34 +10,68 @@ component.  Loops (over parameters, voltage, temperature), searches, and optimiz
 components.
 
 """
+import pdb
+
+import collections
 
 from ..types import Typed
 from ..types.hierarchy import Node as TreeNode
 
+class ComponentBase:
+    ...
+
+class ComponentParameter(ComponentBase):
+    category = "params"
+    pass
+
+class ComponentDirective(ComponentBase):
+    category = "directives"
+
+class ComponentDict(collections.OrderedDict):
+    def __init__(self, owner, *args, **kwargs):
+        self.owner = owner
+        super().__init__(*args, **kwargs)
+
+    def __missing__(self, key):
+        if self.owner.parent is not None:
+            print("{} missing from {}.  Asking {}".format(key, self.owner, self.owner.parent))
+            return self.owner.parent._namespace[key]
+
 class ComponentMeta(type):
-    """This metaclass will parse the class *dct*, grabbing the descriptors from them
-     to store in a separate _descriptor dictionary.  The Qt models will use this
-     dictionary to map attributes of items in their models to Qt model data roles.
+    """Meta class for all Components.  This metaclass will allow for closs
+    definition via a declarative syntax, as well has sharing the name
+    space up and down the component hierarchy.
+
     """
     def __new__(cls, name, bases, dct):
-        _descriptors = DescriptorDict()
+        _namespace = ComponentDict(owner=cls)
+
+        """
+        Implementation of the declarative definition
+        will be deferred for now, but I'll leave this code here as a
+        reminder.
+
         for base in bases:
             if '_descriptors' in base.__dict__:
                 td = base.__dict__.get('_descriptors')
                 for k,v in td.items():
                     _descriptors[k] = v
 
+
+        """
         for k,v in dct.items():
-            if isinstance(v, Type):
+            if isinstance(v, ComponentBase):
+                print("Adding {} to namespace".format(v))
                 v.attr = k
                 if not hasattr(v, 'name'):
                     v.name = k
-                _descriptors[k] = v
+                _namespace[k] = v
 
-        dct['_descriptors'] = _descriptors
+        dct['_namespace'] = _namespace
+
         return super().__new__(cls, name, bases, dct)
 
-class Component(TreeNode):
+class Component(TreeNode, ComponentBase, metaclass=ComponentMeta):
     """
     Features
     * Dotted path description and resolution
@@ -45,6 +79,18 @@ class Component(TreeNode):
     * Declarative syntax
     """
 
+    def __new__(cls, *args, **kwargs):
+        print("New instance being created")
+        inst = super().__new__(cls)
+
+
+
+
+
+        return inst
+
     def __init__(self, parent=None, children=None):
         super().__init__(parent=parent, children=children)
+        self._namespace = ComponentDict(owner=self)
         pass
+
