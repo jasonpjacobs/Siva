@@ -13,7 +13,7 @@ class LoopVariable:
         #Calculate n, so we can use lin/logspace functions
         if step is not None and n is None:
             if endpoint:
-                # Arange normally exludes the endpoint.  In order to capture
+                # arange normally excludes the endpoint.  In order to capture
                 # it, we'll extend it by an amount smaller than the step size
                 stop = stop + step/2
             if space == "linear":
