@@ -2,7 +2,7 @@
 import numpy as np
 import itertools
 
-from .component import AnalysisComponent
+from .component import Component
 
 class LoopVariable:
     def __init__(self, name, target, start, stop, step=None, n=None, endpoint=True, space="linear"):
@@ -62,7 +62,7 @@ class LoopVariable:
     def reset(self):
         self.i = -1
 
-class LoopComponent(AnalysisComponent):
+class LoopComponent(Component):
     def __init__(self, parent=None, vars=None):
         if isinstance(vars, LoopVariable):
             vars = (vars,)
@@ -80,7 +80,7 @@ class LoopComponent(AnalysisComponent):
 
     @property
     def vars(self):
-        return self._children
+        return self.children
 
     def __iter__(self):
         self.values = itertools.product(self.vars.values())

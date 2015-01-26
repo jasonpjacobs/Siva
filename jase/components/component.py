@@ -61,6 +61,7 @@ class ComponentMeta(type):
             if isinstance(v, ComponentBase):
                 if not hasattr(v, 'name'):
                     v.name = k
+                    v.parent = cls
                 _components[k] = v
 
         dct['_components'] = _components
@@ -84,13 +85,20 @@ class Component(ComponentBase, metaclass=ComponentMeta):
         # to the attribute in the class dict.
         for comp_name in cls._components:
             comp_inst = copy.deepcopy(cls._components[comp_name])
+            comp_inst.parent = inst
             assert comp_inst is not cls._components[comp_name]
             inst._components[comp_name] = comp_inst
         return inst
 
     def __init__(self, parent=None, children=None, name=None):
         self.name = name
-        pass
+        self.parent = parent
+        if children is not None:
+            self._components.update(children)
+
+    @property
+    def children(self):
+        return self._components
 
     def __repr__(self):
         if hasattr(self, 'name'):
@@ -106,4 +114,13 @@ class Component(ComponentBase, metaclass=ComponentMeta):
             return self._components[name]
         else:
             return super().__getattribute__(name)
+
+    def add_instance(self, inst, name=None):
+        if name is None:
+            if hasattr(inst, 'name'):
+                name = self.name
+            else:
+                name = "i" + str(len(self._components) + 1)
+        inst.parent = self
+        self._components[name] = inst
 

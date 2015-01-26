@@ -21,9 +21,31 @@ class A(Component):
 def model():
     return A()
 
+@pytest.fixture
+def procedural_model():
 
-def test_instantiation():
+    class A(Component):
+        pass
+
+    class B(Component):
+        pass
+
+    c = C()
+    c.id = 104
+
+    b = B()
+    b.add_instance(c, 'c')
+
     a = A()
+    a.add_instance(b, 'b')
+
+    return a
+
+
+
+
+def test_instantiation(model):
+    a = model
 
     # Check that the child component was put into the _components dict
         # Check that the child component was put into the _components dict
@@ -43,6 +65,8 @@ def test_instantiation():
     assert a._components['b'] is not A._components['b']
     assert a.b is not A.b
 
+def test_procedural_model(procedural_model):
+    test_instantiation(procedural_model)
 
 def test_paths(model):
     assert model.b.c.id == 104
@@ -78,6 +102,10 @@ def test_model_modification():
 
 
 
+def test_hierarchy():
+    a = A()
+    assert a.b.parent is a
+    assert a.b.c.parent is a.b
 
 
 

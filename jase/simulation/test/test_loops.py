@@ -35,7 +35,6 @@ def test_loop_creation(mock):
         assert mock.int_var == var.values[i]
         i+=1
 
-
     var = LoopVariable('int',mock.int_var, start=1, stop=10, step=2)
     assert len(var) == 5
     assert (var.values == np.array([1, 3, 5, 7, 9])).all()
@@ -66,6 +65,8 @@ def test_simple_loop(simple_loop):
         i += 1
         print(m.int_var, value, i)
         assert value is not None
+
+
 
 
 

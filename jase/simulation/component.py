@@ -1,26 +1,29 @@
 from ..components import Component
 
-class AnalysisComponent(Component):
+class Analysis(Component):
 
     def init(self):
         """ The first step in a simulation.
         * Initialize local variables.
         * Creates local directories on the work disk.
         """
-        pass
+        for component in self._components:
+            component.init()
 
     def reset(self):
         """
         Used to reset the component to the initial state after having been run.
-
         """
-        pass
+        for component in self._components:
+            component.reset()
 
     def run(self):
-        pass
+        for component in self._components:
+            component.run()
 
     def post_process(self, results=None):
-        pass
+        for component in self._components:
+            component.post_process()
 
     def clean_up(self):
         pass
