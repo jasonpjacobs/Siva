@@ -10,7 +10,6 @@ class LoopVariable:
         if n is None and step is None:
             raise ValueError("Either 'step' or 'N' must be provided")
 
-        #Calculate n, so we can use lin/logspace functions
         if step is not None and n is None:
             if endpoint:
                 # arange normally excludes the endpoint.  In order to capture
@@ -41,14 +40,18 @@ class LoopVariable:
 
     def __next__(self):
         self.i += 1
+        if self.i == self.n:
+            raise StopIteration
+
+        self.current = self.values[self.i]
+
         if callable(self.target):
             pass
         else:
-            print("{}: Setting target {} to {}".format(self.i, self.target, self.values[self.i]))
-            self.target = self.values[self.i]
+            #print("{}: Setting target {} to {}".format(self.i, self.target, self.values[self.i]))
+            #self.target = self.values[self.i]
+            pass
 
-        if self.i == self.n:
-            raise StopIteration
 
 
         return self.values[self.i]
@@ -72,20 +75,24 @@ class LoopComponent(Component):
         return np.sum([len(var) for var in self.vars.values()])
 
     def __iter__(self):
-        self._iterator = itertools.product(self.vars.values())
+        self._iterators = [var.__iter__() for var in self.vars]
         return self
 
-    def __next__(self):
-        self._iterator.__next__()
+    def __next__(self, i=0):
+        pass
+
+    def __iter_next__(self, i):
+        iterator = self.vars[i]
+        for value in iterator:
+            print("{} Iterator {} is {}".format("  "*i, iterator.name, iterator.current))
+            if i < len(vars) - 1:
+                yield iter_all(i+1)
+            yield
 
     @property
     def vars(self):
         return self.children
 
-    def __iter__(self):
-        self.values = itertools.product(self.vars.values())
-        return self
 
-    def __next__(self):
-        return self.values.__next__()
+
 
