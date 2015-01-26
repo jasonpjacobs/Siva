@@ -60,7 +60,6 @@ def test_simple_loop(simple_loop):
     assert len(simple_loop) == 5
 
     i = 0
-
     for value in simple_loop:
         i += 1
         print(m.int_var, value, i)

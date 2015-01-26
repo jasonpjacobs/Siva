@@ -28,6 +28,14 @@ class Analysis(Component):
     def clean_up(self):
         pass
 
+
+    def start(self):
+        self.init()
+        for child in self.children:
+            child.init()
+
+        
+
     @property
     def editor(self):
         pass
