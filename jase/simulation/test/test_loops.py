@@ -45,6 +45,28 @@ def test_loop_creation(mock):
     var = LoopVariable('str', 'mock.str_var', values = ['a','b','c'])
     assert len(var) == 3
 
+
+def test_callable_loop_variable():
+
+    class Mock:
+        def __init__(self, value=0):
+            self.value=value
+
+        def set_value(self, value):
+            self.value = value
+
+    m = Mock()
+    var = LoopVariable('var', 'obj.set_value', values=[0.33, 0.55, 0.77])
+    loop = LoopComponent(vars = var, namespace={'obj':m})
+    results = []
+    for _ in loop:
+        results.append(m.value)
+
+    results = np.array(results)
+    assert results[0] == 0.33
+    assert results[1] == 0.55
+    assert results[2] == 0.77
+
 def test_simple_loop(simple_loop):
     assert len(simple_loop) == 45
 

@@ -51,20 +51,10 @@ class LoopVariable:
 
         self.current = self.values[self.i]
 
-        if callable(self.target):
-            pass
-        else:
-            #print("{}: Setting target {} to {}".format(self.i, self.target, self.values[self.i]))
-            #self.target = self.values[self.i]
-            pass
-
         return self.values[self.i]
 
     def __len__(self):
         return self.n
-
-    def __getitem__(self, item):
-        return self.values[self.i]
 
     def reset(self):
         self.i = -1
