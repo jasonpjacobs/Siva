@@ -8,6 +8,8 @@ from .command import Command
 from .node import Node
 from .analysis import Analysis
 
+from ..simulation.base_component import BaseComponent
+
 class SpiceDict(collections.OrderedDict):
     default_factor = Node
 
@@ -108,8 +110,6 @@ class Spice(metaclass=SpiceMetaclass):
             shutil.rmtree(self.work_dir)
             os.mkdir(self.work_dir)
 
-
-
     @property
     def analysis(self):
         return self._analysis
@@ -149,3 +149,33 @@ class Spice(metaclass=SpiceMetaclass):
     def Include(self):
         pass
 
+
+    # Component interface
+    def init(self):
+        """ The first step in a simulation.
+        * Initialize local variables.
+        * Creates local directories on the work disk.
+        """
+        pass
+
+    def reset(self):
+        """
+        Used to reset the component to the initial state after having been run.
+        """
+        pass
+
+    def execute(self):
+        pass
+
+    def measure(self, results=None):
+        pass
+
+    def final(self):
+        pass
+
+    def init(self):
+        """ The first step in a simulation.
+        * Initialize local variables.
+        * Creates local directories on the work disk.
+        """
+        print("Init sim")

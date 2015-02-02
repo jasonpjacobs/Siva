@@ -1,4 +1,4 @@
-from .component import Component
+from .base_component import Component
 
 
 class SimulationStatus:

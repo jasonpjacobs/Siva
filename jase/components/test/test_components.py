@@ -30,6 +30,9 @@ def procedural_model():
     class B(Component):
         pass
 
+        def run(self):
+            a.int = 2
+
     c = C()
     c.id = 104
 
@@ -48,7 +51,6 @@ def test_instantiation(model):
     a = model
 
     # Check that the child component was put into the _components dict
-        # Check that the child component was put into the _components dict
     assert 'b' in A._components
 
     # Check that A's component dict was copied to the 'a' instance.

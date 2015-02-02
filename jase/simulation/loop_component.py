@@ -2,7 +2,7 @@
 import numpy as np
 import itertools
 
-from .component import Component
+from .base_component import BaseComponent
 
 class LoopVariable:
     def __init__(self, name, target, start=None, stop=None, step=None, n=None, values=None, endpoint=True, space="linear"):
@@ -69,7 +69,7 @@ class LoopVariable:
     def set(self, value):
         self.current = value
 
-class LoopComponent(Component):
+class LoopComponent(BaseComponent):
     def __init__(self, parent=None, vars=None, children=None, namespace=None):
         if isinstance(vars, LoopVariable):
             vars = (vars,)
@@ -95,3 +95,32 @@ class LoopComponent(Component):
             var.set(val)
             var.eval(globals(), self.__namespace__)
         return values
+
+
+    # BaseComponent interface
+    def init(self):
+        """
+        """
+        self.__iter__()
+
+    def reset(self):
+        """
+        Used to reset the component to the initial state after having been run.
+        """
+        self.__iter__()
+
+    def execute(self):
+        self.__next__()
+
+    def measure(self, results=None):
+        pass
+
+    def final(self):
+        pass
+
+    def init(self):
+        """ The first step in a simulation.
+        * Initialize local variables.
+        * Creates local directories on the work disk.
+        """
+        pass

@@ -92,8 +92,8 @@ def test_single_plot():
 
 #multiple_plots()
 
-#test_small_scales()
+test_small_scales()
 #test_multiple_plots()
-test_single_plot()
+#test_single_plot()
 pw.show()
 sys.exit(app.exec_())
