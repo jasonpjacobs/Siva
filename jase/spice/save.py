@@ -14,6 +14,13 @@ class Save(Command):
         txt = ".PRINT {} FORMAT={} {}".format(self.analysis, format, " ".join([i.output() for i in self.items]))
         return txt
 
+    def output(self):
+        if type(self.item) is str:
+            txt = self.item
+        else:
+            txt = str(self.item.path)
+        return "{}{}({})".format(self.token, str(self.pin), txt)
+
 class V(Save):
     token = "V"
 

@@ -95,10 +95,36 @@ class Component(ComponentBase, metaclass=ComponentMeta):
         self.parent = parent
         if children is not None:
             self._components.update(children)
+            for child in self.children.values():
+                child.parent = self
 
     @property
     def children(self):
         return self._components
+
+    @property
+    def root(self):
+        if self.parent is not None:
+            return self.parent.root
+        else:
+            return self
+
+    @property
+    def path(self):
+        if self.parent is not None:
+            return self.parent.path + "." + str(self.name)
+        else:
+            return str(self.name)
+
+    @property
+    def path_components(self):
+        if self.parent is not None:
+            path =  self.parent.path_components
+            path.append(self)
+            return path
+        else:
+            return [self]
+
 
     def __repr__(self):
         if hasattr(self, 'name'):
@@ -121,6 +147,7 @@ class Component(ComponentBase, metaclass=ComponentMeta):
                 name = self.name
             else:
                 name = "i" + str(len(self._components) + 1)
+                inst.name = name
         inst.parent = self
         self._components[name] = inst
 

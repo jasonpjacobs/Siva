@@ -59,6 +59,7 @@ class SpiceMetaclass(type):
                         metacls.analysis = value
 
 
+
 class Spice(metaclass=SpiceMetaclass):
     __props = ['analysis', 'included', 'saves', 'libs', 'instances', 'params']
 
@@ -77,6 +78,9 @@ class Spice(metaclass=SpiceMetaclass):
             for lib in commands['INC']:
                 txt.append(lib.card())
 
+        if self.temp is not None:
+            txt.append(".TEMP {}".format(self.temp))
+
         if 'analyses' in commands:
             for analysis in commands['analyses']:
                 txt.append(analysis.card())
@@ -91,7 +95,7 @@ class Spice(metaclass=SpiceMetaclass):
                 txt.append(save.card(format="RAW"
                 ))
         else:
-            raise ValueError("No analysis specified.  Aborting netlisting")
+            raise ValueError("No saved nodes specified.  Aborting netlisting")
 
         txt.append(".END")
         return "\n".join(txt)
@@ -101,6 +105,7 @@ class Spice(metaclass=SpiceMetaclass):
         self.work_dir = work_dir
         self.name = name
 
+        self._temperature = 27
         if clean:
             self.clean_results()
 
@@ -146,36 +151,16 @@ class Spice(metaclass=SpiceMetaclass):
     def save(self, *args):
         self.analysis.save(*args)
 
+    @property
+    def temp(self):
+        return self._temperature
+
+    @temp.setter
+    def temp(self, value):
+        self._temperature = value
+
     def Include(self):
         pass
 
 
-    # Component interface
-    def init(self):
-        """ The first step in a simulation.
-        * Initialize local variables.
-        * Creates local directories on the work disk.
-        """
-        pass
 
-    def reset(self):
-        """
-        Used to reset the component to the initial state after having been run.
-        """
-        pass
-
-    def execute(self):
-        pass
-
-    def measure(self, results=None):
-        pass
-
-    def final(self):
-        pass
-
-    def init(self):
-        """ The first step in a simulation.
-        * Initialize local variables.
-        * Creates local directories on the work disk.
-        """
-        print("Init sim")

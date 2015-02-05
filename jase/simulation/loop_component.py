@@ -70,12 +70,11 @@ class LoopVariable:
         self.current = value
 
 class LoopComponent(BaseComponent):
-    def __init__(self, parent=None, vars=None, children=None, namespace=None):
+    def __init__(self, parent=None, vars=None, children=None, namespace=None, name=None, measurements=None, **kwargs):
         if isinstance(vars, LoopVariable):
             vars = (vars,)
-
-        super().__init__(parent, children=children)
-        self.vars = vars
+        self.loop_vars = vars
+        super().__init__(parent=parent, children=children, name=name, vars=None, measurements=measurements, **kwargs)
 
         if namespace is not None:
             self.__namespace__ = namespace
@@ -83,19 +82,18 @@ class LoopComponent(BaseComponent):
             self.__namespace__ = {}
 
     def __len__(self):
-        return np.product([len(var) for var in self.vars])
+        return np.product([len(var) for var in self.loop_vars])
 
     def __iter__(self):
-        self._iterators = itertools.product(*self.vars)
+        self._iterators = itertools.product(*self.loop_vars)
         return self
 
     def __next__(self):
         values = self._iterators.__next__()
-        for var, val in zip(self.vars, values):
+        for var, val in zip(self.loop_vars, values):
             var.set(val)
             var.eval(globals(), self.__namespace__)
         return values
-
 
     # BaseComponent interface
     def init(self):
@@ -112,15 +110,9 @@ class LoopComponent(BaseComponent):
     def execute(self):
         self.__next__()
 
-    def measure(self, results=None):
+    def measure(self):
         pass
 
     def final(self):
         pass
 
-    def init(self):
-        """ The first step in a simulation.
-        * Initialize local variables.
-        * Creates local directories on the work disk.
-        """
-        pass

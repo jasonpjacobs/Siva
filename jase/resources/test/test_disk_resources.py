@@ -1,6 +1,8 @@
 import pytest
 import unittest
 import os
+import tempfile
+
 class A(unittest.TestCase):
     pass
 
@@ -11,8 +13,18 @@ class Job:
     def __init__(self, name):
         self.name = name
 
-def test_disk_creation():
-    mgr = LocalDiskManager()
+
+@pytest.fixture
+def work_dir():
+    return tempfile.mkdtemp()
+
+@pytest.fixture
+def local_disk(work_dir):
+    mgr = LocalDiskManager(root=work_dir)
+    return mgr
+
+def test_disk_creation(local_disk):
+    mgr = local_disk
     job = Job(name='job1')
 
     disk = mgr.request(job)
@@ -20,15 +32,24 @@ def test_disk_creation():
         assert os.path.exists(disk.path)
         root, subdir = os.path.split(disk.path)
         assert subdir == 'job1'
-        assert root == os.path.abspath('.')
+        assert root == os.path.abspath(local_disk.root)
     assert os.path.exists(disk.path) is False
 
-def test_disk_timeout():
-
-    mgr = LocalDiskManager(max_size=0)
+def test_disk_timeout(work_dir):
+    mgr = LocalDiskManager(root=work_dir, max_size=0)
     job = Job(name='test')
     with pytest.raises(TimeoutError):
         disk = mgr.request(job, size=1e6, timeout=2)
     mgr.stop()
+
+
+def test_subdir_creation(work_dir):
+    mgr = LocalDiskManager(root=work_dir)
+    job = Job(name='test')
+    disk = mgr.request(job, subdirs=['a','b','c'])
+    if True:
+        assert os.path.exists(disk.path)
+        path = os.path.join(work_dir, *['a','b','c'])
+        assert os.path.exists(path)
 
 

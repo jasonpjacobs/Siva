@@ -1,13 +1,40 @@
 from ..components import Component
+from ..resources.disk_resources import LocalDiskManager
+from ..simulation.table import Table
 
+import collections
 class BaseComponent(Component):
     """ Base class for all simulation components
 
     This class defines how each component is executed.
     """
+
+    def __init__(self, parent=None, children=None, name=None, vars=None, measurements=None, work_dir="."):
+        super().__init__(parent=parent, children=children, name=name)
+
+        if vars is None:
+            vars = collections.OrderedDict()
+
+        if measurements is None:
+            measurements = collections.OrderedDict()
+
+        self._vars = vars
+        self._measurements= measurements
+
+        self.work_dir = work_dir
+
+    @property
+    def disk_mgr(self):
+        if not hasattr(self,'_disk_mgr') or self._disk_mgr is None:
+            self._disk_mgr = LocalDiskManager(root=self.work_dir)
+        return self._disk_mgr
+
     def start(self):
         self._init()
-        self._execute()
+        try:
+            self._execute()
+        except StopIteration:
+            pass
         self._final()
 
     def _init(self):
@@ -15,6 +42,17 @@ class BaseComponent(Component):
         * Initialize local variables.
         * Creates local directories on the work disk.
         """
+
+        # Create work area.
+        root = self.root
+        disk_mgr = root.disk_mgr
+        subdirs = [comp.name for comp in self.path_components]
+        request = disk_mgr.request(job=self, subdirs = subdirs)
+        self.work_dir = request.path
+
+        # Create a results table
+        self.results = Table()
+
         self.init()
         for component in self.children.values():
             component._init()
@@ -31,10 +69,15 @@ class BaseComponent(Component):
         """ Execute the component's main task.  Simulation components will run the simulation. Loop components
         will increment and set loop variables.  Search components will start a new set of trials.
         """
-        self.execute()
-        for component in self.children.values():
-            component._execute()
-        self.measure()
+        self._n = 0
+        self._i = 0
+        for run in self:
+            self._i += 1
+            self.execute()
+            for component in self.children.values():
+                self._n += 1
+                component._execute()
+            self.measure()
 
     def _measure(self):
         for component in self.children.values():
@@ -45,6 +88,14 @@ class BaseComponent(Component):
         for component in self.children.values():
             component._final()
         self.final()
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        # By default, just execute once
+        if self._i > 0:
+            raise StopIteration
 
     def init(self):
         """ The first step in a simulation.

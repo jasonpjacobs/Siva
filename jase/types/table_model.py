@@ -196,7 +196,8 @@ class TableModel(QtCore.QAbstractTableModel):
                 if descriptor.desc is not None:
                     return QtCore.QString(descriptor.desc)
             except:
-                pass
+                import pdb
+                pdb.set_trace()
         # Default action
         return None
 

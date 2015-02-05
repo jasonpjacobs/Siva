@@ -43,7 +43,7 @@ class ResourceManager(threading.Thread):
         """ Called by the job dispatcher to request a resource.  The execution of this method is
           blocked until the resource is granted, or timed out.
 
-        Resource specific managers can re-implement this method to modify the specif Resource class
+        Resource specific managers can re-implement this method to modify the specific Resource class
         used for the request or to provide additional constraints or parameters.
         """
         request = Request(job=job)
@@ -53,7 +53,7 @@ class ResourceManager(threading.Thread):
     def enqueue_request(self, request, timeout=None):
         """Places the request in the queue and waits for it to be granted.
         """
-        if self._run is not True:
+        if not self._started.is_set():
             self.start()
         self.queue.put(request)
         request.wait(timeout)
@@ -84,9 +84,16 @@ class ResourceManager(threading.Thread):
         self.stop()
 
     def stop(self):
+        super()._stop()
         self._run = False
 
     def get_resource(self, request):
+        """ Called by the Resource base class to get a resource.  This method is responsible
+        for allocating resources given the request.  If the resource is not available, it should
+        block until the resource is available.
+
+        This method should check for resource availability once every 'polling_time' seconds.
+        """
         raise NotImplementedError
 
     def delete_resource(self, resource):

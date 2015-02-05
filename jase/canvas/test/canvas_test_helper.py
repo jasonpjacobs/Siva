@@ -43,7 +43,7 @@ class CanvasTestHelper(object):
         try:
             size=QtCore.QSize(self.canvas_widget.canvas._view.viewport().size())
         except:
-            pass
+            raise
         image = QtGui.QImage(size, QtGui.QImage.Format_ARGB32)
         painter = QtGui.QPainter()
         painter.begin(image)

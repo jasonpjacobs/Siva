@@ -4,22 +4,22 @@ import pdb
 from jase.components.component import Component as jComponent
 
 class Component(jComponent):
-    def __init__(self, parent=None, children=None, id=None):
+    def __init__(self, parent=None, children=None, id=None, name=None):
         self.id = id
-        super().__init__(parent, children)
+        super().__init__(parent, children, name=name)
 
 class C(Component):
     pass
 
 class B(Component):
-    c = C(id=104)
+    c = C(id=104,name='c')
 
 class A(Component):
-    b = B()
+    b = B(name='b')
 
 @pytest.fixture
 def model():
-    return A()
+    return A(name='a')
 
 @pytest.fixture
 def procedural_model():
@@ -83,7 +83,7 @@ def test_paths(model):
 def test_model_modification():
 
     # Lets create one model
-    model_A = A()
+    model_A = A(name='a')
 
     # ... and make sure the defaults are correct.
     assert model_A.b.c.id == 104
@@ -97,7 +97,7 @@ def test_model_modification():
     assert b.c.id == 22
 
     # If we create a new A model
-    model_B = A()
+    model_B = A(name='a')
 
     # ... the B instance should still be the same
     assert model_B.b.c.id == 104
@@ -105,9 +105,15 @@ def test_model_modification():
 
 
 def test_hierarchy():
-    a = A()
+    a = A(name='a')
     assert a.b.parent is a
     assert a.b.c.parent is a.b
+
+    assert a.b.c.root is a
+    assert a.b.root is a
+
+    assert a.b.c.path == 'a.b.c'
+
 
 
 

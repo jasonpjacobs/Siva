@@ -109,10 +109,35 @@ def test_simple_loop(simple_loop):
 
 
 
+@pytest.fixture
+def hierarchical_loops(mock):
+    import tempfile
+    work_dir = tempfile.mkdtemp()
+    a = LoopVariable('int', 'obj.int_var', start=1, stop=9, step=2)  # 5 values: 1,3,5,7, and 9
+    b = LoopVariable('float', 'obj.float_var', start=-2., stop=2., n=3 )
+    c = LoopVariable('str', 'obj.str_var', values=['"A"', '"B"', '"C"'])
+
+    L3 = LoopComponent(parent=None, vars=[c,], namespace={'obj': mock}, name='L3')
+    L2 = LoopComponent(parent=None, vars=[b,], namespace={'obj': mock}, name='L2', children={'l3':L3,})
+    L1 = LoopComponent(parent=None, vars=[a,], namespace={'obj': mock}, name='L1', children={'l2':L2,},
+                       work_dir=work_dir)
+    return L1
 
 
+def test_hierarchical_loops(hierarchical_loops):
+    loop = hierarchical_loops
 
 
+    results = {}
+    results['int'] = []
+    results['str'] = []
+    results['float'] = []
+    i=0
+
+    loop.start()
+
+    print(loop.work_dir)
+    assert False
 
 
 
