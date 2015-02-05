@@ -4,7 +4,7 @@ Created on Nov 25, 2013
 @author: Jase
 '''
 import unittest
-from jtypes.hierarchy import Node
+from jase.types.hierarchy import Node
 import pdb
 
 class Test(unittest.TestCase):

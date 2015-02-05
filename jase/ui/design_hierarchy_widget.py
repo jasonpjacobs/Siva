@@ -1,6 +1,6 @@
-from jtypes.hierarchy import Node
-from jtypes.tree_model import TreeModel, TreeView
-from jtypes.types import Typed, Str, Int
+from jase.types.hierarchy import Node
+from jase.types.tree_model import TreeModel, TreeView
+from jase.types.types import Typed, Str, Int
 
 class Design(Node, Typed):
     name = Str()

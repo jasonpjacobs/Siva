@@ -53,7 +53,7 @@ HEAD tree:bddde76
 
 """
 
-from jase.types.qt_binding import Qt, QtCore
+from jase.qt_bindings import Qt, QtCore
 
 QModelIndex = QtCore.QModelIndex
 

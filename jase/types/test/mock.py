@@ -1,11 +1,11 @@
-from jase.types.qt_binding import QtGui
+from jase.qt_bindings import QtGui
 
 
 # ----------------------------------------------------------------
 #    Mock object used for lightweight testing
 # ----------------------------------------------------------------
-from jtypes.types import Int, Str, Bool, Float, Typed
-from jtypes.editors import ComboBox
+from jase.types.types import Int, Str, Bool, Float, Typed
+from jase.types.editors import ComboBox
 
 pixmap = QtGui.QPixmap(100,100)
 pixmap.fill(QtGui.QColor(0,0, 255))

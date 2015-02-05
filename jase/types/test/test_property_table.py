@@ -1,8 +1,8 @@
 import pytest
 
-from jtypes.property_table import PropertyTable
-from jtypes.types import Int, Str, Bool, Float, Typed
-from jase.types.qt_binding import Qt, QtCore, QtGui
+from jase.types.property_table import PropertyTable
+from jase.types.types import Int, Str, Bool, Float, Typed
+from jase.qt_bindings import Qt, QtCore, QtGui
 
 pixmap = QtGui.QPixmap(100,100)
 pixmap.fill(QtGui.QColor(Qt.blue))

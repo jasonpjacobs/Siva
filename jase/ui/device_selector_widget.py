@@ -1,8 +1,8 @@
 from ..qt_bindings import QtGui, QtCore, Qt
 from ..types.table_model import TableModel, TableView
 
-from jtypes.list_model import ListModel, ListView
-from jtypes.types import Typed, Str
+from jase.types.list_model import ListModel, ListView
+from jase.types.types import Typed, Str
 
 from ..views.symbol import Symbol
 

@@ -1,5 +1,5 @@
 import pytest
-from jtypes.types import Int, Str, Bool, Float, Type
+from jase.types.types import Int, Str, Bool, Float, Type
 
 class Mock:
     int = Int(0)

@@ -3,7 +3,7 @@ from collections import OrderedDict
 import pdb
 
 # Third party imports
-from jase.types.qt_binding import Qt, QtCore, QtGui
+from jase.qt_bindings import Qt, QtCore, QtGui
 
 class ListModel(QtCore.QAbstractListModel):
     def __init__(self, data=None, descriptors=None, columns=None, path=None):
