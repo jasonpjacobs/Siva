@@ -2,6 +2,8 @@ from ..components import Component
 from ..resources.disk_resources import LocalDiskManager
 from ..simulation.table import Table
 
+import h5py
+
 import collections
 class BaseComponent(Component):
     """ Base class for all simulation components
@@ -23,11 +25,17 @@ class BaseComponent(Component):
 
         self.work_dir = work_dir
 
+        self.results = Table()
+
     @property
     def disk_mgr(self):
         if not hasattr(self,'_disk_mgr') or self._disk_mgr is None:
-            self._disk_mgr = LocalDiskManager(root=self.work_dir)
+            raise AttributeError
         return self._disk_mgr
+
+    @disk_mgr.setter
+    def disk_mgr(self, value):
+        self._disk_mgr = value
 
     def start(self):
         self._init()
@@ -46,6 +54,8 @@ class BaseComponent(Component):
         # Create work area.
         root = self.root
         disk_mgr = root.disk_mgr
+        if self is self.root:
+            disk_mgr.start()
         subdirs = [comp.name for comp in self.path_components]
         request = disk_mgr.request(job=self, subdirs = subdirs)
         self.work_dir = request.path
@@ -114,7 +124,8 @@ class BaseComponent(Component):
         pass
 
     def measure(self, results=None):
-        pass
+        for measurement in self._measurements:
+            m.evaluate()
 
     def final(self):
         pass

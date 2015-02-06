@@ -1,4 +1,7 @@
 import pytest
+import logging
+import os
+
 
 import numpy as np
 from ..loop_component import LoopVariable, LoopComponent
@@ -107,8 +110,6 @@ def test_simple_loop(simple_loop):
     assert (str[0:4] == ['A', 'B', 'C', 'A']).all()
     assert len(str[str=='A']) == 15
 
-
-
 @pytest.fixture
 def hierarchical_loops(mock):
     import tempfile
@@ -121,6 +122,11 @@ def hierarchical_loops(mock):
     L2 = LoopComponent(parent=None, vars=[b,], namespace={'obj': mock}, name='L2', children={'l3':L3,})
     L1 = LoopComponent(parent=None, vars=[a,], namespace={'obj': mock}, name='L1', children={'l2':L2,},
                        work_dir=work_dir)
+
+    from ...resources.disk_resources import LocalDiskManager
+
+    L1.root_dir = work_dir
+    L1.disk_mgr = LocalDiskManager(root=work_dir)
     return L1
 
 
@@ -134,9 +140,16 @@ def test_hierarchical_loops(hierarchical_loops):
     results['float'] = []
     i=0
 
-    loop.start()
 
-    print(loop.work_dir)
+    try:
+        loop.start()
+    except KeyboardInterrupt:
+        pass
+        log = logging.getLogger('Disk')
+        print("Log is", log, loop.disk_mgr.logger)
+        log.error("Interrupted.")
+
+    log_path = os.path.join(loop.root_dir, "disk_mgr.log")
     assert False
 
 

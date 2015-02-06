@@ -1,6 +1,7 @@
-import os
+import os, sys
 import shutil
 import time
+import logging
 
 from .resources import Request, ResourceManager, ResourceTimeoutError
 
@@ -31,17 +32,20 @@ class DiskResource:
 class DiskManager(ResourceManager):
     """A generic resource for disk space.
     """
+    log_name = "Disk"
 
-    def __init__(self, root=".", max_size=None, polling_time=.01):
-        super().__init__(polling_time=polling_time)
+    def __init__(self, root=".", max_size=None, polling_time=.01, log_file="disk_mgr.log"):
 
         root = os.path.abspath(root)
+        log_file = os.path.join(root, log_file)
+
         if not os.path.exists(root):
             raise FileNotFoundError("Root directory, {} does not exist.")
 
+        super().__init__(polling_time=polling_time, log_file=log_file)
+
         self.root = root
         self.max_size = max_size
-
 
 class LocalDiskManager(DiskManager):
     """ A disk manager that just gives out directories
@@ -55,6 +59,7 @@ class LocalDiskManager(DiskManager):
         """
 
         request = DiskRequest(job=job, size=size, subdirs=subdirs)
+        self.logger.info("Disk requested: {}, dirs={}, size={}".format(job.name, subdirs, size))
         resource = self.enqueue_request(request, timeout=timeout)
         return resource
 
@@ -66,7 +71,7 @@ class LocalDiskManager(DiskManager):
         This method should check for resource availability once every 'polling_time' seconds.
         """
         # If there is enough disk space for the requested job, grant the request.
-        while self._run:
+        while self._running:
             if self.max_size is not None:
                 available_space = sum([r.size for r in self.resources]) - self.max_size
             else:
@@ -79,10 +84,13 @@ class LocalDiskManager(DiskManager):
                     subdirs = [request.name]
                 job_dir = os.path.join(self.root, *subdirs)
                 resource = DiskResource(path=job_dir, mgr=self, size=request.size)
+                self.logger.info("Disk granted to {}".format(job_dir))
                 self.resources.append(resource)
                 return resource
-            print("Waiting for disk space")
-            time.sleep(self.polling_time)
+            else:
+                print("Waiting for disk space")
+                self.logger.info("Waiting for more disk space")
+                time.sleep(self.polling_time)
 
 
 

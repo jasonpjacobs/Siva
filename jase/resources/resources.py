@@ -1,9 +1,11 @@
 import threading
 import time
 import os
+import sys
 import shutil
-from queue import Queue
+import logging
 
+from queue import Queue
 
 class ResourceTimeoutError(TimeoutError):
     pass
@@ -25,19 +27,35 @@ class Request(threading.Event):
         self.resource = None
 
 class ResourceManager(threading.Thread):
-    def __init__(self, polling_time=1):
+    def __init__(self, polling_time=1, log_file=None):
         super().__init__()
         # Queue to store incoming requests
         self.queue = Queue()
 
         # Initial state of the manager
-        self._run = False
+        self._running = False
 
         # How often the request queue is polled for new requests (in seconds)
         self.polling_time = polling_time
 
         # Keep track of allocated resources
         self.resources = []
+
+        if log_file is not None:
+            self.logger = logging.getLogger(self.log_name)
+            self.logger.setLevel(logging.DEBUG)
+            self.logger.info("Local resource manager created at {}".format(log_file))
+            formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+
+            ch = logging.StreamHandler(sys.stdout)
+            ch.setFormatter(formatter)
+            self.logger.addHandler(ch)
+
+            fh = logging.FileHandler(log_file)
+            fh.setFormatter(formatter)
+            self.logger.addHandler(fh)
+        else:
+            self.logger = None
 
     def request(self, job, timeout=None):
         """ Called by the job dispatcher to request a resource.  The execution of this method is
@@ -46,6 +64,7 @@ class ResourceManager(threading.Thread):
         Resource specific managers can re-implement this method to modify the specific Resource class
         used for the request or to provide additional constraints or parameters.
         """
+
         request = Request(job=job)
         resource = self.enqueue_request(request, timeout=timeout)
         return resource
@@ -53,7 +72,7 @@ class ResourceManager(threading.Thread):
     def enqueue_request(self, request, timeout=None):
         """Places the request in the queue and waits for it to be granted.
         """
-        if not self._started.is_set():
+        if not self._running:
             self.start()
         self.queue.put(request)
         request.wait(timeout)
@@ -65,8 +84,13 @@ class ResourceManager(threading.Thread):
         return request.resource
 
     def run(self):
-        self._run = True
-        while self._run is True:
+        """Executes the resource manager.  This method is called in its own thread of execution
+        when the start method is called.
+        """
+        self._running = True
+        if self.logger:
+            self.logger.info("Resource manager started.".format(self.log_name))
+        while True:
             time.sleep(self.polling_time)
             self.process_requests()
 
@@ -77,15 +101,15 @@ class ResourceManager(threading.Thread):
         More sophisticated managers can override this method to implement prioritization, or allow
         smaller requests to get access to resources before larger ones.
         """
-        while not self.queue.empty():
+        if not self.queue.empty():
             request = self.queue.get()
+            self.logger.debug("Processing request: {}".format(request))
             request.resource = self.get_resource(request)
             request.set()
-        self.stop()
-
-    def stop(self):
-        super()._stop()
-        self._run = False
+        else:
+            if self.logger:
+                pass
+                #self.logger.debug("Request queue empty.")
 
     def get_resource(self, request):
         """ Called by the Resource base class to get a resource.  This method is responsible
