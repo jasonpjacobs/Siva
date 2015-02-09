@@ -87,11 +87,23 @@ class BaseComponent(Component):
             for component in self.children.values():
                 self._n += 1
                 component._execute()
-            self.measure()
+            self._measure()
 
     def _measure(self):
-        for component in self.children.values():
-            component._measure()
+        # Default implementation simple evaluates the measurement statements.
+        for m in self._measurements:
+            m.evaluate(self._namespace)
+
+        results = {}
+        for v in self._vars:
+            results[v.name] = v.value
+
+        for m in self._measurements:
+            results[m.name] = m.value
+
+        # Add it to the results table
+        self.results.add_row(results)
+
         self.measure()
 
     def _final(self):
@@ -124,13 +136,8 @@ class BaseComponent(Component):
         pass
 
     def measure(self, results=None):
-        for m in self._measurements:
-            m.evaluate(self._namespace)
+        pass
 
-        results = {}
-        for m in self._measurements:
-            results[m.name] = m.value
-        self.results.add_row(results)
 
     def final(self):
         pass
