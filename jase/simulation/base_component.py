@@ -124,8 +124,13 @@ class BaseComponent(Component):
         pass
 
     def measure(self, results=None):
-        for measurement in self._measurements:
-            m.evaluate()
+        for m in self._measurements:
+            m.evaluate(self._namespace)
+
+        results = {}
+        for m in self._measurements:
+            results[m.name] = m.value
+        self.results.add_row(results)
 
     def final(self):
         pass

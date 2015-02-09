@@ -77,9 +77,9 @@ class LoopComponent(BaseComponent):
         super().__init__(parent=parent, children=children, name=name, vars=None, measurements=measurements, **kwargs)
 
         if namespace is not None:
-            self.__namespace__ = namespace
+            self._namespace = namespace
         else:
-            self.__namespace__ = {}
+            self._namespace = {}
 
     def __len__(self):
         return np.product([len(var) for var in self.loop_vars])
@@ -92,7 +92,7 @@ class LoopComponent(BaseComponent):
         values = self._iterators.__next__()
         for var, val in zip(self.loop_vars, values):
             var.set(val)
-            var.eval(globals(), self.__namespace__)
+            var.eval(globals(), self._namespace)
         return values
 
     # BaseComponent interface
@@ -110,9 +110,4 @@ class LoopComponent(BaseComponent):
     def execute(self):
         self.__next__()
 
-    def measure(self):
-        pass
-
-    def final(self):
-        pass
 

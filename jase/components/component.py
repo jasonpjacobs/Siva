@@ -135,7 +135,7 @@ class Component(ComponentBase, metaclass=ComponentMeta):
             name = "{}()<@{}>".format(self.__class__.__name__, id(self))
         return name
 
-    def __getattribute__(self, name):
+    def __getattr__(self, name):
         if name in super().__getattribute__('_components'):
             return self._components[name]
         else:

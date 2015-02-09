@@ -17,19 +17,20 @@ class Table:
 
 
     def add_row(self, *columns):
-        if hasattr(columns, 'keys'):
-            for key in columns:
+        if hasattr(columns[0], 'keys'):
+            values_dict = columns[0]
+            for key in values_dict.keys():
                 if key not in self.columns:
                     self.columns[key] = []
-                self.columns[key].append(columns[key])
+                self.columns[key].append(values_dict[key])
 
-        # list
-        if not len(columns) == len(self.columns):
-            raise ValueError("Number of items does not match the number of columns. {} vs {}".format(
-                len(columns),len(self.columns)))
+        else:
+            if not len(columns) == len(self.columns):
+                raise ValueError("Number of items does not match the number of columns. {} vs {}".format(
+                    len(columns),len(self.columns)))
 
-        for val, col in zip(columns, self.columns.values()):
-            col.append(val)
+            for val, col in zip(columns, self.columns.values()):
+                col.append(val)
 
     def __str__(self):
         lines = []
@@ -43,9 +44,9 @@ class Table:
         lines.append("  ".join(col_format.format(w*"-").capitalize() for l in self.columns.keys()))
 
         # Rows
-        l = len(list(self.columns.values())[0])
-        for i in range(len(self.columns)):
-            line = "  ".join(col_format.format(l[i]) for l in self.columns.values())
+        num_rows = len(list(self.columns.values())[0])
+        for row_num in range(num_rows):
+            line = "  ".join(col_format.format(c[row_num]) for c in self.columns.values())
             lines.append(line)
 
         return "\n".join(lines)

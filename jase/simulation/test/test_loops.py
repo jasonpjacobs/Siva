@@ -5,6 +5,7 @@ import os
 
 import numpy as np
 from ..loop_component import LoopVariable, LoopComponent
+from ..measurement import Measurement
 
 class Mock:
     def __init__(self, int_var=0, str_var='string', float_var = 0.0):
@@ -114,11 +115,16 @@ def test_simple_loop(simple_loop):
 def hierarchical_loops(mock):
     import tempfile
     work_dir = tempfile.mkdtemp()
+
+    m1 = Measurement('m1', 'obj.int_var')
+    m2 = Measurement('m2', 'obj.float_var')
+    m3 = Measurement('m3', 'obj.str_var')
+
     a = LoopVariable('int', 'obj.int_var', start=1, stop=9, step=2)  # 5 values: 1,3,5,7, and 9
     b = LoopVariable('float', 'obj.float_var', start=-2., stop=2., n=3 )
     c = LoopVariable('str', 'obj.str_var', values=['"A"', '"B"', '"C"'])
 
-    L3 = LoopComponent(parent=None, vars=[c,], namespace={'obj': mock}, name='L3')
+    L3 = LoopComponent(parent=None, vars=[c,], namespace={'obj': mock}, name='L3', measurements=[m1,m2,m3])
     L2 = LoopComponent(parent=None, vars=[b,], namespace={'obj': mock}, name='L2', children={'l3':L3,})
     L1 = LoopComponent(parent=None, vars=[a,], namespace={'obj': mock}, name='L1', children={'l2':L2,},
                        work_dir=work_dir)
@@ -150,6 +156,7 @@ def test_hierarchical_loops(hierarchical_loops):
         log.error("Interrupted.")
 
     log_path = os.path.join(loop.root_dir, "disk_mgr.log")
+    print(loop.l2.l3.results)
     assert False
 
 
