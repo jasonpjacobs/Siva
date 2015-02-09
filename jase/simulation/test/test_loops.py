@@ -74,7 +74,7 @@ def test_callable_loop_variable():
 def test_simple_loop(simple_loop):
     assert len(simple_loop) == 45
 
-    m = simple_loop.__namespace__['obj']
+    m = simple_loop._namespace['obj']
     i = 0
 
     results = {}

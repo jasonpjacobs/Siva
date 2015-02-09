@@ -3,9 +3,12 @@ import numpy as np
 import itertools
 
 from .base_component import BaseComponent
+from .variable import Variable
+class LoopVariable(Variable):
+    def __init__(self, name, target, start=None, stop=None, step=None, n=None,
+                 values=None, endpoint=True, space="linear", desc=None):
 
-class LoopVariable:
-    def __init__(self, name, target, start=None, stop=None, step=None, n=None, values=None, endpoint=True, space="linear"):
+        super().__init__(name, target, desc)
 
         if values is not None:
             self.values = values
@@ -41,7 +44,7 @@ class LoopVariable:
 
     def __iter__(self):
         self.reset()
-        self.current = self.values[0]
+        self.value = self.values[0]
         return self
 
     def __next__(self):
@@ -49,7 +52,7 @@ class LoopVariable:
         if self.i == self.n:
             raise StopIteration
 
-        self.current = self.values[self.i]
+        self.value = self.values[self.i]
 
         return self.values[self.i]
 
@@ -59,15 +62,8 @@ class LoopVariable:
     def reset(self):
         self.i = -1
 
-    def eval(self, globals, locals):
-        target = eval(self.target, globals, locals)
-        if callable(target):
-            exec("{}({})".format(self.target, self.current), globals, locals)
-        else:
-             exec("{}={}".format(self.target, self.current), globals, locals)
-
     def set(self, value):
-        self.current = value
+        self._value = value
 
 class LoopComponent(BaseComponent):
     def __init__(self, parent=None, vars=None, children=None, namespace=None, name=None, measurements=None, **kwargs):
