@@ -83,14 +83,20 @@ class LoopComponent(BaseComponent):
         return np.product([len(var) for var in self.loop_vars])
 
     def __iter__(self):
+        if self.root.log:
+            self.root.log.debug("{}: Loop __iter__".format(self.name))
         self._iterators = itertools.product(*self.loop_vars)
         return self
 
     def __next__(self):
+        if self.root.log:
+            self.root.log.debug("{}: Loop __next__".format(self.name))
         values = self._iterators.__next__()
         for var, val in zip(self.loop_vars, values):
             var.set(val)
             var.eval(globals(), self._namespace)
+            if self.root.log:
+                self.root.log.debug("{}: Set '{}' to {}".format(self.name, var.target, val))
         return values
 
     # BaseComponent interface
@@ -106,10 +112,15 @@ class LoopComponent(BaseComponent):
         self.__iter__()
 
     def execute(self):
-        self.__next__()
+        #self.__next__()
+        pass
 
     def _measure(self):
         """Loop component implementation
+        """
+
+        if len(self._measurements) > 0:
+            super()._measure()
         """
         for m in self._measurements:
             m.evaluate(self._namespace)
@@ -125,5 +136,6 @@ class LoopComponent(BaseComponent):
         self.results.add_row(results)
 
         self.measure()
+        """
 
 

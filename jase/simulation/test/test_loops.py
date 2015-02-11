@@ -7,6 +7,8 @@ import numpy as np
 from ..loop_component import LoopVariable, LoopComponent
 from ..measurement import Measurement
 
+
+LOG = []
 class Mock:
     def __init__(self, int_var=0, str_var='string', float_var = 0.0):
         self.int_var = int_var
@@ -22,13 +24,36 @@ def mock():
 
 @pytest.fixture
 def simple_loop(mock):
-    a = LoopVariable('int', 'obj.int_var', start=1, stop=9, step=2)  # 5 values: 1,3,5,7, and 9
-    b = LoopVariable('float', 'obj.float_var', start=-2., stop=2., n=3 )
+    """
+
+    A       B       C
+    ================================
+    1       -2      A
+    5       -2      A
+    9       -2      A
+    1        0      A
+    5        0      A
+    9        0      A
+    1        2      A
+    5        2      A
+    9        2      A
+    1       -2      B
+    5       -2      B
+    9       -2      B
+    1        0      B
+    5        0      B
+    9        0      B
+    1        2      B
+    5        2      B
+    9        2      B
+    """
+    a = LoopVariable('int', 'obj.int_var', start=1, stop=9, step=2)
+    b = LoopVariable('float', 'obj.float_var', start=-2., stop=2., n=3 ) # 3 values: -2, 0, 2
     c = LoopVariable('str', 'obj.str_var', values=['"A"', '"B"', '"C"'])
 
     loop = LoopComponent(parent=None, vars=[a,b,c], namespace={'obj': mock})
     return loop
-
+"""
 def test_loop_creation(mock):
     var = LoopVariable('int','mock.int_var', start=1, stop=9, step=2)
     assert len(var) == 5
@@ -110,7 +135,7 @@ def test_simple_loop(simple_loop):
     str = np.array(results['str'])
     assert (str[0:4] == ['A', 'B', 'C', 'A']).all()
     assert len(str[str=='A']) == 15
-
+"""
 @pytest.fixture
 def hierarchical_loops(mock):
     import tempfile
@@ -120,14 +145,31 @@ def hierarchical_loops(mock):
     m2 = Measurement('m2', 'obj.float_var')
     m3 = Measurement('m3', 'obj.str_var')
 
-    a = LoopVariable('int', 'obj.int_var', start=1, stop=9, step=2)  # 5 values: 1,3,5,7, and 9
+    l1 = Measurement('l1', '"L1"')
+    l2 = Measurement('l2', '"L2"')
+
+
+    a = LoopVariable('int', 'obj.int_var', start=1, stop=9, step=4)  # 5 values: 1,3,5,7, and 9
     b = LoopVariable('float', 'obj.float_var', start=-2., stop=2., n=3 )
     c = LoopVariable('str', 'obj.str_var', values=['"A"', '"B"', '"C"'])
 
-    L3 = LoopComponent(parent=None, vars=[c,], namespace={'obj': mock}, name='L3', measurements=[m1,m2,m3])
-    L2 = LoopComponent(parent=None, vars=[b,], namespace={'obj': mock}, name='L2', children={'l3':L3,})
+
+    class Analysis(LoopComponent):
+        def measure(self, results=None):
+            global LOG
+            LOG.append("Calling measure from L3")
+
+    L3 = Analysis(parent=None, vars=[c,], namespace={'obj': mock}, name='L3', measurements=[m1,m2,m3])
+    L2 = LoopComponent(parent=None, vars=[b,], namespace={'obj': mock}, name='L2', children={'l3':L3,}, measurements=[l2,])
+
+
+    class Analysis(LoopComponent):
+        def measure(self, results=None):
+            global LOG
+            LOG.append("Calling measure from L3")
+
     L1 = LoopComponent(parent=None, vars=[a,], namespace={'obj': mock}, name='L1', children={'l2':L2,},
-                       work_dir=work_dir)
+                       work_dir=work_dir, measurements=[l1,], log_file='loop.log')
 
     from ...resources.disk_resources import LocalDiskManager
 
@@ -156,8 +198,10 @@ def test_hierarchical_loops(hierarchical_loops):
         log.error("Interrupted.")
 
     log_path = os.path.join(loop.root_dir, "disk_mgr.log")
-    print(loop.l2.l3.results)
-    assert False
+    print(loop.log_file)
+    print(LOG)
+
+    assert True
 
 
 

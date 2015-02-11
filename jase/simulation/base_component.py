@@ -2,7 +2,9 @@ from ..components import Component
 from ..resources.disk_resources import LocalDiskManager
 from ..simulation.table import Table
 
+import logging
 import h5py
+import os
 
 import collections
 class BaseComponent(Component):
@@ -11,7 +13,8 @@ class BaseComponent(Component):
     This class defines how each component is executed.
     """
 
-    def __init__(self, parent=None, children=None, name=None, vars=None, measurements=None, work_dir="."):
+    def __init__(self, parent=None, children=None, name=None, vars=None, measurements=None, work_dir=".",
+                 log_file = None):
         super().__init__(parent=parent, children=children, name=name)
 
         if vars is None:
@@ -26,6 +29,9 @@ class BaseComponent(Component):
         self.work_dir = work_dir
 
         self.results = Table()
+
+        self.log_file = log_file
+        self.log = None
 
     @property
     def disk_mgr(self):
@@ -60,12 +66,31 @@ class BaseComponent(Component):
         request = disk_mgr.request(job=self, subdirs = subdirs)
         self.work_dir = request.path
 
+        # Create a log file
+        self.setup_logging()
+
         # Create a results table
         self.results = Table()
 
         self.init()
         for component in self.children.values():
             component._init()
+
+    def setup_logging(self):
+        if self.log_file is not None:
+            path = os.path.join(self.work_dir, self.log_file)
+            self.log = logging.getLogger(self.log_file)
+            logging.basicConfig(filename=path, level=logging.DEBUG)
+
+            ch = logging.StreamHandler()
+            ch.setLevel(logging.DEBUG)
+            formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+            ch.setFormatter(formatter)
+
+            # add ch to logger
+            self.log.addHandler(ch)
+
+            self.log_file = path
 
     def _reset(self):
         """
@@ -81,6 +106,10 @@ class BaseComponent(Component):
         """
         self._n = 0
         self._i = 0
+
+        if self.root.log:
+            self.root.log.debug("{} component executed".format(self.name))
+
         for _ in self:
             self._i += 1
             self.execute()
@@ -89,9 +118,37 @@ class BaseComponent(Component):
                 component._execute()
             self._measure()
 
+    def _measure(self):
+        # Evaluate all measurement statements
+        if self.root.log:
+            self.root.log.debug("{}: Evaluating measurements".format(self.name))
+
+        for m in self._measurements:
+            m.evaluate(self._namespace)
+
+        # If the measure method was overridden, call it.
+        self.measure()
+
+        # Now record input variables and measurement values
+        # into the results table
+
+        record = {}
+        for v in self._vars:
+            record[v.name] = v.value
+
+        # As well as the measured values
+        for m in self._measurements:
+            record[m.name] = m.value
+
+        # Add it to the results table
+        self.results.add_row(record)
+
 
 
     def _final(self):
+        if self.root.log:
+            self.root.log.debug("{}: Final postprocessing".format(self.name))
+
         for component in self.children.values():
             component._final()
         self.final()

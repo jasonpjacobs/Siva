@@ -33,6 +33,10 @@ class Table:
                 col.append(val)
 
     def __str__(self):
+        # Check for empty table
+        if len(self.columns) == 0:
+            return "<Empty Table>"
+
         lines = []
         w = self.w
         col_format = "{:" + str(w) + "}"
@@ -44,9 +48,15 @@ class Table:
         lines.append("  ".join(col_format.format(w*"-").capitalize() for l in self.columns.keys()))
 
         # Rows
-        num_rows = len(list(self.columns.values())[0])
-        for row_num in range(num_rows):
+        for row_num in range(self.num_rows):
             line = "  ".join(col_format.format(c[row_num]) for c in self.columns.values())
             lines.append(line)
 
         return "\n".join(lines)
+
+    @property
+    def num_rows(self):
+        return max([len(col) for col in self.columns.values()])
+
+
+

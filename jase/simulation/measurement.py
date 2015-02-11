@@ -5,8 +5,9 @@ class Measurement:
         self.name = name
         self.expr = expr
         self.spec = spec
+        self.value = None
 
     def evaluate(self, namespace):
-        self.value = eval(self.expr, globals(), namespace)
+        self.value = exec(self.expr, globals(), namespace)
         return self.value
 
