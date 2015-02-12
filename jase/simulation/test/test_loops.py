@@ -153,21 +153,8 @@ def hierarchical_loops(mock):
     b = LoopVariable('float', 'obj.float_var', start=-2., stop=2., n=3 )
     c = LoopVariable('str', 'obj.str_var', values=['"A"', '"B"', '"C"'])
 
-
-    class Analysis(LoopComponent):
-        def measure(self, results=None):
-            global LOG
-            LOG.append("Calling measure from L3")
-
-    L3 = Analysis(parent=None, vars=[c,], namespace={'obj': mock}, name='L3', measurements=[m1,m2,m3])
+    L3 = LoopComponent(parent=None, vars=[c,], namespace={'obj': mock}, name='L3', measurements=[m1,m2,m3])
     L2 = LoopComponent(parent=None, vars=[b,], namespace={'obj': mock}, name='L2', children={'l3':L3,}, measurements=[l2,])
-
-
-    class Analysis(LoopComponent):
-        def measure(self, results=None):
-            global LOG
-            LOG.append("Calling measure from L3")
-
     L1 = LoopComponent(parent=None, vars=[a,], namespace={'obj': mock}, name='L1', children={'l2':L2,},
                        work_dir=work_dir, measurements=[l1,], log_file='loop.log')
 
@@ -180,14 +167,6 @@ def hierarchical_loops(mock):
 
 def test_hierarchical_loops(hierarchical_loops):
     loop = hierarchical_loops
-
-
-    results = {}
-    results['int'] = []
-    results['str'] = []
-    results['float'] = []
-    i=0
-
 
     try:
         loop.start()

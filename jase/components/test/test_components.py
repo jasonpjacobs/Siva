@@ -2,6 +2,7 @@ import pytest
 import pdb
 
 from jase.components.component import Component as jComponent
+from ..parameter import Parameter
 
 class Component(jComponent):
     def __init__(self, parent=None, children=None, id=None, name=None):
@@ -73,7 +74,7 @@ def test_procedural_model(procedural_model):
 def test_paths(model):
     assert model.b.c.id == 104
 
-    # Update the occurance of 'c'
+    # Update the occurrence of 'c'
     model.b.c.id = 0
 
     assert A.b.c.id == 104
@@ -113,6 +114,60 @@ def test_hierarchy():
     assert a.b.root is a
 
     assert a.b.c.path == 'a.b.c'
+
+
+@pytest.fixture
+def hier_with_params():
+
+    class C(Component):
+        z = Parameter(923478)
+
+    class B(Component):
+        y = Parameter('234l')
+        c = C()
+
+    class A(Component):
+        d = Parameter(167.2, local=True)
+        z = Parameter(1111)
+        b = B()
+
+    a = A(name='a')
+    return a
+
+def test_component_namespaces(hier_with_params):
+    a = hier_with_params
+    assert a is not None
+
+    ns = a.namespace
+
+    assert ns is not None
+    assert 'z' in ns
+    assert a.namespace['z'] == 1111
+    assert a.namespace['a'] == a
+
+
+    # Local parameters should not show up in name spaces
+    assert 'x' not in a.namespace
+
+
+    assert a.namespace
+
+def test_namespace_order(hier_with_params):
+    a = hier_with_params
+
+    # When called from C, the parameter value
+    # should be C's z parameter (923478)
+    assert a.b.c.namespace['z'] == 923478
+
+    # But when called from 'A', it should be A's parameter 'z'
+    assert a.namespace['z'] == 1111
+
+
+
+
+
+
+
 
 
 
