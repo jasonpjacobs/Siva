@@ -141,23 +141,26 @@ def hierarchical_loops(mock):
     import tempfile
     work_dir = tempfile.mkdtemp()
 
-    m1 = Measurement('m1', 'obj.int_var')
-    m2 = Measurement('m2', 'obj.float_var')
-    m3 = Measurement('m3', 'obj.str_var')
+    m1 = Measurement('m1', 'l3.int_var')
+    m2 = Measurement('m2', 'l3.float_var')
+    m3 = Measurement('m3', 'l3.str_var')
 
     l1 = Measurement('l1', '"L1"')
     l2 = Measurement('l2', '"L2"')
 
 
-    a = LoopVariable('int', 'obj.int_var', start=1, stop=9, step=4)  # 5 values: 1,3,5,7, and 9
-    b = LoopVariable('float', 'obj.float_var', start=-2., stop=2., n=3 )
-    c = LoopVariable('str', 'obj.str_var', values=['"A"', '"B"', '"C"'])
+    a = LoopVariable('int', 'l1.l2.l3.int_var', start=1, stop=9, step=4)  # 5 values: 1,3,5,7, and 9
+    b = LoopVariable('float', 'l1.l2.l3.float_var', start=-2., stop=2., n=3 )
+    c = LoopVariable('str', 'l1.l2.l3.str_var', values=['"A"', '"B"', '"C"'])
 
-    L3 = LoopComponent(parent=None, vars=[c,], namespace={'obj': mock}, name='L3', measurements=[m1,m2,m3])
-    L2 = LoopComponent(parent=None, vars=[b,], namespace={'obj': mock}, name='L2', children={'l3':L3,}, measurements=[l2,])
-    L1 = LoopComponent(parent=None, vars=[a,], namespace={'obj': mock}, name='L1', children={'l2':L2,},
+    L3 = LoopComponent(parent=None, vars=[c,], name='l3', measurements=[m1,m2,m3])
+    L2 = LoopComponent(parent=None, vars=[b,], name='l2', children=[L3,], measurements=[l2,])
+    L1 = LoopComponent(parent=None, vars=[a,], name='l1', children=[L2,],
                        work_dir=work_dir, measurements=[l1,], log_file='loop.log')
 
+    L3.int_var = 2
+    L3.float_var = 0.0
+    L3.str_var = "0"
     from ...resources.disk_resources import LocalDiskManager
 
     L1.root_dir = work_dir
@@ -178,9 +181,9 @@ def test_hierarchical_loops(hierarchical_loops):
 
     log_path = os.path.join(loop.root_dir, "disk_mgr.log")
     print(loop.log_file)
-    print(LOG)
+    print(loop.l2.l3.results)
 
-    assert True
+    assert False
 
 
 

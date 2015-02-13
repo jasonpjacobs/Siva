@@ -1,9 +1,11 @@
 
 import numpy as np
 import itertools
+import collections
 
 from .base_component import BaseComponent
 from .variable import Variable
+from ..components.parameter import Parameter
 class LoopVariable(Variable):
     def __init__(self, name, target, start=None, stop=None, step=None, n=None,
                  values=None, endpoint=True, space="linear", desc=None):
@@ -72,7 +74,12 @@ class LoopComponent(BaseComponent):
             vars = (vars,)
         self.loop_vars = vars
 
-        super().__init__(parent=parent, children=children, name=name, vars=vars, measurements=measurements, **kwargs)
+        # Convert the parameters from a list to a dict
+        params = collections.OrderedDict()
+        for v in vars:
+            params[v.name] = v
+
+        super().__init__(parent=parent, children=children, name=name, params=params, measurements=measurements, **kwargs)
 
         if namespace is not None:
             self._namespace = namespace
@@ -94,7 +101,7 @@ class LoopComponent(BaseComponent):
         values = self._iterators.__next__()
         for var, val in zip(self.loop_vars, values):
             var.set(val)
-            var.eval(globals(), self._namespace)
+            var.eval(globals(), self.namespace)
             if self.root.log:
                 self.root.log.debug("{}: Set '{}' to {}".format(self.name, var.target, val))
         return values
@@ -121,21 +128,8 @@ class LoopComponent(BaseComponent):
 
         if len(self._measurements) > 0:
             super()._measure()
-        """
-        for m in self._measurements:
-            m.evaluate(self._namespace)
-
-        results = {}
-        for v in self._vars:
-            results[v.name] = v.value
-
-        for m in self._measurements:
-            results[m.name] = m.value
-
-        # Add it to the results table
-        self.results.add_row(results)
 
         self.measure()
-        """
+
 
 

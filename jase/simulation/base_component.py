@@ -13,17 +13,14 @@ class BaseComponent(Component):
     This class defines how each component is executed.
     """
 
-    def __init__(self, parent=None, children=None, name=None, vars=None, measurements=None, work_dir=".",
+    def __init__(self, parent=None, children=None, name=None, params=None, measurements=None, work_dir=".",
                  log_file = None):
         super().__init__(parent=parent, children=children, name=name)
-
-        if vars is None:
-            vars = collections.OrderedDict()
 
         if measurements is None:
             measurements = collections.OrderedDict()
 
-        self._vars = vars
+        self._params = params
         self._measurements= measurements
 
         self.work_dir = work_dir
@@ -124,7 +121,7 @@ class BaseComponent(Component):
             self.root.log.debug("{}: Evaluating measurements".format(self.name))
 
         for m in self._measurements:
-            m.evaluate(self._namespace)
+            m.evaluate(self.namespace)
 
         # If the measure method was overridden, call it.
         self.measure()
@@ -133,8 +130,7 @@ class BaseComponent(Component):
         # into the results table
 
         record = {}
-        for v in self._vars:
-            record[v.name] = v.value
+        record.update(self.namespace)
 
         # As well as the measured values
         for m in self._measurements:

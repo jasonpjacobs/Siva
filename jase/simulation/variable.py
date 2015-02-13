@@ -1,8 +1,12 @@
-class Variable:
-    def __init__(self, name, target, desc=None):
+from ..components.parameter import Parameter
+
+class Variable(Parameter):
+    def __init__(self, name, target, desc=None, local=False, value=None):
+        super().__init__(value, local=local)
         self.name = name
         self.target = target
         self.desc = desc
+        self.value = value
 
     def eval(self, globals, locals):
         target = eval(self.target, globals, locals)

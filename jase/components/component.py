@@ -102,8 +102,8 @@ class Component(ComponentBase, metaclass=ComponentMeta):
         self.name = name
         self.parent = parent
         if children is not None:
-            self._components.update(children)
-            for child in self.children.values():
+            for child in children:
+                self._components[child.name] = child
                 child.parent = self
 
     @property
@@ -176,7 +176,7 @@ class Component(ComponentBase, metaclass=ComponentMeta):
                 name = self.name
             else:
                 name = "i" + str(len(self._components) + 1)
-                inst.name = name
+        inst.name = name
         inst.parent = self
         self._components[name] = inst
 

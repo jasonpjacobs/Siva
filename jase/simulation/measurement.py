@@ -8,6 +8,10 @@ class Measurement:
         self.value = None
 
     def evaluate(self, namespace):
-        self.value = exec(self.expr, globals(), namespace)
+        try:
+            self.value = eval(self.expr, globals(), namespace)
+        except Exception as e:
+            self.value = e.args
+            #raise
         return self.value
 

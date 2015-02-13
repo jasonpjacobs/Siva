@@ -162,6 +162,21 @@ def test_namespace_order(hier_with_params):
     # But when called from 'A', it should be A's parameter 'z'
     assert a.namespace['z'] == 1111
 
+def test_instance_naming():
+    class C(Component):
+        z = Parameter(923478)
+
+    class B(Component):
+        y = Parameter('234l')
+
+    c = C()
+    # The name keyword should override the instances name
+    c.add_instance(B(name='b1'), name='b2')
+
+    assert 'b2' in c._components
+
+    assert c.b2.name == 'b2'
+
 
 
 

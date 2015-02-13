@@ -21,7 +21,6 @@ class Parameter:
         self.value = value
         self.local = local
 
-
     @staticmethod
     def _register(self, store_as="attr", dict_name='_params', keyword=None):
         """Stores Parameter in special dictionaries when
