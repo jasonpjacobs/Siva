@@ -14,17 +14,23 @@ class BaseComponent(Component):
     """
 
     def __init__(self, parent=None, children=None, name=None, params=None, measurements=None, work_dir=".",
-                 log_file = None):
+                 log_file=None):
         super().__init__(parent=parent, children=children, name=name)
 
         if measurements is None:
             measurements = collections.OrderedDict()
 
-        self._params = params
-        self._measurements= measurements
+        if params is not None:
+            # If given a dict, convert to a list
+            if hasattr(params, 'values'):
+                params = params.values()
+            # Then update the parameter dictionary
+            for param in params:
+                self.params[param.name] = param
+
+        self.measurements= measurements
 
         self.work_dir = work_dir
-
         self.results = Table()
 
         self.log_file = log_file
@@ -33,7 +39,7 @@ class BaseComponent(Component):
     @property
     def disk_mgr(self):
         if not hasattr(self,'_disk_mgr') or self._disk_mgr is None:
-            raise AttributeError
+            return LocalDiskManager(root=self.work_dir)
         return self._disk_mgr
 
     @disk_mgr.setter
@@ -59,8 +65,12 @@ class BaseComponent(Component):
         disk_mgr = root.disk_mgr
         if self is self.root:
             disk_mgr.start()
+
+        for comp in self.path_components:
+            if comp.name is None:
+                raise ValueError("Component must have a name: {}".format(self))
         subdirs = [comp.name for comp in self.path_components]
-        request = disk_mgr.request(job=self, subdirs = subdirs)
+        request = disk_mgr.request(job=self, subdirs=subdirs)
         self.work_dir = request.path
 
         # Create a log file
@@ -120,7 +130,7 @@ class BaseComponent(Component):
         if self.root.log:
             self.root.log.debug("{}: Evaluating measurements".format(self.name))
 
-        for m in self._measurements:
+        for m in self.measurements:
             m.evaluate(self.namespace)
 
         # If the measure method was overridden, call it.
@@ -130,10 +140,12 @@ class BaseComponent(Component):
         # into the results table
 
         record = {}
+        if self.namespace is None:
+            pass
         record.update(self.namespace)
 
         # As well as the measured values
-        for m in self._measurements:
+        for m in self.measurements:
             record[m.name] = m.value
 
         # Add it to the results table

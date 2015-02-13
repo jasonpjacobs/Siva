@@ -6,7 +6,7 @@ import os
 import numpy as np
 from ..loop_component import LoopVariable, LoopComponent
 from ..measurement import Measurement
-
+from ...simulation.variable import Variable
 
 LOG = []
 class Mock:
@@ -47,13 +47,13 @@ def simple_loop(mock):
     5        2      B
     9        2      B
     """
-    a = LoopVariable('int', 'obj.int_var', start=1, stop=9, step=2)
-    b = LoopVariable('float', 'obj.float_var', start=-2., stop=2., n=3 ) # 3 values: -2, 0, 2
-    c = LoopVariable('str', 'obj.str_var', values=['"A"', '"B"', '"C"'])
+    a = LoopVariable('int', 'Loop.int_var', start=1, stop=9, step=2)
+    b = LoopVariable('float', 'Loop.float_var', start=-2., stop=2., n=3 ) # 3 values: -2, 0, 2
+    c = LoopVariable('str', 'Loop.str_var', values=['"A"', '"B"', '"C"'])
 
-    loop = LoopComponent(parent=None, vars=[a,b,c], namespace={'obj': mock})
+    loop = LoopComponent(parent=None, vars=[a,b,c], name='Loop')
     return loop
-"""
+
 def test_loop_creation(mock):
     var = LoopVariable('int','mock.int_var', start=1, stop=9, step=2)
     assert len(var) == 5
@@ -78,15 +78,17 @@ def test_loop_creation(mock):
 def test_callable_loop_variable():
 
     class Mock:
-        def __init__(self, value=0):
+        def __init__(self, value=0, name='M'):
             self.value=value
+            self.name=name
 
         def set_value(self, value):
             self.value = value
 
-    m = Mock()
-    var = LoopVariable('var', 'obj.set_value', values=[0.33, 0.55, 0.77])
-    loop = LoopComponent(vars = var, namespace={'obj':m})
+    m = Mock(name='M')
+    var = LoopVariable('var', 'Loop.M.set_value', values=[0.33, 0.55, 0.77])
+    loop = LoopComponent(vars = [var,], name='Loop')
+    loop.M = m
     results = []
     for _ in loop:
         results.append(m.value)
@@ -99,7 +101,7 @@ def test_callable_loop_variable():
 def test_simple_loop(simple_loop):
     assert len(simple_loop) == 45
 
-    m = simple_loop._namespace['obj']
+    loop = simple_loop
     i = 0
 
     results = {}
@@ -108,9 +110,9 @@ def test_simple_loop(simple_loop):
     results['float'] = []
     for value in simple_loop:
         i += 1
-        results['int'].append(m.int_var)
-        results['str'].append(m.str_var)
-        results['float'].append(m.float_var)
+        results['int'].append(loop.int_var)
+        results['str'].append(loop.str_var)
+        results['float'].append(loop.float_var)
 
     # This is the outer loop variable,
     # So there should be 3*3 (9) unique
@@ -135,7 +137,7 @@ def test_simple_loop(simple_loop):
     str = np.array(results['str'])
     assert (str[0:4] == ['A', 'B', 'C', 'A']).all()
     assert len(str[str=='A']) == 15
-"""
+
 @pytest.fixture
 def hierarchical_loops(mock):
     import tempfile

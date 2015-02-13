@@ -68,8 +68,8 @@ class LoopVariable(Variable):
         self._value = value
 
 class LoopComponent(BaseComponent):
-    def __init__(self, parent=None, vars=None, children=None, namespace=None, name=None, measurements=None,
-                 **kwargs):
+    def __init__(self, parent=None, vars=None, children=None, name=None, measurements=None, **kwargs):
+
         if isinstance(vars, LoopVariable):
             vars = (vars,)
         self.loop_vars = vars
@@ -80,11 +80,6 @@ class LoopComponent(BaseComponent):
             params[v.name] = v
 
         super().__init__(parent=parent, children=children, name=name, params=params, measurements=measurements, **kwargs)
-
-        if namespace is not None:
-            self._namespace = namespace
-        else:
-            self._namespace = {}
 
     def __len__(self):
         return np.product([len(var) for var in self.loop_vars])
@@ -101,7 +96,7 @@ class LoopComponent(BaseComponent):
         values = self._iterators.__next__()
         for var, val in zip(self.loop_vars, values):
             var.set(val)
-            var.eval(globals(), self.namespace)
+            var.eval(globals(), self.root.namespace)
             if self.root.log:
                 self.root.log.debug("{}: Set '{}' to {}".format(self.name, var.target, val))
         return values
@@ -125,10 +120,8 @@ class LoopComponent(BaseComponent):
     def _measure(self):
         """Loop component implementation
         """
-
-        if len(self._measurements) > 0:
+        if len(self.measurements) > 0:
             super()._measure()
-
         self.measure()
 
 

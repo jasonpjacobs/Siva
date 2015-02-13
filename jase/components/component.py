@@ -47,8 +47,8 @@ class ComponentMeta(type):
 
     """
     def __new__(cls, name, bases, dct):
-        _components = ComponentDict(owner=cls)
-        _params = ComponentDict(owner=cls)
+        components = ComponentDict(owner=cls)
+        params = ComponentDict(owner=cls)
 
         for k,v in dct.items():
             if k.startswith('_'):
@@ -57,17 +57,17 @@ class ComponentMeta(type):
                 if not hasattr(v, 'name'):
                     v.name = k
                     v.parent = cls
-                _components[k] = v
+                components[k] = v
 
             if isinstance(v, Parameter):
                 if not hasattr(v, 'name'):
                     v.name = k
                     v.parent = cls
-                _params[k] = v
+                params[k] = v
 
         # Add this component dictionary to the class's namespace
-        dct['_components'] = _components
-        dct['_params'] = _params
+        dct['components'] = components
+        dct['params'] = params
         return super().__new__(cls, name, bases, dct)
 
 class Component(ComponentBase, metaclass=ComponentMeta):
@@ -82,20 +82,20 @@ class Component(ComponentBase, metaclass=ComponentMeta):
 
     def __new__(cls, *args, **kwargs):
         inst = super().__new__(cls)
-        inst._components = ComponentDict(owner=inst)
-        inst._params = ComponentDict(owner=inst)
+        inst.components = ComponentDict(owner=inst)
+        inst.params = ComponentDict(owner=inst)
 
         # Create copies of the components and parameters in the class dictionary,
         # so instance attribute lookup won't fall back to the attribute in the class dict.
-        for comp_name in cls._components:
-            comp_inst = copy.deepcopy(cls._components[comp_name])
+        for comp_name in cls.components:
+            comp_inst = copy.deepcopy(cls.components[comp_name])
             comp_inst.parent = inst
-            inst._components[comp_name] = comp_inst
+            inst.components[comp_name] = comp_inst
 
-        for param_name in cls._params:
-            param_inst = copy.deepcopy(cls._params[param_name])
+        for param_name in cls.params:
+            param_inst = copy.deepcopy(cls.params[param_name])
             param_inst.parent = inst
-            inst._params[param_name] = param_inst
+            inst.params[param_name] = param_inst
         return inst
 
     def __init__(self, parent=None, children=None, name=None):
@@ -103,12 +103,12 @@ class Component(ComponentBase, metaclass=ComponentMeta):
         self.parent = parent
         if children is not None:
             for child in children:
-                self._components[child.name] = child
+                self.components[child.name] = child
                 child.parent = self
 
     @property
     def children(self):
-        return self._components
+        return self.components
 
     @property
     def root(self):
@@ -140,12 +140,17 @@ class Component(ComponentBase, metaclass=ComponentMeta):
         This dictionary can be used as the locals() dict for expressions.
         """
         ns = {}
-        if self.parent is not None:
-            ns.update(self.parent.namespace)
 
-        for var in self._params.values():
+        for comp in self.components.values():
+            ns.update(comp.namespace)
+
+        for var in self.params.values():
             if not var.local:
                 ns[var.name] = var.value
+
+        for var in self.components.values():
+            ns[var.name] = var
+
 
         ns[self.name] = self
         return ns
@@ -163,10 +168,10 @@ class Component(ComponentBase, metaclass=ComponentMeta):
         """Overridden to ensure that the Component's '_components' and '_params' dict
         is searched before the Class dictionary during attribute lookup
         """
-        if name in ComponentBase.__getattribute__(self, '_components'):
-            return ComponentBase.__getattribute__(self, '_components')[name]
-        elif name in ComponentBase.__getattribute__(self, '_params'):
-            return ComponentBase.__getattribute__(self, '_params')[name]
+        if name in ComponentBase.__getattribute__(self, 'components'):
+            return ComponentBase.__getattribute__(self, 'components')[name]
+        elif name in ComponentBase.__getattribute__(self, 'params'):
+            return ComponentBase.__getattribute__(self, 'params')[name]
         else:
             return ComponentBase.__getattribute__(self, name)
 
@@ -175,8 +180,8 @@ class Component(ComponentBase, metaclass=ComponentMeta):
             if hasattr(inst, 'name'):
                 name = self.name
             else:
-                name = "i" + str(len(self._components) + 1)
+                name = "i" + str(len(self.components) + 1)
         inst.name = name
         inst.parent = self
-        self._components[name] = inst
+        self.components[name] = inst
 

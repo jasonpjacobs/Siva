@@ -43,6 +43,7 @@ class DiskManager(ResourceManager):
             raise FileNotFoundError("Root directory, {} does not exist.")
 
         super().__init__(polling_time=polling_time, log_file=log_file)
+        self.logger.info("Disk manager started on {}. Max size: {}".format(root, max_size))
 
         self.root = root
         self.max_size = max_size

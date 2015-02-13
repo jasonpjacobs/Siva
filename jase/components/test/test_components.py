@@ -173,7 +173,7 @@ def test_instance_naming():
     # The name keyword should override the instances name
     c.add_instance(B(name='b1'), name='b2')
 
-    assert 'b2' in c._components
+    assert 'b2' in c.components
 
     assert c.b2.name == 'b2'
 
