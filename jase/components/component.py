@@ -98,6 +98,33 @@ class Component(ComponentBase, metaclass=ComponentMeta):
             inst.params[param_name] = param_inst
         return inst
 
+
+    def clone(self, clone_inst=None, name=None):
+        """ Create a clone of self.
+
+        If 'orig' is provided, it will be made into a clone of self. Otherwise a new instance is created.
+        """
+        if clone_inst is None:
+            clone_inst =  self.__class__()
+
+        if name is not None:
+            clone_inst.name = name
+        clone_inst.components = ComponentDict(owner=self)
+        clone_inst.params = ComponentDict(owner=self)
+
+        # Create copies of the components and parameters in the class dictionary,
+        # so instance attribute lookup won't fall back to the attribute in the class dict.
+        for comp_name in self.components:
+            comp_inst = self.components[comp_name].clone()
+            comp_inst.parent = clone_inst
+            clone_inst.components[comp_name] = comp_inst
+
+        for param_name in self.params:
+            param_inst = copy.deepcopy(self.params[param_name])
+            param_inst.parent = clone_inst
+            clone_inst.params[param_name] = param_inst
+        return clone_inst
+
     def __init__(self, parent=None, children=None, name=None):
         self.name = name
         self.parent = parent
@@ -156,12 +183,7 @@ class Component(ComponentBase, metaclass=ComponentMeta):
         return ns
 
     def __repr__(self):
-        if hasattr(self, 'name'):
-            name = self.name
-        else:
-            name = None
-        if name is None:
-            name = "{}()<@{}>".format(self.__class__.__name__, id(self))
+        name = "{}(name={})".format(self.__class__.__name__, self.name)
         return name
 
     def __getattribute__(self, name):
@@ -177,8 +199,8 @@ class Component(ComponentBase, metaclass=ComponentMeta):
 
     def add_instance(self, inst, name=None):
         if name is None:
-            if hasattr(inst, 'name'):
-                name = self.name
+            if hasattr(inst, 'name') and inst.name is not None:
+                name = inst.name
             else:
                 name = "i" + str(len(self.components) + 1)
         inst.name = name

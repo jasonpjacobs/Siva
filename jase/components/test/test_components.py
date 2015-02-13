@@ -31,18 +31,18 @@ def procedural_model():
     class B(Component):
         pass
 
-        def run(self):
-            a.int = 2
-
-    c = C()
+    c = C(name='c')
     c.id = 104
 
-    b = B()
-    b.add_instance(c, 'c')
+
+    b = B(children=[c,])
 
     a = A()
     a.add_instance(b, 'b')
 
+    # Add instances w/o a name
+    a.add_instance(C()) # Should get the name i2
+    a.add_instance(C(name='c2'))
     return a
 
 
@@ -52,33 +52,52 @@ def test_instantiation(model):
     a = model
 
     # Check that the child component was put into the _components dict
-    assert 'b' in A._components
+    assert 'b' in A.components
 
     # Check that A's component dict was copied to the 'a' instance.
-    assert 'b' in a._components
+    assert 'b' in a.components
 
     # Check that the child component can be looked up via standard attribute access
-    assert a.b is a._components['b']
+    assert a.b is a.components['b']
 
     # Same for the component in the class definition
-    assert A.b is A._components['b']
+    assert A.b is A.components['b']
 
     # Check that the instance child is a copy of the class
     # in the class definition
-    assert a._components['b'] is not A._components['b']
+    assert a.components['b'] is not A.components['b']
     assert a.b is not A.b
 
 def test_procedural_model(procedural_model):
     test_instantiation(procedural_model)
 
+    a = procedural_model
+
+    assert len(a.components) == 3
+    assert 'i2' in a.components
+    assert 'c2' in a.components
+
 def test_paths(model):
-    assert model.b.c.id == 104
+    a = model
+    assert repr(a) == 'A(name=a)'
+
+    assert a.children == a.components
+
+    assert a.b.c.id == 104
 
     # Update the occurrence of 'c'
-    model.b.c.id = 0
+    a.b.c.id = 0
 
     assert A.b.c.id == 104
-    assert model.b.c.id == 0
+    assert a.b.c.id == 0
+
+    pc = a.b.c.path_components
+    assert(len(pc) == 3)
+    assert pc[0] is model
+    assert pc[1] is a.b
+    assert pc[2] is a.b.c
+
+
 
 
 def test_model_modification():
@@ -176,6 +195,20 @@ def test_instance_naming():
     assert 'b2' in c.components
 
     assert c.b2.name == 'b2'
+
+
+def test_clone(hier_with_params):
+    a = hier_with_params
+
+    a2 = a.clone(name='a2')
+
+    assert a2.name == 'a2'
+
+    assert a.b is not a2.b
+    assert a.b.c is not a2.b.c
+
+    assert a2.b.c.parent is not a.b
+    assert a2.b.c.parent is a2.b
 
 
 
