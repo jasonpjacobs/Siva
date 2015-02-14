@@ -68,7 +68,7 @@ class LoopVariable(Variable):
         self._value = value
 
 class LoopComponent(BaseComponent):
-    def __init__(self, parent=None, vars=None, children=None, name=None, measurements=None, **kwargs):
+    def __init__(self, parent=None, vars=None, children=None, name=None, measurements=None, parallel=True, **kwargs):
 
         if isinstance(vars, LoopVariable):
             vars = (vars,)
@@ -79,7 +79,8 @@ class LoopComponent(BaseComponent):
         if vars is not None:
             for v in vars:
                 params[v.name] = v
-        super().__init__(parent=parent, children=children, name=name, params=params, measurements=measurements, **kwargs)
+        super().__init__(parent=parent, children=children, name=name, params=params, measurements=measurements,
+                         parallel=parallel, **kwargs)
 
     def __len__(self):
         return np.product([len(var) for var in self.loop_vars])
@@ -92,26 +93,23 @@ class LoopComponent(BaseComponent):
         return self
 
     def __next__(self):
-        if self.root.log:
-            self.root.log.debug("{}: Loop __next__".format(self.inst_name))
-        self._i += 1
         values = self._iterators.__next__()
+        self._i += 1
+        if self.root.log:
+            self.root.log.debug("{}: Loop __next__ ({})".format(self.inst_name, self._i,))
 
-        """
-        for var, val in zip(self.loop_vars, values):
-            var.set(val)
-            var.eval(globals(), self.root.namespace)
-            if self.root.log:
-                self.root.log.debug("{}: Set '{}' to {}".format(self.inst_name, var.target, val))
-        return values
-        """
-        var_vals = zip([v.name for v in self.loop_vars], values)
+        if self.name == 'l2' and self._i == 2:
+            pass
+
+        var_vals = list(zip([v.name for v in self.loop_vars], values))
         inst_name = self.name + "_" + str(self._i)
         loop_iteration = self.clone(inst_name=inst_name)
 
         # TODO:  Can we do this using descriptors?
         for var, val in var_vals:
             loop_iteration.params[var].value = val
+            if self.root.log:
+                self.root.log.debug("{}:    {} -> {}".format(self.inst_name, var, loop_iteration.params[var].value))
         return loop_iteration
 
     # BaseComponent interface
@@ -128,7 +126,9 @@ class LoopComponent(BaseComponent):
 
     def execute(self):
         for param in self.params.values():
-            param.eval(globals(), self.namespace)
+            if self.root.log:
+                self.root.log.debug("{}: Setting {} to {}".format(self.inst_name, param.name, param.value))
+            param.eval(globals(), self.hierarchy_namespace)
 
     def _measure(self):
         """Loop component implementation

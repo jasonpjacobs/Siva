@@ -51,12 +51,11 @@ class Parameter:
         instance.params[self.name].value = value
 
     def __get__(self, instance, owner):
-        print("Getting parameter value")
         return instance.params[self.name].value
 
     @property
     def evaluated_value(self):
-        if self._evaluated_value is not None:
+        if hasattr(self, '_evaluated_value') and self._evaluated_value is not None:
             return self._evaluated_value
         else:
             return self.value

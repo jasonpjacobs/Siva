@@ -121,7 +121,7 @@ class Component(ComponentBase, metaclass=ComponentMeta):
         # Parameters need to copied seperately so their parent
         # attribute can be set
         for param_name in self.params:
-            param_inst = copy.deepcopy(self.params[param_name])
+            param_inst = copy.copy(self.params[param_name])
             param_inst.parent = clone_inst
             clone_inst.params[param_name] = param_inst
 
@@ -189,7 +189,30 @@ class Component(ComponentBase, metaclass=ComponentMeta):
             ns[var.name] = var
 
         ns[self.name] = self
+        ns['self'] = self
         return ns
+
+    @property
+    def hierarchy_namespace(self):
+        """Gets the name space for all components up the hierarchy,
+        from this comppnent's point of view.
+        """
+        ns = {}
+
+        if self.parent:
+            ns.update(self.parent.hierarchy_namespace)
+
+        ns.update(self.namespace)
+        return ns
+
+    @property
+    def hierarchy_params(self):
+        params = {}
+
+        if self.parent:
+            params.update(self.parent.hierarchy_params)
+        params.update(self.params)
+        return params
 
     def __repr__(self):
         name = "{}(name={})".format(self.__class__.__name__, self.name)
@@ -201,6 +224,7 @@ class Component(ComponentBase, metaclass=ComponentMeta):
         """
         if name in ComponentBase.__getattribute__(self, 'components'):
             return ComponentBase.__getattribute__(self, 'components')[name]
+        # Removed to allow access to parameters via the descriptor protocol
         #elif name in ComponentBase.__getattribute__(self, 'params'):
         #    return ComponentBase.__getattribute__(self, 'params')[name]
         else:

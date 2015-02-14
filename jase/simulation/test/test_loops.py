@@ -57,7 +57,6 @@ def simple_loop(mock):
 
     loop = LoopComponent(parent=None, vars=[a,b,c], name='Loop', measurements=[m1, m2, m3])
     return loop
-"""
 
 def test_loop_creation(mock):
     var = LoopVariable('int','mock.int_var', start=1, stop=9, step=2)
@@ -91,18 +90,20 @@ def test_callable_loop_variable():
             self.value = value
 
     m = Mock(name='M')
+    ms = Measurement('v', 'Loop.M.value')
     var = LoopVariable('var', 'Loop.M.set_value', values=[0.33, 0.55, 0.77])
-    loop = LoopComponent(vars = [var,], name='Loop')
+    loop = LoopComponent(vars = [var,], name='Loop', measurements=[ms,])
     loop.M = m
     results = []
-    for _ in loop:
-        results.append(m.value)
+    loop.start()
 
-    results = np.array(results)
+    assert loop.results is not None
+
+    results = np.array(loop.results['var'])
     assert results[0] == 0.33
     assert results[1] == 0.55
     assert results[2] == 0.77
-"""
+
 def test_simple_loop(simple_loop):
     assert len(simple_loop) == 45
 
@@ -138,12 +139,13 @@ def test_simple_loop(simple_loop):
     assert (str[0:4] == ['A', 'B', 'C', 'A']).all()
     assert len(str[str=='A']) == 15
 
-"""
+
 @pytest.fixture
 def hierarchical_loops(mock):
     import tempfile
     work_dir = tempfile.mkdtemp()
-
+    global M
+    M = mock
     m1 = Measurement('m1', 'l3.int_var')
     m2 = Measurement('m2', 'l3.float_var')
     m3 = Measurement('m3', 'l3.str_var')
@@ -152,18 +154,15 @@ def hierarchical_loops(mock):
     l2 = Measurement('l2', '"L2"')
 
 
-    a = LoopVariable('int', 'l1.l2.l3.int_var', start=1, stop=9, step=4)  # 5 values: 1,3,5,7, and 9
-    b = LoopVariable('float', 'l1.l2.l3.float_var', start=-2., stop=2., n=3 )
-    c = LoopVariable('str', 'l1.l2.l3.str_var', values=['"A"', '"B"', '"C"'])
+    a = LoopVariable('int', 'l3.int_var', start=1, stop=9, step=2)
+    b = LoopVariable('float', 'l3.float_var', start=-2., stop=2., n=3, endpoint=True)
+    c = LoopVariable('str',  'l3.str_var', values=['"A"', '"B"', '"C"'])
 
     L3 = LoopComponent(parent=None, vars=[c,], name='l3', measurements=[m1,m2,m3])
     L2 = LoopComponent(parent=None, vars=[b,], name='l2', children=[L3,], measurements=[l2,])
     L1 = LoopComponent(parent=None, vars=[a,], name='l1', children=[L2,],
                        work_dir=work_dir, measurements=[l1,], log_file='loop.log')
 
-    L3.int_var = 2
-    L3.float_var = 0.0
-    L3.str_var = "0"
     from ...resources.disk_resources import LocalDiskManager
 
     L1.root_dir = work_dir
@@ -173,6 +172,9 @@ def hierarchical_loops(mock):
 
 def test_hierarchical_loops(hierarchical_loops):
     loop = hierarchical_loops
+
+    loop.namespace
+
 
     try:
         loop.start()
@@ -190,6 +192,6 @@ def test_hierarchical_loops(hierarchical_loops):
 
 
 
-"""
+
 
 

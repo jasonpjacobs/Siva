@@ -42,7 +42,8 @@ class Variable(Parameter):
                 # the expression, the previous eval statement will create an AttributeError
                 # but the expression below will work.
                 exec("{}={}".format(self.target, value), globals, locals)
-
+            except NameError:
+                raise
     @property
     def value(self):
         return self._value
@@ -50,4 +51,7 @@ class Variable(Parameter):
     @value.setter
     def value(self, value):
         self._value = value
+
+
+
 

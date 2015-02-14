@@ -124,26 +124,25 @@ class BaseComponent(Component):
         if self.root.log:
             self.root.log.debug("{} component executed".format(self.inst_name))
 
-        threads = []
         for iteration in self:
+            threads = []
             iteration.execute()
             # Execute each child in its own thread
             for component in iteration.children.values():
                 thread = threading.Thread(target=component._execute)
                 threads.append(thread)
 
-            if self.parallel:
-                for thread in threads:
-                    thread.start()
-                # Wait for all to finish
-                for thread in threads:
-                    thread.join()
-            else:
-                for thread in threads:
-                    thread.start()
-                    thread.join()
-
-
+            if len(threads) > 0:
+                if self.parallel:
+                    for thread in threads:
+                        thread.start()
+                    # Wait for all to finish
+                    for thread in threads:
+                        thread.join()
+                else:
+                    for thread in threads:
+                        thread.start()
+                        thread.join()
             # Perform measurements
             iteration._measure()
 
@@ -153,18 +152,16 @@ class BaseComponent(Component):
             self.root.log.debug("{}: Evaluating measurements".format(self.inst_name))
 
         for m in self.measurements:
-            m.evaluate(self.namespace)
+            m.evaluate(self.hierarchy_namespace)
 
         # If the measure method was overridden, call it.
         self.measure()
 
         # Now record input variables and measurement values
         # into the results table
-
         record = {}
-        if self.namespace is None:
-            pass
-        record.update(self.namespace)
+        for param in self.hierarchy_params.values():
+            record[param.name] = param.value
 
         # As well as the measured values
         for m in self.measurements:
@@ -220,7 +217,7 @@ class BaseComponent(Component):
 
     @property
     def inst_name(self):
-        if self._inst_name is not None:
+        if hasattr(self, '_inst_name') and self._inst_name is not None:
             return self._inst_name
         else:
             return self.name
@@ -228,3 +225,8 @@ class BaseComponent(Component):
     @inst_name.setter
     def inst_name(self, value):
         self._inst_name = value
+
+    def __repr__(self):
+        name = "{}(name={})".format(self.__class__.__name__, self.inst_name)
+        return name
+

@@ -164,11 +164,8 @@ def test_component_namespaces(hier_with_params):
     assert a.namespace['z'] == 1111
     assert a.namespace['a'] == a
 
-
     # Local parameters should not show up in name spaces
     assert 'x' not in a.namespace
-
-
     assert a.namespace
 
 def test_namespace_order(hier_with_params):
@@ -193,7 +190,6 @@ def test_instance_naming():
     c.add_instance(B(name='b1'), name='b2')
 
     assert 'b2' in c.components
-
     assert c.b2.name == 'b2'
 
 
@@ -203,10 +199,8 @@ def test_clone(hier_with_params):
     a2 = a.clone(name='a2')
 
     assert a2.name == 'a2'
-
     assert a.b is not a2.b
     assert a.b.c is not a2.b.c
-
     assert a2.b.c.parent is not a.b
     assert a2.b.c.parent is a2.b
 
