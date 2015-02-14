@@ -58,5 +58,8 @@ class Table:
     def num_rows(self):
         return max([len(col) for col in self.columns.values()])
 
+    def __getitem__(self, item):
+        return self.columns[item]
+
 
 

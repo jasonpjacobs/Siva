@@ -76,9 +76,9 @@ class LoopComponent(BaseComponent):
 
         # Convert the parameters from a list to a dict
         params = collections.OrderedDict()
-        for v in vars:
-            params[v.name] = v
-
+        if vars is not None:
+            for v in vars:
+                params[v.name] = v
         super().__init__(parent=parent, children=children, name=name, params=params, measurements=measurements, **kwargs)
 
     def __len__(self):
@@ -86,20 +86,33 @@ class LoopComponent(BaseComponent):
 
     def __iter__(self):
         if self.root.log:
-            self.root.log.debug("{}: Loop __iter__".format(self.name))
+            self.root.log.debug("{}: Loop __iter__".format(self.inst_name))
         self._iterators = itertools.product(*self.loop_vars)
+        self._i = 0
         return self
 
     def __next__(self):
         if self.root.log:
-            self.root.log.debug("{}: Loop __next__".format(self.name))
+            self.root.log.debug("{}: Loop __next__".format(self.inst_name))
+        self._i += 1
         values = self._iterators.__next__()
+
+        """
         for var, val in zip(self.loop_vars, values):
             var.set(val)
             var.eval(globals(), self.root.namespace)
             if self.root.log:
-                self.root.log.debug("{}: Set '{}' to {}".format(self.name, var.target, val))
+                self.root.log.debug("{}: Set '{}' to {}".format(self.inst_name, var.target, val))
         return values
+        """
+        var_vals = zip([v.name for v in self.loop_vars], values)
+        inst_name = self.name + "_" + str(self._i)
+        loop_iteration = self.clone(inst_name=inst_name)
+
+        # TODO:  Can we do this using descriptors?
+        for var, val in var_vals:
+            loop_iteration.params[var].value = val
+        return loop_iteration
 
     # BaseComponent interface
     def init(self):
@@ -114,8 +127,8 @@ class LoopComponent(BaseComponent):
         self.__iter__()
 
     def execute(self):
-        #self.__next__()
-        pass
+        for param in self.params.values():
+            param.eval(globals(), self.namespace)
 
     def _measure(self):
         """Loop component implementation

@@ -79,6 +79,7 @@ class Component(ComponentBase, metaclass=ComponentMeta):
     * Eval contexts for scripting
     * New methods that create new instances of child components when an instance is created.
     """
+    _dicts = []
 
     def __new__(cls, *args, **kwargs):
         inst = super().__new__(cls)
@@ -99,16 +100,14 @@ class Component(ComponentBase, metaclass=ComponentMeta):
         return inst
 
 
-    def clone(self, clone_inst=None, name=None):
+    def clone(self, clone_inst=None, **kwargs):
         """ Create a clone of self.
 
         If 'orig' is provided, it will be made into a clone of self. Otherwise a new instance is created.
         """
         if clone_inst is None:
-            clone_inst =  self.__class__()
+            clone_inst = self.__class__()
 
-        if name is not None:
-            clone_inst.name = name
         clone_inst.components = ComponentDict(owner=self)
         clone_inst.params = ComponentDict(owner=self)
 
@@ -119,10 +118,21 @@ class Component(ComponentBase, metaclass=ComponentMeta):
             comp_inst.parent = clone_inst
             clone_inst.components[comp_name] = comp_inst
 
+        # Parameters need to copied seperately so their parent
+        # attribute can be set
         for param_name in self.params:
             param_inst = copy.deepcopy(self.params[param_name])
             param_inst.parent = clone_inst
             clone_inst.params[param_name] = param_inst
+
+        # Other attributes can simply be reassigned w/o copying
+        for k,v in self.__dict__.items():
+            if k not in ('components', 'params') and not k.startswith('_'):
+                setattr(clone_inst, k, v)
+
+        # Apply new attribute values to the clone
+        for name,value in kwargs.items():
+            setattr(clone_inst, name, value)
         return clone_inst
 
     def __init__(self, parent=None, children=None, name=None):
@@ -177,7 +187,6 @@ class Component(ComponentBase, metaclass=ComponentMeta):
 
         for var in self.components.values():
             ns[var.name] = var
-
 
         ns[self.name] = self
         return ns

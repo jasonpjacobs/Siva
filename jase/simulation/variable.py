@@ -35,3 +35,4 @@ class Variable(Parameter):
     @value.setter
     def value(self, value):
         self._value = value
+
