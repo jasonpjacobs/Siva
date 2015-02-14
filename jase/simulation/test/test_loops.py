@@ -49,7 +49,7 @@ def simple_loop(mock):
     """
     a = LoopVariable('int', 'Loop.int_var', start=1, stop=9, step=2)
     b = LoopVariable('float', 'Loop.float_var', start=-2., stop=2., n=3 ) # 3 values: -2, 0, 2
-    c = LoopVariable('str', 'Loop.str_var', values=['"A"', '"B"', '"C"'])
+    c = LoopVariable('str', 'Loop.str_var', values=['A', 'B', 'C'])
 
     m1 = Measurement('int_result', 'Loop.int_var')
     m2 = Measurement('float_result', 'Loop.float_var')

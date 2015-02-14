@@ -183,7 +183,7 @@ class Component(ComponentBase, metaclass=ComponentMeta):
 
         for var in self.params.values():
             if not var.local:
-                ns[var.name] = var.value
+                ns[var.name] = var.evaluated_value
 
         for var in self.components.values():
             ns[var.name] = var
