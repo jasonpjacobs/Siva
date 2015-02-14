@@ -18,7 +18,7 @@ class BaseComponent(Component):
     _dicts = ['measurements']
 
     def __init__(self, parent=None, children=None, name=None, params=None, measurements=None, work_dir=".",
-                 log_file=None, disk_mgr=None):
+                 log_file=None, disk_mgr=None, parallel=False):
         super().__init__(parent=parent, children=children, name=name)
 
         if measurements is None:
@@ -41,6 +41,8 @@ class BaseComponent(Component):
         self.log = None
 
         self.disk_mgr = disk_mgr
+
+        self.parallel = parallel
 
     @property
     def disk_mgr(self):
@@ -129,11 +131,18 @@ class BaseComponent(Component):
             for component in iteration.children.values():
                 thread = threading.Thread(target=component._execute)
                 threads.append(thread)
-                thread.start()
 
-            # Wait for all to finish
-            for thread in threads:
-                thread.join()
+            if self.parallel:
+                for thread in threads:
+                    thread.start()
+                # Wait for all to finish
+                for thread in threads:
+                    thread.join()
+            else:
+                for thread in threads:
+                    thread.start()
+                    thread.join()
+
 
             # Perform measurements
             iteration._measure()

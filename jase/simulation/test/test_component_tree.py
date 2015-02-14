@@ -65,6 +65,7 @@ def test_model(sim_tree):
         pass
 
     print(MockComponent.LOG)
+
     assert MockComponent.LOG == ['a.init',
                                    'b1.init',
                                      'c.init',

@@ -53,3 +53,14 @@ class Parameter:
     def __get__(self, instance, owner):
         print("Getting parameter value")
         return instance.params[self.name].value
+
+    @property
+    def evaluated_value(self):
+        if self._evaluated_value is not None:
+            return self._evaluated_value
+        else:
+            return self.value
+
+    @evaluated_value.setter
+    def evaluated_value(self, value):
+        self._evaluated_value = value
