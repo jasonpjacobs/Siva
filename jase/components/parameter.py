@@ -3,7 +3,7 @@ import inspect
 class Parameter:
     """ A class to define Component level attributes.
 
-    Parameter can be declared as pat of a calss definition using a declarative syntax:
+    Parameter can be declared as pat of a class definition using a declarative syntax:
 
     class A(Component):
         # Define a parameter named 'b'
@@ -45,3 +45,11 @@ class Parameter:
 
         elif store_as == "list":
             c_locals[dict_name][keyword].append(self)
+
+
+    def __set__(self, instance, value):
+        instance.params[self.name].value = value
+
+    def __get__(self, instance, owner):
+        print("Getting parameter value")
+        return instance.params[self.name].value

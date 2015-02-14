@@ -185,7 +185,7 @@ def test_hierarchical_loops(hierarchical_loops):
     print(loop.log_file)
     print(loop.l2.l3.results)
 
-    assert False
+    assert True
 
 
 

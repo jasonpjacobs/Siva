@@ -211,6 +211,15 @@ def test_clone(hier_with_params):
     assert a2.b.c.parent is a2.b
 
 
+def test_param_descriptors(hier_with_params):
+
+    a = hier_with_params
+
+    assert a.d == 167.2
+
+    a.d = 42.3
+    assert a.d == 42.3
+    assert a.params['d'].value == 42.3
 
 
 

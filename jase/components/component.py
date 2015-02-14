@@ -192,8 +192,8 @@ class Component(ComponentBase, metaclass=ComponentMeta):
         """
         if name in ComponentBase.__getattribute__(self, 'components'):
             return ComponentBase.__getattribute__(self, 'components')[name]
-        elif name in ComponentBase.__getattribute__(self, 'params'):
-            return ComponentBase.__getattribute__(self, 'params')[name]
+        #elif name in ComponentBase.__getattribute__(self, 'params'):
+        #    return ComponentBase.__getattribute__(self, 'params')[name]
         else:
             return ComponentBase.__getattribute__(self, name)
 

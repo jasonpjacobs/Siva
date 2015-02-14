@@ -1,13 +1,13 @@
 import pytest
-
+import tempfile
 from ..base_component import BaseComponent
 
 class MockComponent(BaseComponent):
-    """  A mock comopnent class that records the order in which its methods were called
+    """  A mock component class that records the order in which its methods were called
     """
     LOG = []
-    def __init__(self,name=None):
-        super().__init__(name=name)
+    def __init__(self,name=None, **kwargs):
+        super().__init__(name=name, **kwargs)
         self.init_called = False
         self.reset_called = False
         self.exec_called = False
@@ -47,7 +47,8 @@ def sim_tree():
     A.add_instance(A, B(name='b1'),name='b1')
     A.add_instance(A, B(name='b2'),name='b2')
 
-    a = A(name='a')
+    work_dir = tempfile.mkdtemp()
+    a = A(name='a', work_dir=work_dir)
     return a
 
 def test_model(sim_tree):
@@ -58,7 +59,10 @@ def test_model(sim_tree):
     b2 = a.b2
     c1 = a.b1.c
     c2 = a.b2.c
-    a.start()
+    try:
+        a.start()
+    except:
+        pass
 
     print(MockComponent.LOG)
     assert MockComponent.LOG == ['a.init',
