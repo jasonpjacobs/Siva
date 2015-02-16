@@ -47,9 +47,17 @@ class ComponentMeta(type):
 
     """
     def __new__(cls, name, bases, dct):
-        components = ComponentDict(owner=cls)
-        params = ComponentDict(owner=cls)
+        dct['components'] = ComponentDict(owner=cls)
+        dct['params'] = ComponentDict(owner=cls)
 
+        # Go through the instances created during class definition
+        # and handle any items that request registration
+
+        for k,v in dct.items():
+            if hasattr(v,'register'):
+                v.register(parent=cls, dct=dct, name=k)
+
+        """
         for k,v in dct.items():
             if k.startswith('_'):
                 continue
@@ -64,10 +72,7 @@ class ComponentMeta(type):
                     v.name = k
                     v.parent = cls
                 params[k] = v
-
-        # Add this component dictionary to the class's namespace
-        dct['components'] = components
-        dct['params'] = params
+        """
         return super().__new__(cls, name, bases, dct)
 
 class Component(ComponentBase, metaclass=ComponentMeta):
@@ -99,6 +104,17 @@ class Component(ComponentBase, metaclass=ComponentMeta):
             inst.params[param_name] = param_inst
         return inst
 
+
+    def register(self, parent, dct, name=None):
+        """Called by the Component metaclass to add child Components
+        to the class's "component" dictionary prior to calling
+        the class's __new__ method.
+        """
+        if name is not None:
+            self.name = name
+
+        self.parent = parent
+        dct["components"][self.name] = self
 
     def clone(self, clone_inst=None, **kwargs):
         """ Create a clone of self.
