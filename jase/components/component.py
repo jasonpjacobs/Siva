@@ -60,7 +60,7 @@ class ComponentMeta(type):
                 components[k] = v
 
             if isinstance(v, Parameter):
-                if not hasattr(v, 'name'):
+                if not hasattr(v, 'name') or v.name is None:
                     v.name = k
                     v.parent = cls
                 params[k] = v

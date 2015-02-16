@@ -1,7 +1,7 @@
 from ..components.parameter import Parameter
 
 class Variable(Parameter):
-    def __init__(self, name, target=None, desc=None, local=False, value=None):
+    def __init__(self, value=None, name=None, target=None, desc=None, local=False):
         super().__init__(value, local=local)
         self.name = name
         self.target = target
