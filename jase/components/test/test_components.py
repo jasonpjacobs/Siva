@@ -81,7 +81,8 @@ def test_paths(model):
     a = model
     assert repr(a) == 'A(name=a)'
 
-    assert a.children == a.components
+
+    assert set([c.name for c in a.children]) == set([c.name for c in a.components.values()])
 
     assert a.b.c.id == 104
 

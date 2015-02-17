@@ -13,16 +13,10 @@ class BaseComponent(Component):
 
     This class defines how each component is executed.
     """
-
-    # Instance dicts to copy when cloning
-    _dicts = ['measurements']
-
+    _component_dicts = ["components", "params", "measurements"]
     def __init__(self, parent=None, children=None, name=None, params=None, measurements=None, work_dir=".",
                  log_file=None, disk_mgr=None, parallel=False):
         super().__init__(parent=parent, children=children, name=name)
-
-        if measurements is None:
-            measurements = collections.OrderedDict()
 
         if params is not None:
             # If given a dict, convert to a list
@@ -31,8 +25,6 @@ class BaseComponent(Component):
             # Then update the parameter dictionary
             for param in params:
                 self.params[param.name] = param
-
-        self.measurements = measurements
 
         self.work_dir = work_dir
         self.results = Table()
@@ -90,7 +82,7 @@ class BaseComponent(Component):
         self.results = Table()
 
         self.init()
-        for component in self.children.values():
+        for component in self.children:
             component._init()
 
     def setup_logging(self):

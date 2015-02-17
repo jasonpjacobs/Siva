@@ -28,12 +28,6 @@ class ComponentDict(collections.OrderedDict):
         self.owner = owner
         super().__init__(*args, **kwargs)
 
-    """
-    def __missing__(self, key):
-        if self.owner.parent is not None:
-            print("{} missing from {}.  Asking {}".format(key, self.owner, self.owner.parent))
-            return self.owner.parent._namespace[key]
-    """
     def __deepcopy__(self, memo):
         new_copy = self.__class__(owner=self.owner)
         for k,v in self.items():
@@ -49,6 +43,7 @@ class ComponentMeta(type):
     def __new__(cls, name, bases, dct):
         dct['components'] = ComponentDict(owner=cls)
         dct['params'] = ComponentDict(owner=cls)
+        dct['measurements'] = ComponentDict(owner=cls)
 
         # Go through the instances created during class definition
         # and handle any items that request registration
@@ -56,26 +51,10 @@ class ComponentMeta(type):
         # dct will get appended to while iterating over it, so we need
         # to make a copy before iteration
         items = [(k,v) for k,v in dct.items()]
-        for k,v in items:
-            if hasattr(v,'register'):
-                v.register(parent=cls, dct=dct, name=k)
+        for key, value in items:
+            if hasattr(value,'register'):
+                value.register(parent=cls, dct=dct, name=key)
 
-        """
-        for k,v in dct.items():
-            if k.startswith('_'):
-                continue
-            if isinstance(v, ComponentBase):
-                if not hasattr(v, 'name'):
-                    v.name = k
-                    v.parent = cls
-                components[k] = v
-
-            if isinstance(v, Parameter):
-                if not hasattr(v, 'name') or v.name is None:
-                    v.name = k
-                    v.parent = cls
-                params[k] = v
-        """
         return super().__new__(cls, name, bases, dct)
 
 class Component(ComponentBase, metaclass=ComponentMeta):
@@ -87,24 +66,31 @@ class Component(ComponentBase, metaclass=ComponentMeta):
     * Eval contexts for scripting
     * New methods that create new instances of child components when an instance is created.
     """
-    _dicts = []
+    # Instance dicts to copy when cloning
+
+    _component_dicts = ["components", "params"]
 
     def __new__(cls, *args, **kwargs):
         inst = super().__new__(cls)
-        inst.components = ComponentDict(owner=inst)
-        inst.params = ComponentDict(owner=inst)
 
-        # Create copies of the components and parameters in the class dictionary,
-        # so instance attribute lookup won't fall back to the attribute in the class dict.
-        for comp_name in cls.components:
-            comp_inst = copy.deepcopy(cls.components[comp_name])
-            comp_inst.parent = inst
-            inst.components[comp_name] = comp_inst
+        """
+        When defined as part of a Comopnent class definition, child components, parameters,
+        and other attributes are stored in the class dictionary.
 
-        for param_name in cls.params:
-            param_inst = copy.deepcopy(cls.params[param_name])
-            param_inst.parent = inst
-            inst.params[param_name] = param_inst
+        In order to prevent instance modification from affecting the class definition,
+        we create copies of these items.
+        """
+
+        for dict_name in cls._component_dicts:
+            inst_dict = ComponentDict(owner=inst)
+            setattr(inst, dict_name, inst_dict)
+            class_dct = getattr(cls, dict_name)
+
+            for name, item in class_dct.items():
+                inst_item = copy.deepcopy(item)
+                inst_item.parent = inst
+                inst_dict[item.name] = inst_item
+        
 
         return inst
 
@@ -174,7 +160,7 @@ class Component(ComponentBase, metaclass=ComponentMeta):
 
     @property
     def children(self):
-        return self.components
+        return self.components.values()
 
     @property
     def root(self):

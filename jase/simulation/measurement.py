@@ -1,4 +1,5 @@
 import collections
+from ..components.component import ComponentDict
 
 class Measurement:
     def __init__(self, expr, name=None, spec=None):
@@ -9,7 +10,7 @@ class Measurement:
 
     def register(self, parent, dct, name=None):
         """Called by the Component metaclass to add child Components
-        to the class's "param" dictionary
+        to the class's "measurements" dictionary
         """
         if name is not None:
             self.name = name
@@ -19,6 +20,15 @@ class Measurement:
             dct["measurements"] = collections.OrderedDict()
         dct["measurements"][self.name] = self
 
+    def __set__(self, instance, value):
+        instance.measurements[self.name].value = value
+
+    def __get__(self, instance, owner):
+        if instance is not None:
+            return instance.measurements[self.name]
+        else:
+            return owner.measurements[self.name]
+
     def evaluate(self, namespace):
         try:
             self.value = eval(self.expr, globals(), namespace)
@@ -26,11 +36,5 @@ class Measurement:
             self.value = e.args
             #raise
         return self.value
-
-    def __set__(self, instance, value):
-        instance.measurements[self.name].value = value
-
-    def __get__(self, instance, owner):
-        return instance.measurements[self.name].value
 
 
