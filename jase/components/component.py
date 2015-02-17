@@ -53,7 +53,10 @@ class ComponentMeta(type):
         # Go through the instances created during class definition
         # and handle any items that request registration
 
-        for k,v in dct.items():
+        # dct will get appended to while iterating over it, so we need
+        # to make a copy before iteration
+        items = [(k,v) for k,v in dct.items()]
+        for k,v in items:
             if hasattr(v,'register'):
                 v.register(parent=cls, dct=dct, name=k)
 
@@ -102,8 +105,8 @@ class Component(ComponentBase, metaclass=ComponentMeta):
             param_inst = copy.deepcopy(cls.params[param_name])
             param_inst.parent = inst
             inst.params[param_name] = param_inst
-        return inst
 
+        return inst
 
     def register(self, parent, dct, name=None):
         """Called by the Component metaclass to add child Components
@@ -156,8 +159,18 @@ class Component(ComponentBase, metaclass=ComponentMeta):
         self.parent = parent
         if children is not None:
             for child in children:
-                self.components[child.name] = child
-                child.parent = self
+                self.add_instance(child)
+
+    def __set__(self, instance, value):
+        instance.components[self.name] = value
+
+    def __get__(self, instance, owner):
+        if instance is not None:
+            # Called on instance
+            return instance.components[self.name]
+        else:
+            # Called on Class
+            return owner.components[self.name]
 
     @property
     def children(self):
@@ -234,7 +247,7 @@ class Component(ComponentBase, metaclass=ComponentMeta):
         name = "{}(name={})".format(self.__class__.__name__, self.name)
         return name
 
-    def __getattribute__(self, name):
+    def XXX__getattribute__(self, name):
         """Overridden to ensure that the Component's '_components' and '_params' dict
         is searched before the Class dictionary during attribute lookup
         """
@@ -246,6 +259,12 @@ class Component(ComponentBase, metaclass=ComponentMeta):
         else:
             return ComponentBase.__getattribute__(self, name)
 
+    def __getattr__(self, item):
+        if item in self.components:
+            return self.components[item]
+        else:
+            raise AttributeError
+
     def add_instance(self, inst, name=None):
         if name is None:
             if hasattr(inst, 'name') and inst.name is not None:
@@ -254,5 +273,13 @@ class Component(ComponentBase, metaclass=ComponentMeta):
                 name = "i" + str(len(self.components) + 1)
         inst.name = name
         inst.parent = self
-        self.components[name] = inst
+
+        # Add the instance to the Class dictionary, so the descriptor
+        # protocol will be used for attribute access.
+        inst.register(self, dct=self.__class__.__dict__, name=name)
+
+        # And add it to the instance dictionary as well.
+        inst.register(self, dct=self.__dict__, name=name)
+
+
 

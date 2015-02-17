@@ -7,7 +7,7 @@ from .base_component import BaseComponent
 from .variable import Variable
 from ..components.parameter import Parameter
 class LoopVariable(Variable):
-    def __init__(self, name, target, start=None, stop=None, step=None, n=None,
+    def __init__(self, name, target=None, start=None, stop=None, step=None, n=None,
                  values=None, endpoint=True, space="linear", desc=None):
 
         super().__init__(name, target, desc)
@@ -42,7 +42,21 @@ class LoopVariable(Variable):
         self.stop = stop
         self.n = n
         self.values = values
+        self.parent = None
         self.reset()
+
+    def register(self, parent, dct, name=None):
+        """Called by the Component metaclass to add child Components
+        to the class's "param" dictionary
+        """
+        if name is not None:
+            self.name = name
+
+        self.parent = parent
+        if "loop_vars" not in dct:
+            dct["loop_vars"] = collections.OrderedDict()
+        dct["loop_vars"][self.name] = self
+        dct["params"][self.name] = self
 
     def __iter__(self):
         self.reset()
@@ -72,7 +86,14 @@ class LoopComponent(BaseComponent):
 
         if isinstance(vars, LoopVariable):
             vars = (vars,)
-        self.loop_vars = vars
+
+        # If 'vars' was specified, we assume the procedural interface is being used to define the loop variables.
+        # If the declarative interface is used, loop_vars will already be populated
+        if vars is not None:
+            if hasattr(vars, '__getitem__'):
+                self.loop_vars = vars
+            else:
+                self.loop_vars = collections.OrderedDict([(v.name, v.value) for v in vars])
 
         # Convert the parameters from a list to a dict
         params = collections.OrderedDict()
@@ -83,12 +104,12 @@ class LoopComponent(BaseComponent):
                          parallel=parallel, **kwargs)
 
     def __len__(self):
-        return np.product([len(var) for var in self.loop_vars])
+        return np.product([len(var) for var in self.loop_vars.values()])
 
     def __iter__(self):
         if self.root.log:
             self.root.log.debug("{}: Loop __iter__".format(self.inst_name))
-        self._iterators = itertools.product(*self.loop_vars)
+        self._iterators = itertools.product(*self.loop_vars.values())
         self._i = 0
         return self
 
@@ -101,7 +122,7 @@ class LoopComponent(BaseComponent):
         if self.name == 'l2' and self._i == 2:
             pass
 
-        var_vals = list(zip([v.name for v in self.loop_vars], values))
+        var_vals = list(zip([v.name for v in self.loop_vars.values()], values))
         inst_name = self.name + "_" + str(self._i)
         loop_iteration = self.clone(inst_name=inst_name)
 
