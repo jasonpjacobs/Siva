@@ -18,11 +18,6 @@ import copy
 from ..types import Typed
 from ..types.hierarchy import Node as TreeNode
 
-class ComponentBase:
-    ...
-
-from .parameter import Parameter
-
 class ComponentDict(collections.OrderedDict):
     def __init__(self, owner, *args, **kwargs):
         self.owner = owner
@@ -57,7 +52,7 @@ class ComponentMeta(type):
 
         return super().__new__(cls, name, bases, dct)
 
-class Component(ComponentBase, metaclass=ComponentMeta):
+class Component(metaclass=ComponentMeta):
     """
     Features:
     * Dotted path description and resolution
@@ -90,7 +85,7 @@ class Component(ComponentBase, metaclass=ComponentMeta):
                 inst_item = copy.deepcopy(item)
                 inst_item.parent = inst
                 inst_dict[item.name] = inst_item
-        
+
 
         return inst
 
