@@ -25,9 +25,9 @@ class Measurement:
 
     def __get__(self, instance, owner):
         if instance is not None:
-            return instance.measurements[self.name]
+            return instance.measurements[self.name].value
         else:
-            return owner.measurements[self.name]
+            return owner.measurements[self.name].value
 
     def evaluate(self, namespace):
         try:

@@ -49,10 +49,15 @@ class BaseComponent(Component):
     def start(self):
         self._init()
         try:
-            self._execute()
+            self.thread = threading.Thread(target=self._execute())
+            self.thread.start()
         except StopIteration:
             pass
         self._final()
+
+    def wait(self):
+        if self.thread is not None:
+            self.thread.join()
 
     def _init(self):
         """ The first step in a simulation.
@@ -116,34 +121,37 @@ class BaseComponent(Component):
         if self.root.log:
             self.root.log.debug("{} component executed".format(self.inst_name))
 
+        threads = []
         for iteration in self:
-            threads = []
-            iteration.execute()
-            # Execute each child in its own thread
-            for component in iteration.children.values():
-                thread = threading.Thread(target=component._execute)
-                threads.append(thread)
+            thread = threading.Thread(target=iteration.spawn)
+            threads.append(thread)
 
-            if len(threads) > 0:
-                if self.parallel:
-                    for thread in threads:
-                        thread.start()
-                    # Wait for all to finish
-                    for thread in threads:
-                        thread.join()
-                else:
-                    for thread in threads:
-                        thread.start()
-                        thread.join()
-            # Perform measurements
-            iteration._measure()
+        if len(threads) > 0:
+            if self.parallel:
+                for thread in threads:
+                    thread.start()
+                # Wait for all to finish
+                for thread in threads:
+                    thread.join()
+            else:
+                for thread in threads:
+                    thread.start()
+                    thread.join()
+
+    def spawn(self):
+            if self.log:
+                self.log.debug("Spawning {} ({})".format(self.inst_name, id(self)))
+            self.execute()
+            for component in self.components.values():
+                component._execute()
+            self._measure()
 
     def _measure(self):
         # Evaluate all measurement statements
         if self.root.log:
-            self.root.log.debug("{}: Evaluating measurements".format(self.inst_name))
+            self.root.log.debug("{} ({}): Evaluating measurements".format(self.inst_name, id(self)))
 
-        for m in self.measurements:
+        for m in self.measurements.values():
             m.evaluate(self.hierarchy_namespace)
 
         # If the measure method was overridden, call it.
@@ -156,7 +164,7 @@ class BaseComponent(Component):
             record[param.name] = param.value
 
         # As well as the measured values
-        for m in self.measurements:
+        for m in self.measurements.values():
             record[m.name] = m.value
 
         # Add it to the results table
@@ -166,7 +174,7 @@ class BaseComponent(Component):
         if self.root.log:
             self.root.log.debug("{}: Final postprocessing".format(self.inst_name))
 
-        for component in self.children.values():
+        for component in self.components.values():
             component._final()
         self.final()
 
