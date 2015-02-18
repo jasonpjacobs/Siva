@@ -82,11 +82,12 @@ class Component(metaclass=ComponentMeta):
             class_dct = getattr(cls, dict_name)
 
             for name, item in class_dct.items():
-                inst_item = copy.deepcopy(item)
+                if hasattr(item, 'clone'):
+                    inst_item = item.clone()
+                else:
+                    inst_item = copy.deepcopy(item)
                 inst_item.parent = inst
                 inst_dict[item.name] = inst_item
-
-
         return inst
 
     def register(self, parent, dct, name=None):
@@ -106,28 +107,27 @@ class Component(metaclass=ComponentMeta):
         If 'orig' is provided, it will be made into a clone of self. Otherwise a new instance is created.
         """
         if clone_inst is None:
-            clone_inst = self.__class__()
+            clone_inst = self.__class__(name=self.name)
 
-        clone_inst.components = ComponentDict(owner=self)
-        clone_inst.params = ComponentDict(owner=self)
+        clone_inst.components = ComponentDict(owner=clone_inst)
+        clone_inst.params = ComponentDict(owner=clone_inst)
 
-        # Create copies of the components and parameters in the class dictionary,
-        # so instance attribute lookup won't fall back to the attribute in the class dict.
-        for comp_name in self.components:
-            comp_inst = self.components[comp_name].clone()
-            comp_inst.parent = clone_inst
-            clone_inst.components[comp_name] = comp_inst
+        for dict_name in self._component_dicts:
+            inst_dict = ComponentDict(owner=clone_inst)
+            setattr(clone_inst, dict_name, inst_dict)
+            class_dct = getattr(self, dict_name)
 
-        # Parameters need to copied seperately so their parent
-        # attribute can be set
-        for param_name in self.params:
-            param_inst = copy.copy(self.params[param_name])
-            param_inst.parent = clone_inst
-            clone_inst.params[param_name] = param_inst
+            for name, item in class_dct.items():
+                if hasattr(item, 'clone'):
+                    inst_item = item.clone()
+                else:
+                    inst_item = copy.copy(item)
+                inst_item.parent = clone_inst
+                inst_dict[item.name] = inst_item
 
         # Other attributes can simply be reassigned w/o copying
         for k,v in self.__dict__.items():
-            if k not in ('components', 'params') and not k.startswith('_'):
+            if k not in self._component_dicts and not k.startswith('_'):
                 setattr(clone_inst, k, v)
 
         # Apply new attribute values to the clone
@@ -228,18 +228,6 @@ class Component(metaclass=ComponentMeta):
         name = "{}(name={})".format(self.__class__.__name__, self.name)
         return name
 
-    def XXX__getattribute__(self, name):
-        """Overridden to ensure that the Component's '_components' and '_params' dict
-        is searched before the Class dictionary during attribute lookup
-        """
-        if name in ComponentBase.__getattribute__(self, 'components'):
-            return ComponentBase.__getattribute__(self, 'components')[name]
-        # Removed to allow access to parameters via the descriptor protocol
-        #elif name in ComponentBase.__getattribute__(self, 'params'):
-        #    return ComponentBase.__getattribute__(self, 'params')[name]
-        else:
-            return ComponentBase.__getattribute__(self, name)
-
     def __getattr__(self, item):
         if item in self.components:
             return self.components[item]
@@ -257,7 +245,7 @@ class Component(metaclass=ComponentMeta):
 
         # Add the instance to the Class dictionary, so the descriptor
         # protocol will be used for attribute access.
-        inst.register(self, dct=self.__class__.__dict__, name=name)
+        #inst.register(self, dct=self.__class__.__dict__, name=name)
 
         # And add it to the instance dictionary as well.
         inst.register(self, dct=self.__dict__, name=name)

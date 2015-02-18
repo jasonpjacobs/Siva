@@ -209,15 +209,10 @@ if __name__ == "__main__":
         plt.show()
 
     if True:
-
-
         app = QtGui.QApplication([])
         pw = PlotWidget("main")
-
         pw.plot(x=impulse.x, y=np.abs(impulse.y))
-
         pw.show()
-
         app.exec_()
 
 

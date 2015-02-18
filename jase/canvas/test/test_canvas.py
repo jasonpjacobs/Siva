@@ -206,7 +206,7 @@ def test_items(helper):
     v.zoom_fit()
     assert helper.hash() == b'49d6e3933de6bc9ec5d287500e7949f75dddcf85'
 
-    if False:
+    if True:
         cw.show()
         QTest.qWaitForWindowShown(cw)
         helper.app.exec_()

@@ -45,6 +45,9 @@ class LoopVariable(Variable):
         self.parent = None
         self.reset()
 
+    def clone(self):
+        return LoopVariable(name=self.name, target=self.target, start=self.start, values=self.values)
+
     def register(self, parent, dct, name=None):
         """Called by the Component metaclass to add child Components
         to the class's "param" dictionary
@@ -84,23 +87,13 @@ class LoopVariable(Variable):
 class LoopComponent(BaseComponent):
     def __init__(self, parent=None, vars=None, children=None, name=None, measurements=None, parallel=True, **kwargs):
 
+        #if self.__class__.__name__ is "LoopComponent":
+        #    raise TypeError("LoopComponents must be subclassed before use")
+
         if isinstance(vars, LoopVariable):
             vars = (vars,)
 
-        # If 'vars' was specified, we assume the procedural interface is being used to define the loop variables.
-        # If the declarative interface is used, loop_vars will already be populated
-        if vars is not None:
-            if hasattr(vars, '__getitem__'):
-                self.loop_vars = vars
-            else:
-                self.loop_vars = collections.OrderedDict([(v.name, v.value) for v in vars])
-
-        # Convert the parameters from a list to a dict
-        params = collections.OrderedDict()
-        if vars is not None:
-            for v in vars:
-                params[v.name] = v
-        super().__init__(parent=parent, children=children, name=name, params=params, measurements=measurements,
+        super().__init__(parent=parent, children=children, name=name, params=vars, measurements=measurements,
                          parallel=parallel, **kwargs)
 
     def __len__(self):
@@ -118,9 +111,6 @@ class LoopComponent(BaseComponent):
         self._i += 1
         if self.root.log:
             self.root.log.debug("{}: Loop __next__ ({})".format(self.inst_name, self._i,))
-
-        if self.name == 'l2' and self._i == 2:
-            pass
 
         var_vals = list(zip([v.name for v in self.loop_vars.values()], values))
         inst_name = self.name + "_" + str(self._i)

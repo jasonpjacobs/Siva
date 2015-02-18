@@ -18,13 +18,22 @@ class BaseComponent(Component):
                  log_file=None, disk_mgr=None, parallel=False):
         super().__init__(parent=parent, children=children, name=name)
 
+        # If 'vars' was specified, we assume the procedural interface is being used to define the loop variables.
+        # If the declarative interface is used, loop_vars will already be populated
         if params is not None:
-            # If given a dict, convert to a list
+            # Convert to list from dict, if needed
             if hasattr(params, 'values'):
                 params = params.values()
-            # Then update the parameter dictionary
+
             for param in params:
-                self.params[param.name] = param
+                param.register(self, self.__dict__)
+
+        if measurements is not None:
+            if hasattr(measurements, 'values'):
+                measurements = measurements.values()
+
+            for measurement in measurements:
+                measurement.register(self, self.__dict__)
 
         self.work_dir = work_dir
         self.results = Table()

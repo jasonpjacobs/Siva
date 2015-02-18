@@ -7,7 +7,7 @@ import numpy as np
 from ..loop_component import LoopVariable, LoopComponent
 from ..measurement import Measurement
 from ...simulation.variable import Variable
-
+import copy
 LOG = []
 class Mock:
     def __init__(self, int_var=0, str_var='string', float_var = 0.0):
@@ -47,18 +47,18 @@ def simple_loop(mock):
     5        2      B
     9        2      B
     """
-    a = LoopVariable('int', 'Loop.int_var', start=1, stop=9, step=2)
-    b = LoopVariable('float', 'Loop.float_var', start=-2., stop=2., n=3 ) # 3 values: -2, 0, 2
-    c = LoopVariable('str', 'Loop.str_var', values=['A', 'B', 'C'])
+    a = LoopVariable(name='int', target='Loop.int_var', start=1, stop=9, step=2)
+    b = LoopVariable(name='float', target='Loop.float_var', start=-2., stop=2., n=3 ) # 3 values: -2, 0, 2
+    c = LoopVariable(name='str', target='Loop.str_var', values=['A', 'B', 'C'])
 
-    m1 = Measurement('int_result', 'Loop.int_var')
-    m2 = Measurement('float_result', 'Loop.float_var')
-    m3 = Measurement('str_result', 'Loop.str_var')
+    m1 = Measurement(name='int_result', expr='Loop.int_var')
+    m2 = Measurement(name='float_result', expr='Loop.float_var')
+    m3 = Measurement(name='str_result', expr='Loop.str_var')
 
     loop = LoopComponent(parent=None, vars=[a,b,c], name='Loop', measurements=[m1, m2, m3])
     return loop
 
-def test_loop_creation(mock):
+def test_loop_variable_creation(mock):
     var = LoopVariable('int','mock.int_var', start=1, stop=9, step=2)
     assert len(var) == 5
     assert (var.values == np.array([1, 3, 5, 7, 9])).all()
@@ -78,6 +78,37 @@ def test_loop_creation(mock):
     var = LoopVariable('str', 'mock.str_var', values = ['a','b','c'])
     assert len(var) == 3
 
+def test_loop_variable_copy():
+    v1 = LoopVariable('int','mock.int_var', start=1, stop=9, step=2)
+    import copy
+    v2 = copy.copy(v1)
+
+    assert v1 is not v2
+
+def test_loop_component_copy():
+
+
+
+    a = LoopVariable(name='int_var', target='Loop.int_var', start=1, stop=9, step=2)
+    m1 = Measurement(name='m1', expr='Loop.int_var')
+
+    l2 = LoopComponent(parent=None, vars=None, name='l2', measurements=None)
+
+
+    l1 = LoopComponent(parent=None, vars=[a,], name='l1', measurements=[m1], children=[l2,])
+
+
+
+    assert 'int_var' in l1.params
+    assert 'm1' in l1.measurements
+
+    l2 = l1.clone()
+    assert 'int_var' in l2.params
+    assert 'm1' in l2.measurements
+
+    assert l1.measurements['m1'] is not l2.measurements['m1']
+
+
 
 def test_callable_loop_variable():
 
@@ -90,12 +121,13 @@ def test_callable_loop_variable():
             self.value = value
 
     m = Mock(name='M')
-    ms = Measurement('v', 'Loop.M.value')
-    var = LoopVariable('var', 'Loop.M.set_value', values=[0.33, 0.55, 0.77])
+    ms = Measurement('Loop.M.value', name='v')
+    var = LoopVariable(name='var', target='Loop.M.set_value', values=[0.33, 0.55, 0.77])
     loop = LoopComponent(vars = [var,], name='Loop', measurements=[ms,])
     loop.M = m
     results = []
     loop.start()
+    loop.wait()
 
     assert loop.results is not None
 
@@ -108,10 +140,13 @@ def test_simple_loop(simple_loop):
     assert len(simple_loop) == 45
 
     loop = simple_loop
-    i = 0
 
+    assert 'int_result' in loop.measurements
+    assert 'float_result' in loop.measurements
+    assert 'str_result' in loop.measurements
 
     loop.start()
+    loop.wait()
     results = loop.results
 
 
@@ -146,17 +181,17 @@ def hierarchical_loops(mock):
     work_dir = tempfile.mkdtemp()
     global M
     M = mock
-    m1 = Measurement('m1', 'l3.int_var')
-    m2 = Measurement('m2', 'l3.float_var')
-    m3 = Measurement('m3', 'l3.str_var')
+    m1 = Measurement(name='m1', expr='l3.int_var')
+    m2 = Measurement(name='m2', expr='l3.float_var')
+    m3 = Measurement(name='m3', expr='l3.str_var')
 
-    l1 = Measurement('l1', '"L1"')
-    l2 = Measurement('l2', '"L2"')
+    l1 = Measurement(name='l1', expr='"L1"')
+    l2 = Measurement(name='l2', expr='"L2"')
 
 
-    a = LoopVariable('int', 'l3.int_var', start=1, stop=9, step=2)
-    b = LoopVariable('float', 'l3.float_var', start=-2., stop=2., n=3, endpoint=True)
-    c = LoopVariable('str',  'l3.str_var', values=['"A"', '"B"', '"C"'])
+    a = LoopVariable(name='int', target='l3.int_var', start=1, stop=9, step=2)
+    b = LoopVariable(name='float', target='l3.float_var', start=-2., stop=2., n=3, endpoint=True)
+    c = LoopVariable(name='str',  target='l3.str_var', values=['"A"', '"B"', '"C"'])
 
     L3 = LoopComponent(parent=None, vars=[c,], name='l3', measurements=[m1,m2,m3])
     L2 = LoopComponent(parent=None, vars=[b,], name='l2', children=[L3,], measurements=[l2,])
@@ -172,9 +207,7 @@ def hierarchical_loops(mock):
 
 def test_hierarchical_loops(hierarchical_loops):
     loop = hierarchical_loops
-
     loop.namespace
-
 
     try:
         loop.start()
