@@ -14,7 +14,7 @@ class Sim(BaseComponent):
 
     def execute(self):
         print("Running ...", time.time())
-        time.sleep(5)
+        time.sleep(.01)
         self.y = self.x*2
 
 class Char(LoopComponent):
@@ -22,7 +22,7 @@ class Char(LoopComponent):
     sim = Sim()
     m1 = Measurement(expr='sim.m1')
 
-def XXXtest_sim():
+def test_sim():
     s = Sim()
 
     assert 'x' in Sim.params
@@ -49,13 +49,8 @@ def test_char():
     assert 'sim' in c.namespace
 
     c.start()
-    c.wait()
-    print_log(c)
     print(c.results)
-
-    assert False
-
-
+    assert c.results is not None
 
 def print_log(root):
     import os

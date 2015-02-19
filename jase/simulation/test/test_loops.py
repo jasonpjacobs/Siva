@@ -47,15 +47,17 @@ def simple_loop(mock):
     5        2      B
     9        2      B
     """
-    a = LoopVariable(name='int', target='Loop.int_var', start=1, stop=9, step=2)
+    a = LoopVariable(name='int', target='Loop.int_var', start=1, stop=9, step=2) #5 values: 1,3,5,7,9
     b = LoopVariable(name='float', target='Loop.float_var', start=-2., stop=2., n=3 ) # 3 values: -2, 0, 2
-    c = LoopVariable(name='str', target='Loop.str_var', values=['A', 'B', 'C'])
+    c = LoopVariable(name='str', target='Loop.str_var', values=['A', 'B', 'C']) # 3 values
 
     m1 = Measurement(name='int_result', expr='Loop.int_var')
     m2 = Measurement(name='float_result', expr='Loop.float_var')
     m3 = Measurement(name='str_result', expr='Loop.str_var')
 
     loop = LoopComponent(parent=None, vars=[a,b,c], name='Loop', measurements=[m1, m2, m3])
+
+
     return loop
 
 def test_loop_variable_creation(mock):
@@ -86,18 +88,10 @@ def test_loop_variable_copy():
     assert v1 is not v2
 
 def test_loop_component_copy():
-
-
-
     a = LoopVariable(name='int_var', target='Loop.int_var', start=1, stop=9, step=2)
     m1 = Measurement(name='m1', expr='Loop.int_var')
-
     l2 = LoopComponent(parent=None, vars=None, name='l2', measurements=None)
-
-
     l1 = LoopComponent(parent=None, vars=[a,], name='l1', measurements=[m1], children=[l2,])
-
-
 
     assert 'int_var' in l1.params
     assert 'm1' in l1.measurements
@@ -105,10 +99,7 @@ def test_loop_component_copy():
     l2 = l1.clone()
     assert 'int_var' in l2.params
     assert 'm1' in l2.measurements
-
     assert l1.measurements['m1'] is not l2.measurements['m1']
-
-
 
 def test_callable_loop_variable():
 
@@ -146,7 +137,6 @@ def test_simple_loop(simple_loop):
     assert 'str_result' in loop.measurements
 
     loop.start()
-    loop.wait()
     results = loop.results
 
 
@@ -219,9 +209,12 @@ def test_hierarchical_loops(hierarchical_loops):
 
     log_path = os.path.join(loop.root_dir, "disk_mgr.log")
     print(loop.log_file)
+
+
     print(loop.l2.l3.results)
 
-    assert True
+    lines=open(loop.log_file,'r').readlines()
+    print(lines)
 
 
 

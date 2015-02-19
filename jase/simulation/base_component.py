@@ -8,6 +8,31 @@ import h5py
 import os
 
 import collections
+
+class Status:
+    pass
+
+
+class Uninitialized(Status):
+    pass
+
+
+class Initialized(Status):
+    pass
+
+
+class Running(Status):
+    pass
+
+
+class Measured(Status):
+    pass
+
+
+class Finalized(Status):
+    pass
+
+
 class BaseComponent(Component):
     """ Base class for all simulation components
 
@@ -42,8 +67,9 @@ class BaseComponent(Component):
         self.log = None
 
         self.disk_mgr = disk_mgr
-
         self.parallel = parallel
+
+        self.status = Uninitialized
 
     @property
     def disk_mgr(self):
@@ -55,20 +81,59 @@ class BaseComponent(Component):
     def disk_mgr(self, value):
         self._disk_mgr = value
 
-    def start(self):
-        self._init()
-        try:
-            self.thread = threading.Thread(target=self._execute())
-            self.thread.start()
-        except StopIteration:
-            pass
-        self._final()
+    def start(self, wait=True):
+        """ Starts this component's portion of the analysis.
+        """
+        # Initialize:  Get disk space, logs, etc.
+        self.init()
+
+        # This component may spawn several variants to run in their own threads.  (E.g., loop iterations).
+        # These lists will keep track of them.
+        self.threads = []
+        self.variants = []
+
+        for iteration in self:
+            thread = threading.Thread(target=iteration.run)
+            self.threads.append(thread)
+            self.variants.append(iteration)
+
+            # Make sure variant knows who the master is, so they can report
+            # results to the same location
+            iteration.master = self
+
+        # Execute the threads
+        if len(self.threads) > 0:
+            if self.parallel:
+                for thread in self.threads:
+                    thread.start()
+                # Wait for all to finish
+                if wait:
+                    for thread in self.threads:
+                        thread.join()
+            else:
+                for thread in self.threads:
+                    thread.start()
+                    thread.join()
+        # Final clean up
+        if wait:
+            self.final()
+
+    def run(self):
+        """Called by a thread
+        """
+        self.execute()
+        for component in self.components.values():
+            component.start(wait=True)
+        self.measure()
 
     def wait(self):
-        if self.thread is not None:
-            self.thread.join()
+        """Waits for all running threads to complete
+        """
+        if self.threads is not None:
+            for thread in self.threads:
+                thread.join()
 
-    def _init(self):
+    def init(self):
         """ The first step in a simulation.
         * Initialize local variables.
         * Creates local directories on the work disk.
@@ -95,9 +160,7 @@ class BaseComponent(Component):
         # Create a results table
         self.results = Table()
 
-        self.init()
-        for component in self.children:
-            component._init()
+        self.status = Initialized
 
     def setup_logging(self):
         if self.log_file is not None:
@@ -115,56 +178,13 @@ class BaseComponent(Component):
 
             self.log_file = path
 
-    def _reset(self):
-        """
-        Used to reset the component to the initial state after having been run.
-        """
-        self.reset()
-        for component in self.children.values():
-            component._reset()
-
-    def _execute(self):
-        """ Execute the component's main task.  Simulation components will run the simulation. Loop components
-        will increment and set loop variables.  Search components will start a new set of trials.
-        """
-        if self.root.log:
-            self.root.log.debug("{} component executed".format(self.inst_name))
-
-        threads = []
-        for iteration in self:
-            thread = threading.Thread(target=iteration.spawn)
-            threads.append(thread)
-
-        if len(threads) > 0:
-            if self.parallel:
-                for thread in threads:
-                    thread.start()
-                # Wait for all to finish
-                for thread in threads:
-                    thread.join()
-            else:
-                for thread in threads:
-                    thread.start()
-                    thread.join()
-
-    def spawn(self):
-            if self.log:
-                self.log.debug("Spawning {} ({})".format(self.inst_name, id(self)))
-            self.execute()
-            for component in self.components.values():
-                component._execute()
-            self._measure()
-
-    def _measure(self):
-        # Evaluate all measurement statements
+    def measure(self):
         if self.root.log:
             self.root.log.debug("{} ({}): Evaluating measurements".format(self.inst_name, id(self)))
 
+        # Evaluate all measurement statements
         for m in self.measurements.values():
             m.evaluate(self.hierarchy_namespace)
-
-        # If the measure method was overridden, call it.
-        self.measure()
 
         # Now record input variables and measurement values
         # into the results table
@@ -176,16 +196,12 @@ class BaseComponent(Component):
         for m in self.measurements.values():
             record[m.name] = m.value
 
-        # Add it to the results table
-        self.results.add_row(record)
+        # Add it to the master's results table
+        self.master.results.add_row(record)
+        self.status = Measured
 
-    def _final(self):
-        if self.root.log:
-            self.root.log.debug("{}: Final postprocessing".format(self.inst_name))
-
-        for component in self.components.values():
-            component._final()
-        self.final()
+    def final(self):
+        pass
 
     def __iter__(self):
         self._i = 0
@@ -197,28 +213,6 @@ class BaseComponent(Component):
             raise StopIteration
         self._i += 1
         return self
-
-    def init(self):
-        """ The first step in a simulation.
-        * Initialize local variables.
-        * Creates local directories on the work disk.
-        """
-        pass
-
-    def reset(self):
-        """
-        Used to reset the component to the initial state after having been run.
-        """
-        pass
-
-    def execute(self):
-        pass
-
-    def measure(self, results=None):
-        pass
-
-    def final(self):
-        pass
 
     @property
     def editor(self):

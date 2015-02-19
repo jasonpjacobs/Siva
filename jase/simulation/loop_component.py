@@ -3,7 +3,7 @@ import numpy as np
 import itertools
 import collections
 
-from .base_component import BaseComponent
+from .base_component import BaseComponent, Running
 from .variable import Variable
 from ..components.parameter import Parameter
 class LoopVariable(Variable):
@@ -124,11 +124,6 @@ class LoopComponent(BaseComponent):
         return loop_iteration
 
     # BaseComponent interface
-    def init(self):
-        """
-        """
-        self.__iter__()
-
     def reset(self):
         """
         Used to reset the component to the initial state after having been run.
@@ -136,17 +131,13 @@ class LoopComponent(BaseComponent):
         self.__iter__()
 
     def execute(self):
+        self.status = Running
         for param in self.params.values():
             if self.root.log:
                 self.root.log.debug("{}: Setting {} to {}".format(self.inst_name, param.name, param.value))
             param.eval(globals(), self.hierarchy_namespace)
 
-    def _measure(self):
-        """Loop component implementation
-        """
-        if len(self.measurements) > 0:
-            super()._measure()
-        self.measure()
+
 
 
 
