@@ -103,7 +103,8 @@ class ResourceManager(threading.Thread):
         """
         if not self.queue.empty():
             request = self.queue.get()
-            self.logger.debug("Processing request: {}".format(request))
+            if self.logger:
+                self.logger.debug("Processing request: {}".format(request))
             request.resource = self.get_resource(request)
             request.set()
         else:
