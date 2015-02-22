@@ -85,7 +85,7 @@ class BaseComponent(Component):
         """ Starts this component's portion of the analysis.
         """
         # Initialize:  Get disk space, logs, etc.
-        self.init()
+        self.initialize()
 
         # This component may spawn several variants to run in their own threads.  (E.g., loop iterations).
         # These lists will keep track of them.
@@ -133,7 +133,7 @@ class BaseComponent(Component):
             for thread in self.threads:
                 thread.join()
 
-    def init(self):
+    def initialize(self):
         """ The first step in a simulation.
         * Initialize local variables.
         * Creates local directories on the work disk.
@@ -212,6 +212,8 @@ class BaseComponent(Component):
         if self._i > 0:
             raise StopIteration
         self._i += 1
+
+        #return self.clone()
         return self
 
     @property
