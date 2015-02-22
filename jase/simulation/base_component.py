@@ -71,6 +71,8 @@ class BaseComponent(Component):
 
         self.status = Uninitialized
 
+        self.master = self
+
     @property
     def disk_mgr(self):
         if not hasattr(self,'_disk_mgr'):
@@ -229,6 +231,8 @@ class BaseComponent(Component):
     @inst_name.setter
     def inst_name(self, value):
         self._inst_name = value
+
+
 
     def __repr__(self):
         name = "{}(name={})".format(self.__class__.__name__, self.inst_name)
