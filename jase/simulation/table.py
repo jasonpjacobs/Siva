@@ -61,5 +61,14 @@ class Table:
     def __getitem__(self, item):
         return self.columns[item]
 
+    def __len__(self):
+        return self.num_rows
+
+    def get_row(self, row):
+        row_dict = OrderedDict()
+        for column in self.columns:
+            row_dict[column] = self.columns[column][row]
+        return row_dict
+
 
 
