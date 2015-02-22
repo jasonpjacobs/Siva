@@ -139,10 +139,14 @@ class Spice(metaclass=SpiceMetaclass):
         self.log_file = os.path.join(self.work_dir, "sim.log")
         cmd = "{sim} -o {out} -a".format(sim=self.simulator_path, out=self.results_file)
         result = subprocess.call([self.simulator_path, "-l", self.log_file, "-o", self.results_file, self.netlist])
-        print("Result:", result)
+        #print("Result:", result)
         if result == 0:
-            self.results = self.load_results()
+            try:
+                self.results = self.load_results()
+            except FileNotFoundError:
+                print("No results for:", self.work_dir)
 
+                pass
 
     def _post_process(self):
         pass

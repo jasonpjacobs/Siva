@@ -7,8 +7,8 @@ from .base_component import BaseComponent, Running
 from .variable import Variable
 from ..components.parameter import Parameter
 class LoopVariable(Variable):
-    def __init__(self, name, target=None, start=None, stop=None, step=None, n=None,
-                 values=None, endpoint=True, space="linear", desc=None):
+    def __init__(self, target=None, start=None, stop=None, step=None, n=None,
+                 values=None, endpoint=True, space="linear", name=None, desc=None):
 
         super().__init__(name, target, desc)
 

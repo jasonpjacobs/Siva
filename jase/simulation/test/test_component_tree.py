@@ -14,7 +14,10 @@ class MockComponent(BaseComponent):
         self.measure_called = False
         self.final_called = False
 
-    def init(self):
+    def prepare(self):
+        self.LOG.append("{}.prepare".format(self.name))
+
+    def initialize(self):
         self.LOG.append("{}.init".format(self.name))
         self.init_called = True
 

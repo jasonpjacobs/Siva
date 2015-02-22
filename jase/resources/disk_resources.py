@@ -93,7 +93,6 @@ class LocalDiskManager(DiskManager):
                 self.resources.append(resource)
                 return resource
             else:
-                print("Waiting for disk space")
                 if self.logger:
                     self.logger.info("Waiting for more disk space")
                 time.sleep(self.polling_time)

@@ -217,11 +217,14 @@ class Component(metaclass=ComponentMeta):
 
     @property
     def hierarchy_params(self):
-        params = {}
+        params = collections.OrderedDict()
 
         if self.parent:
+
             params.update(self.parent.hierarchy_params)
-        params.update(self.params)
+
+        for p in self.params.values():
+            params[p.name] = p.value
         return params
 
     def __repr__(self):

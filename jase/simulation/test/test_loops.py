@@ -61,27 +61,27 @@ def simple_loop(mock):
     return loop
 
 def test_loop_variable_creation(mock):
-    var = LoopVariable('int','mock.int_var', start=1, stop=9, step=2)
+    var = LoopVariable(name='int',target='mock.int_var', start=1, stop=9, step=2)
     assert len(var) == 5
     assert (var.values == np.array([1, 3, 5, 7, 9])).all()
 
-    var = LoopVariable('int',mock.int_var, start=1, stop=10, step=2)
+    var = LoopVariable(name='int',target=mock.int_var, start=1, stop=10, step=2)
     assert len(var) == 5
     assert (var.values == np.array([1, 3, 5, 7, 9])).all()
 
-    var = LoopVariable('int',mock.int_var, start=9, stop=1, step=-2)
+    var = LoopVariable(name='int',target=mock.int_var, start=9, stop=1, step=-2)
     assert len(var) == 5
     assert (var.values == np.array([9., 7., 5., 3., 1.])).all()
 
-    var = LoopVariable('int',mock.int_var, start=10, stop=1, step=-2)
+    var = LoopVariable(name='int',target=mock.int_var, start=10, stop=1, step=-2)
     assert len(var) == 5
     assert (var.values == np.array([10., 8., 6., 4., 2.])).all()
 
-    var = LoopVariable('str', 'mock.str_var', values = ['a','b','c'])
+    var = LoopVariable(name='str', target='mock.str_var', values = ['a','b','c'])
     assert len(var) == 3
 
 def test_loop_variable_copy():
-    v1 = LoopVariable('int','mock.int_var', start=1, stop=9, step=2)
+    v1 = LoopVariable(name='int',target='mock.int_var', start=1, stop=9, step=2)
     import copy
     v2 = copy.copy(v1)
 
