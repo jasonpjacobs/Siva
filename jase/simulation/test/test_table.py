@@ -30,3 +30,20 @@ def test_simple_table(simple_table):
     assert t.columns['gender'][1] == 'Female'
     assert t.columns['gender'][2] == 'Female'
 
+
+    assert len(t) == 3
+
+    assert t.get_row(0)["name"] == 'Adam'
+
+
+def test_row_iteration(simple_table):
+    t = simple_table
+    num_rows = len(simple_table)
+
+    i=0
+    for row in t:
+        print(row)
+        expected = t.get_row(i)
+        for column in expected:
+            assert row[column] == expected[column]
+        i += 1

@@ -65,10 +65,25 @@ class Table:
         return self.num_rows
 
     def get_row(self, row):
+        if row > len(self) - 1:
+            raise IndexError("Table only has {} rows. Row {} requested.".format(len(self), row + 1))
         row_dict = OrderedDict()
         for column in self.columns:
             row_dict[column] = self.columns[column][row]
         return row_dict
+
+    def __iter__(self):
+        self._current_row = 0
+        return self
+
+    def __next__(self):
+        if self._current_row > len(self) - 1:
+            raise StopIteration
+        
+        row = self.get_row(self._current_row)
+        self._current_row += 1
+        return row
+
 
 
 
