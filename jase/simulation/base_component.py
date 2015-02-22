@@ -73,6 +73,8 @@ class BaseComponent(Component):
 
         self.master = self
 
+        self.lock = threading.Lock()
+
     @property
     def disk_mgr(self):
         if not hasattr(self,'_disk_mgr'):
@@ -160,7 +162,8 @@ class BaseComponent(Component):
         self.setup_logging()
 
         # Create a results table
-        self.results = Table()
+        with self.lock:
+            self.results = Table()
 
         self.status = Initialized
 
@@ -198,7 +201,8 @@ class BaseComponent(Component):
             record[m.name] = m.value
 
         # Add it to the master's results table
-        self.master.results.add_row(record)
+        with self.lock:
+            self.master.results.add_row(record)
         self.status = Measured
 
     def final(self):
