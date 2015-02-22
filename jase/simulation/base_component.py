@@ -96,7 +96,7 @@ class BaseComponent(Component):
         self.threads = []
         self.variants = []
 
-        for iteration in self:
+        for index, iteration in enumerate(self):
             thread = threading.Thread(target=iteration.run)
             self.threads.append(thread)
             self.variants.append(iteration)
@@ -104,6 +104,10 @@ class BaseComponent(Component):
             # Make sure variant knows who the master is, so they can report
             # results to the same location
             iteration.master = self
+
+            # The variant should also know its index, so it
+            # can add its results to the correct row in the results table
+            iteration.index = index
 
         # Execute the threads
         if len(self.threads) > 0:
@@ -194,7 +198,7 @@ class BaseComponent(Component):
         # Now record input variables and measurement values
         # into the results table
         record = {}
-        record.update(self.hierarchy_namespace)
+        record.update(self.hierarchy_params)
 
         # As well as the measured values
         for m in self.measurements.values():
@@ -235,7 +239,6 @@ class BaseComponent(Component):
     @inst_name.setter
     def inst_name(self, value):
         self._inst_name = value
-
 
 
     def __repr__(self):

@@ -14,7 +14,7 @@ class Sim(BaseComponent):
 
     def execute(self):
         print("Running ...", time.time())
-        time.sleep(.01)
+        time.sleep(.1)
         self.y = self.x*2
 
 class Char(LoopComponent):
@@ -35,7 +35,11 @@ def test_sim():
     s.execute()
     assert s.y == 20
 
+    s.measure()
     assert 'm1' in s.measurements
+
+    assert s.measurements['m1'].value == 20
+    assert s.m1 == 20
 
 def test_char():
     work_dir = tempfile.mkdtemp()
@@ -51,6 +55,18 @@ def test_char():
     c.start()
     print(c.results)
     assert c.results is not None
+
+    assert set(c.results.columns) == set(["x", "m1"])
+    assert len(c.results) == 10
+
+    print(c.results)
+
+    i=0
+    for row in c.results:
+        assert row['m1'] == i*2.
+        i += 1
+    assert False
+
 
 def print_log(root):
     import os
