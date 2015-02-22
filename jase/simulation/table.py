@@ -16,21 +16,41 @@ class Table:
         self.w = 8
 
 
-    def add_row(self, *columns):
+    def add_row(self, *columns, row=None):
+        """Adds a row to the table to the specified row.  If the row is not
+        specified, the row is added to the end of the table.
+
+        The columns argument can be given as a dictionary of column/value pairs, or
+        as a list of values.  If a list of values is given, the table's native column
+        order is assumed.
+        """
+
+        # Handle columns as a dictionary
         if hasattr(columns[0], 'keys'):
             values_dict = columns[0]
             for key in values_dict.keys():
+                # Create the column dict if it does not already exist.
                 if key not in self.columns:
                     self.columns[key] = []
-                self.columns[key].append(values_dict[key])
-
+        # Handle a list of values
         else:
+            values_list = columns
             if not len(columns) == len(self.columns):
                 raise ValueError("Number of items does not match the number of columns. {} vs {}".format(
                     len(columns),len(self.columns)))
+            values_dict = dict((k,v) for k,v in zip(self.columns.keys(), values_list))
 
-            for val, col in zip(columns, self.columns.values()):
-                col.append(val)
+        # Now handle the row argument.  If the row is None, append the data
+        if row is None:
+            for key in self.columns.keys():
+                self.columns[key].append(values_dict[key])
+        else:
+            for key, col in self.columns.items():
+                while len(col) < row + 1:
+                    col.append(None)
+                col[row] = values_dict[key]
+
+
 
     def __str__(self):
         # Check for empty table
@@ -79,7 +99,7 @@ class Table:
     def __next__(self):
         if self._current_row > len(self) - 1:
             raise StopIteration
-        
+
         row = self.get_row(self._current_row)
         self._current_row += 1
         return row
