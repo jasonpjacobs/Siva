@@ -189,8 +189,7 @@ class BaseComponent(Component):
         # Now record input variables and measurement values
         # into the results table
         record = {}
-        for param in self.hierarchy_params.values():
-            record[param.name] = param.value
+        record.update(self.hierarchy_namespace)
 
         # As well as the measured values
         for m in self.measurements.values():
