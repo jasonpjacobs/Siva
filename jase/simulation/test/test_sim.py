@@ -63,9 +63,8 @@ def test_char():
 
     i=0
     for row in c.results:
-        assert row['m1'] == i*2.
+        assert row['m1'] == (i+1)*2.
         i += 1
-    assert False
 
 
 def print_log(root):

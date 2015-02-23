@@ -72,6 +72,7 @@ class BaseComponent(Component):
         self.status = Uninitialized
 
         self.master = self
+        self.index = None
 
         self.lock = threading.Lock()
 
@@ -206,7 +207,7 @@ class BaseComponent(Component):
 
         # Add it to the master's results table
         with self.lock:
-            self.master.results.add_row(record)
+            self.master.results.add_row(record, row=self.index)
         self.status = Measured
 
     def final(self):
