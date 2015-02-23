@@ -19,7 +19,7 @@ from ..ui.device_selector_widget import DeviceSelectorWidget
 from ..ui.properties_widget import PropertiesWidget
 from .app import App
 
-from ..design.library import LibDefs
+from ..design_database.library import LibDefs
 from ..icons import ICONS
 
 
@@ -143,7 +143,7 @@ class Main(QtGui.QMainWindow):
 
 
     def read_libdefs(self):
-        from ..design.importer import DesignFinder
+        from ..design_database.importer import DesignFinder
         import db_root
 
         self.info("Reading library definitions")

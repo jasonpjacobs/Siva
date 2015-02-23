@@ -2,9 +2,9 @@ import pytest
 import os, sys
 
 import jase
-from jase.design.importer import DesignFinder
-from jase.design.library import LibDefs, Library
-from jase.design.cell import Cell
+from jase.design_database.importer import DesignFinder
+from jase.design_database.library import LibDefs, Library
+from jase.design_database.cell import Cell
 
 @pytest.fixture
 def finder():

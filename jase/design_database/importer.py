@@ -2,8 +2,8 @@ import types
 import sys
 import os
 import importlib.abc
-from jase.design.library import Library
-from jase.design.cell import Cell
+from jase.design_database.library import Library
+from jase.design_database.cell import Cell
 class DB:
     pass
 

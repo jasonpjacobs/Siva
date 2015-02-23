@@ -3,7 +3,7 @@ import os
 
 import db_root
 from jase import Component
-from jase.design.library import LibDefs
+from jase.design_database.library import LibDefs
 
 @pytest.fixture
 def lib_defs():
