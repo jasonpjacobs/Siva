@@ -24,7 +24,7 @@ class Xyce(Spice):
             # Parse the header to get wave names, number of vars and points
             headers = {}
             VARS_FOUND = False
-
+            data_format = None
             for line in lines:
                 if line == "Binary:":
                     break
@@ -53,6 +53,7 @@ class Xyce(Spice):
             elif data_format == "complex":
                 cols_per_value = 2
             else:
+                print("ERROR:  XYCE results file wasn't formatted properly")
                 pdb.set_trace()
 
             try:

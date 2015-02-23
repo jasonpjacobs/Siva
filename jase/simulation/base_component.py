@@ -78,7 +78,7 @@ class BaseComponent(Component):
 
     @property
     def disk_mgr(self):
-        if not hasattr(self,'_disk_mgr'):
+        if self._disk_mgr is None and self.work_dir is not None:
             return LocalDiskManager(root=self.work_dir)
         return self._disk_mgr
 
@@ -157,7 +157,7 @@ class BaseComponent(Component):
         for comp in self.path_components:
             if comp.name is None:
                 raise ValueError("Component must have a name: {}".format(self))
-        subdirs = [comp.name for comp in self.path_components]
+        subdirs = [comp.inst_name for comp in self.path_components]
 
         if disk_mgr:
             request = disk_mgr.request(job=self, subdirs=subdirs)
@@ -240,6 +240,11 @@ class BaseComponent(Component):
     @inst_name.setter
     def inst_name(self, value):
         self._inst_name = value
+
+
+    @property
+    def root(self):
+        return super().root.master
 
 
     def __repr__(self):
