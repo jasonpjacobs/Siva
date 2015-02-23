@@ -48,7 +48,8 @@ class Table:
             for key, col in self.columns.items():
                 while len(col) < row + 1:
                     col.append(None)
-                col[row] = values_dict[key]
+                if key in values_dict:
+                    col[row] = values_dict[key]
 
 
 

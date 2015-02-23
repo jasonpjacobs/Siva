@@ -59,3 +59,15 @@ def test_row_iteration(simple_table):
         for column in expected:
             assert row[column] == expected[column]
         i += 1
+
+def test_add_column(simple_table):
+    t = simple_table
+    for i in range(len(t)):
+        t.add_row({'ID':i}, row=i)
+
+    # Make sure the original table wasn't altered
+    test_simple_table(t)
+
+    # And that the new column is correct
+    for i,row in enumerate(t):
+        assert row["ID"] == i
