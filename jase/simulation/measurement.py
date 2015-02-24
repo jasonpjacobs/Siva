@@ -1,24 +1,18 @@
 import collections
 from ..components.component import ComponentDict
+from ..components.registered import Registered
 
-class Measurement:
+class Measurement(Registered):
+    dict_name = "measurements"
+
     def __init__(self, expr, name=None, spec=None):
         self.name = name
         self.expr = expr
         self.spec = spec
         self.value = None
 
-    def register(self, parent, dct, name=None):
-        """Called by the Component metaclass to add child Components
-        to the class's "measurements" dictionary
-        """
-        if name is not None:
-            self.name = name
-
-        self.parent = parent
-        if "measurements" not in dct:
-            dct["measurements"] = collections.OrderedDict()
-        dct["measurements"][self.name] = self
+    def _store(self, dct):
+        self._store_as_value(dct)
 
     def __set__(self, instance, value):
         instance.measurements[self.name].value = value

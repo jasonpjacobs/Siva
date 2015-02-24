@@ -7,6 +7,7 @@ from .base_component import BaseComponent, Running
 from .variable import Variable
 from ..components.parameter import Parameter
 class LoopVariable(Variable):
+    dict_name = "params"
     def __init__(self, target=None, start=None, stop=None, step=None, n=None,
                  values=None, endpoint=True, space="linear", name=None, desc=None):
 
@@ -48,18 +49,15 @@ class LoopVariable(Variable):
     def clone(self):
         return LoopVariable(name=self.name, target=self.target, start=self.start, values=self.values)
 
-    def register(self, parent, dct, name=None):
+    def register(self, parent, class_dct, name=None):
         """Called by the Component metaclass to add child Components
         to the class's "param" dictionary
         """
-        if name is not None:
-            self.name = name
+        super().register(parent=parent, class_dct=class_dct, name=name)
 
-        self.parent = parent
-        if "loop_vars" not in dct:
-            dct["loop_vars"] = collections.OrderedDict()
-        dct["loop_vars"][self.name] = self
-        dct["params"][self.name] = self
+        # We also register under the "loop_vars" dict, so the LoopComponent
+        # can keep track of them.
+        super().register(parent=parent, class_dct=class_dct, name=name, key="loop_vars")
 
     def __iter__(self):
         self.reset()

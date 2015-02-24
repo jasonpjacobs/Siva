@@ -41,6 +41,8 @@ def test_sim():
     assert s.measurements['m1'].value == 20
     assert s.m1 == 20
 
+
+
 def test_char():
     work_dir = tempfile.mkdtemp()
     c = Char(name="Char", work_dir=work_dir, log_file="char.log")
@@ -48,6 +50,8 @@ def test_char():
     assert c is not None
     assert c.sim is not None
     assert 'x' in c.params
+
+    assert 'loop_vars' in Char._component_dicts
 
     assert 'x' in c.loop_vars
     assert 'sim' in c.namespace

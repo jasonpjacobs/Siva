@@ -15,19 +15,7 @@ import pdb
 import collections
 import copy
 
-from ..types import Typed
-from ..types.hierarchy import Node as TreeNode
-
-class ComponentDict(collections.OrderedDict):
-    def __init__(self, owner, *args, **kwargs):
-        self.owner = owner
-        super().__init__(*args, **kwargs)
-
-    def __deepcopy__(self, memo):
-        new_copy = self.__class__(owner=self.owner)
-        for k,v in self.items():
-            new_copy[k] = copy.deepcopy(v, memo)
-        return new_copy
+from .registered import Registered, ComponentDict
 
 class ComponentMeta(type):
     """Meta class for all Components.  This metaclass will allow
@@ -36,9 +24,7 @@ class ComponentMeta(type):
 
     """
     def __new__(cls, name, bases, dct):
-        dct['components'] = ComponentDict(owner=cls)
-        dct['params'] = ComponentDict(owner=cls)
-        dct['measurements'] = ComponentDict(owner=cls)
+        dct['_component_dicts'] = []
 
         # Go through the instances created during class definition
         # and handle any items that request registration
@@ -46,13 +32,12 @@ class ComponentMeta(type):
         # dct will get appended to while iterating over it, so we need
         # to make a copy before iteration
         items = [(k,v) for k,v in dct.items()]
-        for key, value in items:
-            if hasattr(value,'register'):
-                value.register(parent=cls, dct=dct, name=key)
-
+        for name, item in items:
+            if hasattr(item,'register'):
+                item.register(parent=cls, class_dct=dct, name=name)
         return super().__new__(cls, name, bases, dct)
 
-class Component(metaclass=ComponentMeta):
+class Component(Registered, metaclass=ComponentMeta):
     """
     Features:
     * Dotted path description and resolution
@@ -63,43 +48,78 @@ class Component(metaclass=ComponentMeta):
     """
     # Instance dicts to copy when cloning
 
-    _component_dicts = ["components", "params"]
+
+    dict_name = "components"
 
     def __new__(cls, *args, **kwargs):
         inst = super().__new__(cls)
 
         """
-        When defined as part of a Comopnent class definition, child components, parameters,
+        When defined as part of a Component class definition, child components, parameters,
         and other attributes are stored in the class dictionary.
 
         In order to prevent instance modification from affecting the class definition,
         we create copies of these items.
         """
-
         for dict_name in cls._component_dicts:
-            inst_dict = ComponentDict(owner=inst)
-            setattr(inst, dict_name, inst_dict)
-            class_dct = getattr(cls, dict_name)
+            # Get the original dict from the class
+            comp_dict = getattr(cls, dict_name)
 
-            for name, item in class_dct.items():
-                if hasattr(item, 'clone'):
-                    inst_item = item.clone()
-                else:
-                    inst_item = copy.deepcopy(item)
-                inst_item.parent = inst
-                inst_dict[item.name] = inst_item
+            # Create a copy
+            inst_dict = comp_dict.clone(owner=inst)
+
+            # Add it to the instance
+            setattr(inst, dict_name, inst_dict)
+
         return inst
 
-    def register(self, parent, dct, name=None):
-        """Called by the Component metaclass to add child Components
-        to the class's "component" dictionary prior to calling
-        the class's __new__ method.
-        """
-        if name is not None:
-            self.name = name
+    if False:
+        def register(self, parent, name, class_dct, key=None):
+            """Called by the Component metaclass to add child Components
+            to the class's *dict_name* dictionary
+            """
+            if name is not None:
+                self.name = name
 
-        self.parent = parent
-        dct["components"][self.name] = self
+            self.parent = parent
+
+            if key is None:
+                dict_name = self.__class__.dict_name
+            else:
+                dict_name = key
+
+            if dict_name not in class_dct:
+                class_dct[dict_name] = ComponentDict(owner=parent)
+
+            self._store(class_dct[dict_name])
+
+
+        def _store(self, dct):
+            self._store_as_value(dct)
+
+        def _store_as_value(self, dct):
+            dct[self.name] = self
+
+        def _store_as_list(self, dct):
+            if self.name not in dct:
+                dct[self.name] = []
+            dct[self.name].append(self)
+
+        def _store_as_dict(self, dct, key):
+            if self.name not in dct:
+                dct[self.name] = {}
+            dct[key] = self
+
+        def XXregister(self, parent, dct, name=None):
+            """Called by the Component metaclass to add child Components
+            to the class's "component" dictionary prior to calling
+            the class's __new__ method.
+            """
+            if name is not None:
+                self.name = name
+
+            self.parent = parent
+            dct["components"][self.name] = self
 
     def clone(self, clone_inst=None, **kwargs):
         """ Create a clone of self.
@@ -109,8 +129,8 @@ class Component(metaclass=ComponentMeta):
         if clone_inst is None:
             clone_inst = self.__class__(name=self.name)
 
-        clone_inst.components = ComponentDict(owner=clone_inst)
-        clone_inst.params = ComponentDict(owner=clone_inst)
+        #clone_inst.components = ComponentDict(owner=clone_inst)
+        #clone_inst.params = ComponentDict(owner=clone_inst)
 
         for dict_name in self._component_dicts:
             inst_dict = ComponentDict(owner=clone_inst)
@@ -141,17 +161,6 @@ class Component(metaclass=ComponentMeta):
         if children is not None:
             for child in children:
                 self.add_instance(child)
-
-    def __set__(self, instance, value):
-        instance.components[self.name] = value
-
-    def __get__(self, instance, owner):
-        if instance is not None:
-            # Called on instance
-            return instance.components[self.name]
-        else:
-            # Called on Class
-            return owner.components[self.name]
 
     @property
     def children(self):
@@ -205,7 +214,7 @@ class Component(metaclass=ComponentMeta):
     @property
     def hierarchy_namespace(self):
         """Gets the name space for all components up the hierarchy,
-        from this comppnent's point of view.
+        from this component's point of view.
         """
         ns = {}
 
@@ -231,12 +240,6 @@ class Component(metaclass=ComponentMeta):
         name = "{}(name={})".format(self.__class__.__name__, self.name)
         return name
 
-    def __getattr__(self, item):
-        if item in self.components:
-            return self.components[item]
-        else:
-            raise AttributeError
-
     def add_instance(self, inst, name=None):
         if name is None:
             if hasattr(inst, 'name') and inst.name is not None:
@@ -246,12 +249,4 @@ class Component(metaclass=ComponentMeta):
         inst.name = name
         inst.parent = self
 
-        # Add the instance to the Class dictionary, so the descriptor
-        # protocol will be used for attribute access.
-        #inst.register(self, dct=self.__class__.__dict__, name=name)
-
-        # And add it to the instance dictionary as well.
-        inst.register(self, dct=self.__dict__, name=name)
-
-
-
+        inst.register_from_inst(self, cls=self.__class__, name=name)

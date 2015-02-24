@@ -1,6 +1,7 @@
 import inspect
+from ..components.registered import Registered
 
-class Parameter:
+class Parameter(Registered):
     """ A class to define Component level attributes.
 
     Parameter can be declared as pat of a class definition using a declarative syntax:
@@ -14,27 +15,22 @@ class Parameter:
 
     """
 
+    # When instantiated as part of a Component's class dictionary, this Param
+    # will be stored in a dictionary named "dict_name"
+    dict_name = "params"
 
     def __init__(self, value=None, local=False, name=None):
         self.value = value
         self.local = local
         self.name = name
 
-    def register(self, parent, dct, name=None):
-        """Called by the Component metaclass to add child Components
-        to the class's "param" dictionary
-        """
-        if name is not None:
-            self.name = name
-
-        self.parent = parent
-        dct["params"][self.name] = self
-
     def __set__(self, instance, value):
-        instance.params[self.name].value = value
+        dct = getattr(instance, self.__class__.dict_name)
+        dct[self.name].value = value
 
     def __get__(self, instance, owner):
-        return instance.params[self.name].value
+        dct = getattr(instance, self.__class__.dict_name)
+        return dct[self.name].value
 
     @property
     def value(self):
@@ -46,6 +42,9 @@ class Parameter:
 
     @property
     def evaluated_value(self):
+        """ If the parameter's value is an expression, the *evaluated_value* attribute
+        stores the result of the evaluation.
+        """
         if hasattr(self, '_evaluated_value') and self._evaluated_value is not None:
             return self._evaluated_value
         else:
