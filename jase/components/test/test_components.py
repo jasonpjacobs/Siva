@@ -77,7 +77,6 @@ def test_procedural_model(procedural_model):
     assert 'i2' in a.components
     assert 'c2' in a.components
 
-"""
 def test_paths(model):
     a = model
     assert repr(a) == 'A(name=a)'
@@ -99,7 +98,7 @@ def test_paths(model):
     assert pc[1] is a.b
     assert pc[2] is a.b.c
 
-
+"""
 
 
 def test_model_modification():
@@ -218,8 +217,6 @@ def test_param_descriptors(hier_with_params):
     assert a.params['d'].value == 42.3
 
 """
-
-
 
 
 

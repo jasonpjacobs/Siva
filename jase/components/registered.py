@@ -89,6 +89,10 @@ class Registered:
         else:
             dict_name = key
 
+        # Add ourselves to the class dictionary
+        setattr(cls, self.name, self)
+
+        # And our component dict as well
         if not hasattr(cls, dict_name):
             component_dict = ComponentDict(owner=parent)
             setattr(cls, dict_name, component_dict)

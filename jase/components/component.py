@@ -237,7 +237,7 @@ class Component(Registered, metaclass=ComponentMeta):
         return params
 
     def __repr__(self):
-        name = "{}(name={})".format(self.__class__.__name__, self.name)
+        name = "{}(name={})".format(self.__class__.__qualname__, self.name)
         return name
 
     def add_instance(self, inst, name=None):
