@@ -37,9 +37,9 @@ class ComponentMeta(type):
         # dct will get appended to while iterating over it, so we need
         # to make a copy before iteration
         items = [(k,v) for k,v in dct.items() if not k.startswith('_')]
-        for name, item in items:
+        for item_name, item in items:
             if hasattr(item,'register'):
-                item.register(parent=cls, class_dct=dct, name=name)
+                item.register(parent=cls, class_dct=dct, name=item_name)
         return super().__new__(cls, name, bases, dct)
 
 class Component(Registered, metaclass=ComponentMeta):
