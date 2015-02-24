@@ -98,7 +98,7 @@ def test_paths(model):
     assert pc[1] is a.b
     assert pc[2] is a.b.c
 
-"""
+
 
 
 def test_model_modification():
@@ -215,8 +215,6 @@ def test_param_descriptors(hier_with_params):
     a.d = 42.3
     assert a.d == 42.3
     assert a.params['d'].value == 42.3
-
-"""
 
 
 

@@ -17,7 +17,10 @@ class ComponentDict(collections.OrderedDict):
             owner = self.owner
         new_copy = self.__class__(owner=owner)
         for k,v in self.items():
-            copied_item = copy.copy(v)
+            if hasattr(v, 'clone'):
+                copied_item = v.clone()
+            else:
+                copied_item = copy.copy(v)
             new_copy[k] = copied_item
             if hasattr(v, 'parent'):
                 copied_item.parent = owner
