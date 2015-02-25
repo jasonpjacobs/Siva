@@ -1,8 +1,6 @@
-from .descriptors import StringType
-from .command import Command
+from jase.old_spice.descriptors import StringType
+from jase.old_spice.command import Command
 
-import inspect
-import pdb
 
 class Library(Command):
     keyword = "LIB"

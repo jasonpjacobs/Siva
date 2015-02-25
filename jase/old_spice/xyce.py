@@ -1,8 +1,10 @@
-
-from .spice import Spice
-import numpy as np
 import struct
 import pdb
+
+import numpy as np
+
+from jase.old_spice.spice import Spice
+
 
 class Xyce(Spice):
     _parse_params = False

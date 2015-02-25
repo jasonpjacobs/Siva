@@ -1,14 +1,13 @@
-import pdb
 import collections
 import os
 import inspect
 import subprocess
 
-from .command import Command
+from jase.old_spice.command import Command
+
 from .node import Node
 from .analysis import Analysis
 
-from ..simulation.base_component import BaseComponent
 
 class SpiceDict(collections.OrderedDict):
     default_factor = Node

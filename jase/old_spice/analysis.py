@@ -1,7 +1,7 @@
 
 
-from .command import Command
-from .descriptors import Variable, FloatType, Int, EnumType, BoolType
+from jase.old_spice.command import Command
+from jase.old_spice.descriptors import Variable, FloatType, Int, EnumType, BoolType
 
 class Analysis(Command):
 

@@ -1,7 +1,7 @@
 
-from .descriptors import NodeType, FloatType, Int, StringType, Type
-from .command import Command
-import pdb
+from jase.old_spice.descriptors import NodeType, FloatType, Int, StringType
+from jase.old_spice.command import Command
+
 
 class Primitive(Command):
     def parse_kwargs(self, kwargs):

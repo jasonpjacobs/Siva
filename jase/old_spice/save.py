@@ -1,6 +1,5 @@
 
-from .command import Command
-import pdb
+from jase.old_spice.command import Command
 
 
 class Save(Command):
