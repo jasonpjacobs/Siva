@@ -40,6 +40,9 @@ class ComponentMeta(type):
         for item_name, item in items:
             if hasattr(item,'register'):
                 item.register(parent=cls, class_dct=dct, name=item_name)
+
+        for directive in dct.get('_directives', []):
+            directive.register(parent=cls, class_dct=dct, )
         return super().__new__(cls, name, bases, dct)
 
 class Component(Registered, metaclass=ComponentMeta):

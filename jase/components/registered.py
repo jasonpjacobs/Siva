@@ -30,7 +30,7 @@ class Registered:
     """A mix-in class to allow subclasses to register themselves when instantiated during
     their parent's class definition
     """
-    def register(self, parent, name, class_dct=None, key=None):
+    def register(self, parent, name=None, class_dct=None, key=None):
         """Called by the Component metaclass to add child Components
         to the class's *dict_name* dictionary
 
