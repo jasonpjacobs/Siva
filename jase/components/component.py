@@ -10,26 +10,65 @@ component.  Loops (over parameters, voltage, temperature), searches, and optimiz
 components.
 """
 
-import pdb
-
 import collections
 import copy
+import inspect
 
 from .registered import Registered, ComponentDict
+
+class ComponentNamespace(collections.OrderedDict):
+    """ A dictionary that provides instances of a default class
+    for missing items in the class definition namespace.  For example, when
+    defining a Spice (simulation) component, undefined names will become
+    Net instances.
+    """
+    def __init__(self, default=None, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Default is a class..
+        assert(callable(default))
+        self.default = default
+
+    def __missing__ (self, key):
+        # Get the locals and globals from the frame where the parent class is being defined
+        frame = inspect.currentframe()
+        c_locals = frame.f_back.f_back.f_locals
+        c_globals = frame.f_back.f_back.f_globals
+
+        # Only create defaults for names that would otherwise raise an
+        # attribute error
+        if key in c_globals or key in c_locals or key in __builtins__:
+            raise KeyError(key)
+        else:
+            val = self.get_default(name=key)
+            self[key] = val
+            return val
+
+    def get_default(self, name):
+        """Creates an instance of the default class.
+        """
+        if self.default is not None:
+            return self.default(name)
+        else:
+            raise KeyError(name)
 
 class ComponentMeta(type):
     """Meta class for all Components.  This metaclass will allow
     Parameters and child Components to be defined via declarative
     syntax.
-
     """
+
+    @classmethod
+    def __prepare__(metacls, name, bases):
+        dict = ComponentNamespace()
+        return dict
+
     def __new__(cls, name, bases, dct):
+        print("Calling new for ", cls, name)
         dct['_component_dicts'] = []
 
         # Ensure all components have at least 'components' and 'params' dicts
         dct['components'] = ComponentDict(owner=cls)
         dct['params'] = ComponentDict(owner=cls)
-
 
         # Go through the instances created during class definition
         # and handle any items that request registration
@@ -43,7 +82,7 @@ class ComponentMeta(type):
 
         for directive in dct.get('_directives', []):
             directive.register(parent=cls, class_dct=dct, )
-        return super().__new__(cls, name, bases, dct)
+        return super().__new__(cls, name, bases, dict(dct))
 
 class Component(Registered, metaclass=ComponentMeta):
     """
@@ -54,21 +93,19 @@ class Component(Registered, metaclass=ComponentMeta):
     * Eval contexts for scripting
     * New methods that create new instances of child components when an instance is created.
     """
-    # Instance dicts to copy when cloning
 
-
+    # When instantiated inside of a parent Component, instances will also be grouped
+    # into a parents dict named 'dict_name'.
     dict_name = "components"
 
     def __new__(cls, *args, **kwargs):
         inst = super().__new__(cls)
 
-        """
-        When defined as part of a Component class definition, child components, parameters,
-        and other attributes are stored in the class dictionary.
-
-        In order to prevent instance modification from affecting the class definition,
-        we create copies of these items.
-        """
+        # When defined as part of a Component class definition, child components, parameters,
+        # and other attributes are stored in the class dictionary.
+        #
+        # In order to prevent instance modification from affecting the class definition,
+        # we create copies of these items.
         for dict_name in cls._component_dicts:
             # Get the original dict from the class
             comp_dict = getattr(cls, dict_name)
@@ -81,43 +118,6 @@ class Component(Registered, metaclass=ComponentMeta):
 
         return inst
 
-    if False:
-        def register(self, parent, name, class_dct, key=None):
-            """Called by the Component metaclass to add child Components
-            to the class's *dict_name* dictionary
-            """
-            if name is not None:
-                self.name = name
-
-            self.parent = parent
-
-            if key is None:
-                dict_name = self.__class__.dict_name
-            else:
-                dict_name = key
-
-            if dict_name not in class_dct:
-                class_dct[dict_name] = ComponentDict(owner=parent)
-
-            self._store(class_dct[dict_name])
-
-
-        def _store(self, dct):
-            self._store_as_value(dct)
-
-        def _store_as_value(self, dct):
-            dct[self.name] = self
-
-        def _store_as_list(self, dct):
-            if self.name not in dct:
-                dct[self.name] = []
-            dct[self.name].append(self)
-
-        def _store_as_dict(self, dct, key):
-            if self.name not in dct:
-                dct[self.name] = {}
-            dct[key] = self
-
     def clone(self, clone_inst=None, **kwargs):
         """ Create a clone of self.
 
@@ -125,9 +125,6 @@ class Component(Registered, metaclass=ComponentMeta):
         """
         if clone_inst is None:
             clone_inst = self.__class__(name=self.name)
-
-        #clone_inst.components = ComponentDict(owner=clone_inst)
-        #clone_inst.params = ComponentDict(owner=clone_inst)
 
         for dict_name in self._component_dicts:
             inst_dict = ComponentDict(owner=clone_inst)
@@ -161,7 +158,8 @@ class Component(Registered, metaclass=ComponentMeta):
 
     @property
     def children(self):
-        return self.components.values()
+        dct = getattr(self, self.__class__.dict_name)
+        return dct.values()
 
     @property
     def root(self):
