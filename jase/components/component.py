@@ -100,6 +100,10 @@ class Component(Registered, metaclass=ComponentMeta):
     dict_name = "components"
 
     def __new__(cls, *args, **kwargs):
+
+        cls._args = args
+        cls._kwargs = kwargs
+
         inst = super().__new__(cls)
 
         # When defined as part of a Component class definition, child components, parameters,
@@ -125,7 +129,7 @@ class Component(Registered, metaclass=ComponentMeta):
         If 'orig' is provided, it will be made into a clone of self. Otherwise a new instance is created.
         """
         if clone_inst is None:
-            clone_inst = self.__class__(name=self.name)
+            clone_inst = self.__class__(name=self.name, *self._args, **self._kwargs)
 
         for dict_name in self._component_dicts:
             inst_dict = ComponentDict(owner=clone_inst)
