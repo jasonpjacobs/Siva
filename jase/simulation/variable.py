@@ -1,4 +1,4 @@
-from ..components.parameter import Parameter
+from ..components.parameter import Parameter, Float
 
 class Variable(Parameter):
     dict_name = "params"
@@ -46,7 +46,6 @@ class Variable(Parameter):
                 exec("{}={}".format(self.target, value), globals, locals)
             except NameError:
                 raise
-
 
 
 
