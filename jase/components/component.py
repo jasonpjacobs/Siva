@@ -25,7 +25,8 @@ class ComponentNamespace(collections.OrderedDict):
     def __init__(self, default=None, *args, **kwargs):
         super().__init__(*args, **kwargs)
         # Default is a class..
-        assert(callable(default))
+        if default is not None:
+            assert(callable(default))
         self.default = default
 
     def __missing__ (self, key):
