@@ -1,15 +1,19 @@
-from ..directive import Directive
-from ..component import Component
 import unittest
 import pytest
 
+from ..directive import Directive
+from ..component import Component
+from ..parameter import Float
 
 class Option(Directive):
     dict_name = "options"
 
-    def __init__(self, name, value):
+    value = Float(0)
+
+    def __init__(self, name, value=None):
         self.name = name
-        self.value = value
+        if value:
+            self.value = value
         super().__init__()
 
 
@@ -18,7 +22,7 @@ class Option(Directive):
 
 class Test(Component):
     a = 20
-    Option("temp", 110)
+    Option("temp", 111)
 
 def test_directive():
     t = Test()
@@ -27,4 +31,5 @@ def test_directive():
 
     assert "temp" in t.options
     assert "options" in t._component_dicts
-    assert t.options["temp"].value == 110
+    assert t.options["temp"].value == 111
+
