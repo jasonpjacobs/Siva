@@ -1,6 +1,5 @@
 import inspect
 from ..components.registered import Registered
-
 class Parameter(Registered):
     """ A class to define Component level attributes.
 
@@ -23,13 +22,17 @@ class Parameter(Registered):
         self.value = value
         self.local = local
         self.name = name
+        super().__init__()
 
     def __set__(self, instance, value):
         dct = getattr(instance, self.__class__.dict_name)
         dct[self.name].value = value
 
     def __get__(self, instance, owner):
-        dct = getattr(instance, self.__class__.dict_name)
+        if instance is not None:
+            dct = getattr(instance, self.__class__.dict_name)
+        else:
+            dct = getattr(owner, self.__class__.dict_name)
         return dct[self.name].value
 
     @property
@@ -53,3 +56,7 @@ class Parameter(Registered):
     @evaluated_value.setter
     def evaluated_value(self, value):
         self._evaluated_value = value
+
+class Float(Parameter):
+    pass
+

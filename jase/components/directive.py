@@ -1,6 +1,8 @@
 import inspect
 from .registered import Registered
-class Directive(Registered):
+from .component import Component
+
+class Directive(Component):
     """ Used to implement declarative style directives during Component class definitions.
 
     This is similar in use to a Registered attribute, however, since the resulting instance isn't

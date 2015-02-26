@@ -1,5 +1,6 @@
 import collections
 import copy
+import inspect
 
 class ComponentDict(collections.OrderedDict):
     def __init__(self, owner, *args, **kwargs):
@@ -106,6 +107,13 @@ class Registered:
 
         if dict_name not in cls._component_dicts:
             cls._component_dicts.append(dict_name)
+
+    def register_as_directive(self):
+        frame = inspect.currentframe()
+        c_locals = frame.f_back.f_back.f_locals
+        if '_directives' not in c_locals:
+            c_locals['_directives'] = []
+        c_locals['_directives'].append(self)
 
     def _store(self, dct):
         self._store_as_value(dct)
