@@ -1,4 +1,0 @@
-
-
-class Save(Typed):
-    pass
