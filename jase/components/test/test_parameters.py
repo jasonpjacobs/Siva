@@ -2,7 +2,7 @@ __author__ = 'Jase'
 
 import pytest
 from ..component import Component
-from ..parameter import Parameter
+from ..parameter import Parameter, Float
 
 @pytest.fixture
 def simple():
@@ -10,6 +10,7 @@ def simple():
     class A(Component):
         x = Parameter(2.34)
         y = Parameter(name='not_x')
+        f = Float(2.2)
 
 
     a = A(name='root')
@@ -22,11 +23,12 @@ def test_names(simple):
     assert a.name == 'root'
     assert 'x' in a.params
     assert 'y' in a.params
+    assert 'f' in a.params
 
     assert a.x == a.params['x'].value
     assert a.y == a.params['y'].value
 
-
+    assert a.f == a.params['f'].value
 
 @pytest.fixture
 def param_storage():

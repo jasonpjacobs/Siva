@@ -28,22 +28,25 @@ class ComponentDict(collections.OrderedDict):
         return new_copy
 
 class Registered:
-    """A mix-in class to allow subclasses to register themselves when instantiated during
+    """A mix-in class to allow subclasses to register themselves when instantiated in
+    a
     their parent's class definition
     """
     def register(self, parent, name=None, class_dct=None, key=None):
         """Called by the Component metaclass to add child Components
-        to the class's *dict_name* dictionary
+        to the class's *registry_name* dictionary
 
         E.g.:
 
             class Var(Registered):
-                dict_name = "my_vars"
+                registry_name = "my_vars"
 
             class A(Component):
                 v = Variable()  # "Variable" descends "from Registered"
 
             a = A()
+
+            a[my_vars]['a'] == v
 
         When the definition for class A is executed, the metaclass for A will call v's "register" method.
         After being defined, class A will have an attribute named "my_vars",
@@ -55,32 +58,28 @@ class Registered:
             self.name = name
 
         if key is None:
-            dict_name = self.__class__.dict_name
+            registry_name = self.__class__.registry_name
         else:
-            dict_name = key
+            registry_name = key
 
-        if dict_name not in class_dct:
-            # When called from an inst, should use:  setattr(cls, dict_name, ComponentDict(owner=parent))
+        if registry_name not in class_dct:
+            # When called from an inst, should use:  setattr(cls, registry_name, ComponentDict(owner=parent))
             try:
-                class_dct[dict_name] = ComponentDict(owner=parent)
+                if self.__class__.registry_type == "list":
+                    class_dct[registry_name] = []
+                else:
+                    class_dct[registry_name] = ComponentDict(owner=parent)
             except:
                 pass
 
-        self._store(class_dct[dict_name])
+        self._store(class_dct[registry_name])
 
-        if dict_name not in class_dct['_component_dicts']:
-            class_dct['_component_dicts'].append(dict_name)
+        if registry_name not in class_dct['_component_dicts']:
+            class_dct['_component_dicts'].append(registry_name)
 
     def register_from_inst(self, parent, name, cls, key=None):
-        """ Handles component registration
-
-            class Var(Registered):
-                dict_name = "my_vars"
-
-            class A(Component):
-                v = Variable()  # "Variable" descends "from Registered"
-
-            a = A()
+        """ Handles component registration when child components are added to a component
+        via the add_instance method.
 
         """
         self.parent = parent
@@ -108,23 +107,24 @@ class Registered:
         if dict_name not in cls._component_dicts:
             cls._component_dicts.append(dict_name)
 
-    def register_as_directive(self):
-        frame = inspect.currentframe()
-        c_locals = frame.f_back.f_back.f_locals
-        if '_directives' not in c_locals:
-            c_locals['_directives'] = []
-        c_locals['_directives'].append(self)
-
-    def _store(self, dct):
+    def _store(self, dct, cls):
         self._store_as_value(dct)
 
-    def _store_as_value(self, dct):
+    def _store_as_value(self, dct, cls):
+        """
+        parent["dict_name"][self.name] = self
+        """
         dct[self.name] = self
 
-    def _store_as_list(self, dct):
-        if self.name not in dct:
-            dct[self.name] = []
-        dct[self.name].append(self)
+    def _store_as_list(self, dct, key=None):
+        """
+        parent["dict_name"][self.name] = self
+        """
+        if key is None:
+            key = self.name
+        if key not in dct:
+            dct[key] = []
+        dct[key].append(self)
 
     def _store_as_dict(self, dct, key):
         if self.name not in dct:

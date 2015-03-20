@@ -41,15 +41,15 @@ class MockComponent(BaseComponent):
 def sim_tree():
 
     class B(MockComponent):
-        pass
-    B.add_instance(B, MockComponent(name='c'), name='c')
+        c = MockComponent()
+
 
     class A(MockComponent):
-        pass
-    A.name = 'a'
-    A.add_instance(A, B(name='b1'),name='b1')
-    A.add_instance(A, B(name='b2'),name='b2')
+        b1 = B()
+        b2 = B()
 
+
+    A.name = 'a'
     work_dir = tempfile.mkdtemp()
     a = A(name='a', work_dir=work_dir)
     return a

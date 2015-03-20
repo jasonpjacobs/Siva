@@ -4,7 +4,7 @@ from ..design import Design
 from ..connections import Pin, Input, Output, Net
 from ...components import Parameter
 
-_PLACEHOLDER = Net
+
 
 print("Defining Nmos")
 class Nmos(Design):
@@ -24,9 +24,9 @@ class Inv(Design):
     in_ = Input(name="in")
     out = Output()
 
-    Net("s, g, d, b")
+    #Net("s, g, d, b")
 
-    s = Net("s")
+    #s = Net("s")
     n1 = Nmos(s, g, d, b, w=2, l=.35, m=2)
 
 
@@ -47,6 +47,12 @@ def test_design():
     # Check instances
     assert "n1" in d.instances
     assert list(d.children)[0].name == "n1"
+
+    # Check nets
+    assert "s" in d.nets
+    assert "g" in d.nets
+    assert "b" in d.nets
+    assert "d" in d.nets
 
     # Check parameters
     assert d.n1.w == 2.0

@@ -37,12 +37,14 @@ class ComponentNamespace(collections.OrderedDict):
 
         # Only create defaults for names that would otherwise raise an
         # attribute error
-        if key in c_globals or key in c_locals or key in __builtins__:
+        if key in c_globals or key in c_locals or key in __builtins__ or key.startswith('_'):
             raise KeyError(key)
         else:
             val = self.get_default(name=key)
+            print("Creating a {} for {}".format(val.__class__.__name__, key))
             self[key] = val
             return val
+
 
     def get_default(self, name):
         """Creates an instance of the default class.
@@ -129,7 +131,9 @@ class Component(Registered, metaclass=ComponentMeta):
         If 'orig' is provided, it will be made into a clone of self. Otherwise a new instance is created.
         """
         if clone_inst is None:
-            clone_inst = self.__class__(name=self.name, *self._args, **self._kwargs)
+            args = copy.copy(self._kwargs)
+            args['name'] = self.name
+            clone_inst = self.__class__(*self._args, **self._kwargs)
 
         for dict_name in self._component_dicts:
             inst_dict = ComponentDict(owner=clone_inst)

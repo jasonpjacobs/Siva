@@ -30,11 +30,14 @@ def test_registry():
     assert "my_vars" in A._component_dicts
     assert 'v1' in A.my_vars
 
+    # Create an instance of A
     a = A(name='a')
     assert "my_vars" in a._component_dicts
     assert 'v1' in a.my_vars
 
     a.my_vars["v1"].parent is a
+
+    assert a.my_vars is not A.my_vars
 
     assert a.v1 is a.my_vars["v1"]
     assert a.my_vars["v1"] is not A.my_vars["v1"]

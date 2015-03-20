@@ -60,3 +60,9 @@ class Parameter(Registered):
 class Float(Parameter):
     pass
 
+class String(Parameter):
+    pass
+
+class File(Parameter):
+    pass
+
