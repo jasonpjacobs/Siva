@@ -1,15 +1,15 @@
 import pytest
 
-from ..registered import Registered, ComponentDict
+from ..registered import Registered, Registry
 from ..component import Component
 
 class Var(Registered):
-    dict_name = "my_vars"
+    registry_name = "my_vars"
 
 
 def test_component_dict():
 
-    d = ComponentDict(owner=None)
+    d = Registry(owner=None)
     v = Var()
     v.name = 'a'
     d["a"] = v
@@ -27,12 +27,12 @@ def test_registry():
     class A(Component):
         v1 = Var()
 
-    assert "my_vars" in A._component_dicts
+    assert "my_vars" in A._registries
     assert 'v1' in A.my_vars
 
     # Create an instance of A
     a = A(name='a')
-    assert "my_vars" in a._component_dicts
+    assert "my_vars" in a._registries
     assert 'v1' in a.my_vars
 
     a.my_vars["v1"].parent is a

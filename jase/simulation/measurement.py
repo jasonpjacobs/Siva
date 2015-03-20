@@ -1,5 +1,5 @@
 import collections
-from ..components.component import ComponentDict
+from ..components.component import Registry
 from ..components.registered import Registered
 
 class Measurement(Registered):

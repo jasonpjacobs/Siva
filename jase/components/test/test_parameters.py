@@ -34,16 +34,16 @@ def test_names(simple):
 def param_storage():
 
     class P_val(Parameter):
-        dict_name = "value_param"
+        registry_name = "value_param"
 
-        def _store(self, dct):
-            self._store_as_value(dct)
+        def _store(self, class_dct, registry_name):
+            self._store_as_key_value_pair(class_dct, registry_name)
 
     class P_list(Parameter):
-        dict_name = "list_param"
+        registry_name = "list_param"
 
-        def _store(self, dct):
-            self._store_as_list(dct)
+        def _store(self, class_dct, registry_name):
+            self._store_as_list(class_dct, registry_name)
 
 
     class A(Component):
@@ -60,8 +60,11 @@ def test_storage(param_storage):
     assert "value_param" in c.__class__.__dict__
 
     assert 'pv' in c.value_param
-    assert 'pl1' in c.list_param
-    assert 'pl2' in c.list_param
+
+    assert len(c.list_param) == 2
+
+    assert 'pl1' in [item.name for item in c.list_param]
+    assert 'pl2' in [item.name for item in c.list_param]
 
 if __name__ == '__main__':
     unittest.main()

@@ -2,8 +2,8 @@ import collections
 import copy
 import inspect
 
-class ComponentDict(collections.OrderedDict):
-    def __init__(self, owner, *args, **kwargs):
+class Registry(collections.OrderedDict):
+    def __init__(self, owner=None, *args, **kwargs):
         self.owner = owner
         super().__init__(*args, **kwargs)
 
@@ -27,7 +27,17 @@ class ComponentDict(collections.OrderedDict):
                 copied_item.parent = owner
         return new_copy
 
+class ListRegistry(list):
+    def __init__(self, *args, owner=None):
+        super().__init__(*args)
+        self.owner = owner
+
+    def clone(self, owner):
+        new_copy = ListRegistry([copy.copy(item) for item in self], owner=owner)
+        return new_copy
+
 class Registered:
+    registry_type = "dict"
     """A mix-in class to allow subclasses to register themselves when instantiated in
     a
     their parent's class definition
@@ -60,22 +70,26 @@ class Registered:
         if key is None:
             registry_name = self.__class__.registry_name
         else:
-            registry_name = key
+            raise NotImplementedError
+            #registry_name = key
 
+        """
         if registry_name not in class_dct:
             # When called from an inst, should use:  setattr(cls, registry_name, ComponentDict(owner=parent))
             try:
                 if self.__class__.registry_type == "list":
                     class_dct[registry_name] = []
                 else:
-                    class_dct[registry_name] = ComponentDict(owner=parent)
+                    class_dct[registry_name] = Registry(owner=parent)
             except:
                 pass
 
-        self._store(class_dct[registry_name])
+        """
 
-        if registry_name not in class_dct['_component_dicts']:
-            class_dct['_component_dicts'].append(registry_name)
+        self._store(class_dct, registry_name)
+
+        if registry_name not in class_dct['_registries']:
+            class_dct['_registries'].append(registry_name)
 
     def register_from_inst(self, parent, name, cls, key=None):
         """ Handles component registration when child components are added to a component
@@ -88,57 +102,70 @@ class Registered:
             self.name = name
 
         if key is None:
-            dict_name = self.__class__.dict_name
+            registry_name = self.__class__.registry_name
         else:
-            dict_name = key
+            registry_name = key
 
         # Add ourselves to the class dictionary
         setattr(cls, self.name, self)
 
-        # And our component dict as well
-        if not hasattr(cls, dict_name):
-            component_dict = ComponentDict(owner=parent)
-            setattr(cls, dict_name, component_dict)
+        # The various store methods are designed to work with the class namespace dictionary
+        # that is created by the metaclass during class construction.  When the class is already
+        # created, we need to access/add attributes via getattr, setattr.
+        #
+        # To make this work, we'll pass in a local dictionary and update the instance with
+        # the registry, after the _store method completes.
+
+        ns = dict()
+        if hasattr(parent, registry_name):
+            ns[registry_name] = getattr(parent, registry_name)
+        registry = self._store(ns, registry_name)
+        if registry_name in ns:
+            setattr(parent, registry_name, ns[registry_name])
+
+        if registry_name not in cls._registries:
+            cls._registries.append(registry_name)
+
+    def _store(self, class_dct, registry_name):
+        self._store_as_key_value_pair(class_dct, registry_name)
+
+    def _store_as_key_value_pair(self, class_dct, registry_name):
+        """ The registered component is stored in a dictionary
+
+
+        parent_dct["registry_name"][self.name] = self
+
+        E.g.:
+        parent_dct["instances"]["a1"] = A()
+        """
+        if registry_name not in class_dct:
+            class_dct[registry_name] = registry = Registry(owner=self.parent)
         else:
-            component_dict = getattr(cls, dict_name)
+            registry = class_dct[registry_name]
 
-        self._store(component_dict)
+        registry[self.name] = self
 
-        if dict_name not in cls._component_dicts:
-            cls._component_dicts.append(dict_name)
-
-    def _store(self, dct, cls):
-        self._store_as_value(dct)
-
-    def _store_as_value(self, dct, cls):
+    def _store_as_list(self, class_dct, registry_name, ):
         """
-        parent["dict_name"][self.name] = self
-        """
-        dct[self.name] = self
+        parent_dct["registry_name"] = [self, ...]
 
-    def _store_as_list(self, dct, key=None):
+        E.g.:
+        parent_dct["includes"] = [ path1, path2, path3,...]
         """
-        parent["dict_name"][self.name] = self
-        """
-        if key is None:
-            key = self.name
-        if key not in dct:
-            dct[key] = []
-        dct[key].append(self)
-
-    def _store_as_dict(self, dct, key):
-        if self.name not in dct:
-            dct[self.name] = {}
-        dct[key] = self
+        if registry_name not in class_dct:
+            class_dct[registry_name] = registry = ListRegistry(owner=self.parent)
+        else:
+            registry = class_dct[registry_name]
+        registry.append(self)
 
     def __set__(self, instance, value):
-        dct = getattr(instance, self.__class__.dict_name)
+        dct = getattr(instance, self.__class__.registry_name)
         dct[self.name] = value
 
     def __get__(self, instance, owner):
         if instance is not None:
-            dct = getattr(instance, self.__class__.dict_name)
+            dct = getattr(instance, self.__class__.registry_name)
         else:
-            dct = getattr(owner, self.__class__.dict_name)
+            dct = getattr(owner, self.__class__.registry_name)
         return dct[self.name]
 

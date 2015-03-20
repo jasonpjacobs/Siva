@@ -15,8 +15,8 @@ class Parameter(Registered):
     """
 
     # When instantiated as part of a Component's class dictionary, this Param
-    # will be stored in a dictionary named "dict_name"
-    dict_name = "params"
+    # will be stored in a dictionary named "registry_name"
+    registry_name = "params"
 
     def __init__(self, value=None, local=False, name=None):
         self.value = value
@@ -24,16 +24,13 @@ class Parameter(Registered):
         self.name = name
         super().__init__()
 
-    def __set__(self, instance, value):
-        dct = getattr(instance, self.__class__.dict_name)
-        dct[self.name].value = value
-
     def __get__(self, instance, owner):
-        if instance is not None:
-            dct = getattr(instance, self.__class__.dict_name)
-        else:
-            dct = getattr(owner, self.__class__.dict_name)
-        return dct[self.name].value
+        item = super().__get__(instance, owner)
+        return item.value
+
+    def __set__(self, instance, value):
+        param = super().__get__(instance, None)
+        param.value = value
 
     @property
     def value(self):

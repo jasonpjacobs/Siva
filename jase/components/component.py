@@ -14,13 +14,14 @@ import collections
 import copy
 import inspect
 
-from .registered import Registered, ComponentDict
+from .registered import Registered, Registry
 
 class ComponentNamespace(collections.OrderedDict):
     """ A dictionary that provides instances of a default class
-    for missing items in the class definition namespace.  For example, when
-    defining a Spice (simulation) component, undefined names will become
-    Net instances.
+    for missing items in the class definition namespace.
+
+    For example, when defining a Spice (simulation) component,
+    undefined names will become Net instances.
     """
     def __init__(self, default=None, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -67,11 +68,11 @@ class ComponentMeta(type):
 
     def __new__(cls, name, bases, dct):
         print("Calling new for ", cls, name)
-        dct['_component_dicts'] = []
+        dct['_registries'] = []
 
         # Ensure all components have at least 'components' and 'params' dicts
-        dct['components'] = ComponentDict(owner=cls)
-        dct['params'] = ComponentDict(owner=cls)
+        dct['components'] = Registry(owner=cls)
+        dct['params'] = Registry(owner=cls)
 
         # Go through the instances created during class definition
         # and handle any items that request registration
@@ -99,7 +100,8 @@ class Component(Registered, metaclass=ComponentMeta):
 
     # When instantiated inside of a parent Component, instances will also be grouped
     # into a parents dict named 'dict_name'.
-    dict_name = "components"
+    registry_name = "components"
+    registry_type = "dict"
 
     def __new__(cls, *args, **kwargs):
 
@@ -113,15 +115,15 @@ class Component(Registered, metaclass=ComponentMeta):
         #
         # In order to prevent instance modification from affecting the class definition,
         # we create copies of these items.
-        for dict_name in cls._component_dicts:
+        for registry_name in cls._registries:
             # Get the original dict from the class
-            comp_dict = getattr(cls, dict_name)
+            registry = getattr(cls, registry_name)
 
             # Create a copy
-            inst_dict = comp_dict.clone(owner=inst)
+            inst_dict = registry.clone(owner=inst)
 
             # Add it to the instance
-            setattr(inst, dict_name, inst_dict)
+            setattr(inst, registry_name, inst_dict)
 
         return inst
 
@@ -135,10 +137,10 @@ class Component(Registered, metaclass=ComponentMeta):
             args['name'] = self.name
             clone_inst = self.__class__(*self._args, **self._kwargs)
 
-        for dict_name in self._component_dicts:
-            inst_dict = ComponentDict(owner=clone_inst)
-            setattr(clone_inst, dict_name, inst_dict)
-            class_dct = getattr(self, dict_name)
+        for registry_name in self._registries:
+            inst_dict = Registry(owner=clone_inst)
+            setattr(clone_inst, registry_name, inst_dict)
+            class_dct = getattr(self, registry_name)
 
             for name, item in class_dct.items():
                 if hasattr(item, 'clone'):
@@ -150,7 +152,7 @@ class Component(Registered, metaclass=ComponentMeta):
 
         # Other attributes can simply be reassigned w/o copying
         for k,v in self.__dict__.items():
-            if k not in self._component_dicts and not k.startswith('_'):
+            if k not in self._registries and not k.startswith('_'):
                 setattr(clone_inst, k, v)
 
         # Apply new attribute values to the clone
@@ -167,7 +169,7 @@ class Component(Registered, metaclass=ComponentMeta):
 
     @property
     def children(self):
-        dct = getattr(self, self.__class__.dict_name)
+        dct = getattr(self, self.__class__.registry_name)
         return dct.values()
 
     @property

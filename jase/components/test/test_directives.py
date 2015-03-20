@@ -6,9 +6,7 @@ from ..component import Component
 from ..parameter import Float
 
 class Option(Directive):
-    dict_name = "options"
-
-    value = Float(0)
+    registry_name = "options"
 
     def __init__(self, name, value=None):
         self.name = name
@@ -17,8 +15,8 @@ class Option(Directive):
         super().__init__()
 
 
-    def _store(self, dct):
-        self._store_as_dict(dct, key=self.name)
+    def _store(self, class_dct, registry_name):
+        self._store_as_key_value_pair(class_dct, registry_name)
 
 class Test(Component):
     a = 20
@@ -30,6 +28,6 @@ def test_directive():
     print(t.__class__.__name__)
 
     assert "temp" in t.options
-    assert "options" in t._component_dicts
+    assert "options" in t._registries
     assert t.options["temp"].value == 111
 
