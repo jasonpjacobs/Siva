@@ -7,7 +7,7 @@ from .base_component import BaseComponent, Running
 from .variable import Variable
 from ..components.parameter import Parameter
 class LoopVariable(Variable):
-    dict_name = "params"
+    registry_name = "params"
     def __init__(self, target=None, start=None, stop=None, step=None, n=None,
                  values=None, endpoint=True, space="linear", name=None, desc=None):
 
@@ -59,6 +59,11 @@ class LoopVariable(Variable):
         # can keep track of them.
         super().register(parent=parent, class_dct=class_dct, name=name, key="loop_vars")
 
+    def register_from_inst(self, parent, name, cls, key=None):
+        super().register_from_inst(parent, name, cls, key=None)
+        super().register_from_inst(parent, name, cls, key="loop_vars")
+
+
     def __iter__(self):
         self.reset()
         self.value = self.values[0]
@@ -84,9 +89,6 @@ class LoopVariable(Variable):
 
 class LoopComponent(BaseComponent):
     def __init__(self, parent=None, vars=None, children=None, name=None, measurements=None, parallel=True, **kwargs):
-
-        #if self.__class__.__name__ is "LoopComponent":
-        #    raise TypeError("LoopComponents must be subclassed before use")
 
         if isinstance(vars, LoopVariable):
             vars = (vars,)

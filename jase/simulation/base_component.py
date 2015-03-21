@@ -38,10 +38,16 @@ class BaseComponent(Component):
 
     This class defines how each component is executed.
     """
-    _component_dicts = ["components", "params", "measurements"]
+    _registries = ["components", "params", "measurements"]
+
     def __init__(self, parent=None, children=None, name=None, params=None, measurements=None, work_dir=".",
                  log_file=None, disk_mgr=None, parallel=False):
+
+        self._registries = ["components", "params", "measurements"]
+
         super().__init__(parent=parent, children=children, name=name)
+
+
 
         # If 'vars' was specified, we assume the procedural interface is being used to define the loop variables.
         # If the declarative interface is used, loop_vars will already be populated
@@ -51,14 +57,15 @@ class BaseComponent(Component):
                 params = params.values()
 
             for param in params:
-                param.register(self, self.__dict__)
+                param.register_from_inst(parent=self, name=param.name, cls=self.__class__)
 
         if measurements is not None:
             if hasattr(measurements, 'values'):
                 measurements = measurements.values()
 
             for measurement in measurements:
-                measurement.register(self, self.__dict__)
+                measurement.register_from_inst(parent=self, name=measurement.name, cls=self.__class__)
+
 
         self.work_dir = work_dir
         self.results = Table()
@@ -245,6 +252,7 @@ class BaseComponent(Component):
     @property
     def root(self):
         return super().root.master
+
 
 
     def __repr__(self):

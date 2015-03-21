@@ -15,6 +15,9 @@ class Mock:
         self.str_var = str_var
         self.float_var = float_var
 
+@pytest.fixture
+def work_dir():
+    return tempfile.mkdtemp()
 
 @pytest.fixture
 def mock():
@@ -55,7 +58,7 @@ def simple_loop(mock):
     m2 = Measurement(name='float_result', expr='Loop.float_var')
     m3 = Measurement(name='str_result', expr='Loop.str_var')
 
-    loop = LoopComponent(parent=None, vars=[a,b,c], name='Loop', measurements=[m1, m2, m3])
+    loop = LoopComponent(parent=None, vars=[a,b,c], name='Loop', measurements=[m1, m2, m3], work_dir=None)
 
 
     return loop
@@ -96,10 +99,10 @@ def test_loop_component_copy():
     assert 'int_var' in l1.params
     assert 'm1' in l1.measurements
 
-    l2 = l1.clone()
-    assert 'int_var' in l2.params
-    assert 'm1' in l2.measurements
-    assert l1.measurements['m1'] is not l2.measurements['m1']
+    new_loop = l1.clone()
+    assert 'int_var' in new_loop.params
+    assert 'm1' in new_loop.measurements
+    assert l1.measurements['m1'] is not new_loop.measurements['m1']
 
 def test_callable_loop_variable():
 
@@ -114,7 +117,7 @@ def test_callable_loop_variable():
     m = Mock(name='M')
     ms = Measurement('Loop.M.value', name='v')
     var = LoopVariable(name='var', target='Loop.M.set_value', values=[0.33, 0.55, 0.77])
-    loop = LoopComponent(vars = [var,], name='Loop', measurements=[ms,])
+    loop = LoopComponent(vars = [var,], name='Loop', measurements=[ms,], work_dir=None)
     loop.M = m
     results = []
     loop.start()

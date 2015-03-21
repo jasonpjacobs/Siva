@@ -51,7 +51,7 @@ def test_char():
     assert c.sim is not None
     assert 'x' in c.params
 
-    assert 'loop_vars' in Char._component_dicts
+    assert 'loop_vars' in Char._registries
 
     assert 'x' in c.loop_vars
     assert 'sim' in c.namespace

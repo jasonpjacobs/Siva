@@ -3,7 +3,7 @@ from ..components.component import Registry
 from ..components.registered import Registered
 
 class Measurement(Registered):
-    dict_name = "measurements"
+    registry_name = "measurements"
 
     def __init__(self, expr, name=None, spec=None):
         self.name = name
@@ -11,8 +11,8 @@ class Measurement(Registered):
         self.spec = spec
         self.value = None
 
-    def _store(self, dct):
-        self._store_as_value(dct)
+    def _store(self, class_dct, registry_name):
+        self._store_as_key_value_pair(class_dct, registry_name)
 
     def __set__(self, instance, value):
         instance.measurements[self.name].value = value

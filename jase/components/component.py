@@ -46,7 +46,6 @@ class ComponentNamespace(collections.OrderedDict):
             self[key] = val
             return val
 
-
     def get_default(self, name):
         """Creates an instance of the default class.
         """
@@ -68,7 +67,7 @@ class ComponentMeta(type):
 
     def __new__(cls, name, bases, dct):
         print("Calling new for ", cls, name)
-        dct['_registries'] = []
+        dct['_registries'] = ['components', 'params']
 
         # Ensure all components have at least 'components' and 'params' dicts
         dct['components'] = Registry(owner=cls)
@@ -85,7 +84,7 @@ class ComponentMeta(type):
                 item.register(parent=cls, class_dct=dct, name=item_name)
 
         for directive in dct.get('_directives', []):
-            directive.register(parent=cls, class_dct=dct, )
+            directive.register(parent=cls, class_dct=dct)
         return super().__new__(cls, name, bases, dict(dct))
 
 class Component(Registered, metaclass=ComponentMeta):
@@ -101,7 +100,6 @@ class Component(Registered, metaclass=ComponentMeta):
     # When instantiated inside of a parent Component, instances will also be grouped
     # into a parents dict named 'dict_name'.
     registry_name = "components"
-    registry_type = "dict"
 
     def __new__(cls, *args, **kwargs):
 
@@ -138,17 +136,25 @@ class Component(Registered, metaclass=ComponentMeta):
             clone_inst = self.__class__(*self._args, **self._kwargs)
 
         for registry_name in self._registries:
+            if not hasattr(self, registry_name):
+                continue
+
+            orig_registry = getattr(self, registry_name)
+            inst_registry = orig_registry.clone(owner=clone_inst)
+            setattr(clone_inst, registry_name, inst_registry)
+            """
             inst_dict = Registry(owner=clone_inst)
             setattr(clone_inst, registry_name, inst_dict)
-            class_dct = getattr(self, registry_name)
+            orig_registry = getattr(self, registry_name)
 
-            for name, item in class_dct.items():
+            for name, item in orig_registry.items():
                 if hasattr(item, 'clone'):
                     inst_item = item.clone()
                 else:
                     inst_item = copy.copy(item)
                 inst_item.parent = clone_inst
                 inst_dict[item.name] = inst_item
+            """
 
         # Other attributes can simply be reassigned w/o copying
         for k,v in self.__dict__.items():
@@ -241,6 +247,12 @@ class Component(Registered, metaclass=ComponentMeta):
         for p in self.params.values():
             params[p.name] = p.value
         return params
+
+    def __getattr__(self, name):
+        for registry_name in self._registries:
+            registry = self.__getattribute__(registry_name)
+            if name in registry:
+                return registry[name]
 
     def __repr__(self):
         name = "{}(name={})".format(self.__class__.__qualname__, self.name)

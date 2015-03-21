@@ -1,7 +1,7 @@
 from ..components.parameter import Parameter, Float
 
 class Variable(Parameter):
-    dict_name = "params"
+    registry_name = "params"
 
     def __init__(self, value=None, name=None, target=None, desc=None, local=False):
         super().__init__(value, local=local)

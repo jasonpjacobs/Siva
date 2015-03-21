@@ -2,7 +2,7 @@
 from ..components import Registered
 
 class Net(Registered):
-    dict_name = "nets"
+    registry_name = "nets"
     def __init__(self, name, *args):
         self.name = name
         self.ports = []
@@ -11,7 +11,7 @@ class Net(Registered):
         self.ports.append(port)
 
 class Pin(Registered):
-    dict_name = "ports"
+    registry_name = "ports"
     def __init__(self, name=None, direction=None):
         self.name = name
         self.direction = None

@@ -8,6 +8,8 @@ from ...components import Parameter
 
 from ...simulation.save import Save
 
+assert Include.registry_name == "includes"
+
 class Nmos(Design):
     s = Pin()
     g = Pin()

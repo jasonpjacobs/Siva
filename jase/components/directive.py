@@ -31,3 +31,6 @@ class Directive(Component):
         if '_directives' not in c_locals:
             c_locals['_directives'] = []
         c_locals['_directives'].append(self)
+
+    def _store(self, class_dct=None, registry_name=None):
+        self._store_as_list(class_dct=class_dct, registry_name=registry_name)

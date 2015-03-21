@@ -7,7 +7,7 @@ class DesignMeta(ComponentMeta):
         return ComponentNamespace(default=Net)
 
 class Design(Component, metaclass=DesignMeta):
-    dict_name = "instances"
+    registry_name = "instances"
 
     def __init__(self, *conns, **params ):
         self.name = params.pop('name', None)

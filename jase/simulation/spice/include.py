@@ -3,7 +3,7 @@ from ...components.directive import Directive
 
 
 class Include(Directive):
-    dict_name = "commands"
+    registry_name = "includes"
     path = File()
 
     def __init__(self, file, name=None):
@@ -12,8 +12,7 @@ class Include(Directive):
         self.name = name
         self.path = file
 
-    def _store(self, dct):
-        self._store_as_list(dct, key="include")
+
 
     def card(self):
         txt = ".INCLUDE {}".format(self.path)

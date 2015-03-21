@@ -70,30 +70,18 @@ class Registered:
         if key is None:
             registry_name = self.__class__.registry_name
         else:
-            raise NotImplementedError
-            #registry_name = key
+            registry_name = key
 
-        """
-        if registry_name not in class_dct:
-            # When called from an inst, should use:  setattr(cls, registry_name, ComponentDict(owner=parent))
-            try:
-                if self.__class__.registry_type == "list":
-                    class_dct[registry_name] = []
-                else:
-                    class_dct[registry_name] = Registry(owner=parent)
-            except:
-                pass
-
-        """
-
-        self._store(class_dct, registry_name)
-
+        try:
+            self._store(class_dct=class_dct, registry_name=registry_name)
+        except:
+            pass
         if registry_name not in class_dct['_registries']:
             class_dct['_registries'].append(registry_name)
 
-    def register_from_inst(self, parent, name, cls, key=None):
+    def register_from_inst(self, parent, name, key=None):
         """ Handles component registration when child components are added to a component
-        via the add_instance method.
+        instance via the add_instance or __init__ methods.
 
         """
         self.parent = parent
@@ -107,7 +95,7 @@ class Registered:
             registry_name = key
 
         # Add ourselves to the class dictionary
-        setattr(cls, self.name, self)
+        #setattr(cls, self.name, self)
 
         # The various store methods are designed to work with the class namespace dictionary
         # that is created by the metaclass during class construction.  When the class is already
@@ -120,11 +108,12 @@ class Registered:
         if hasattr(parent, registry_name):
             ns[registry_name] = getattr(parent, registry_name)
         registry = self._store(ns, registry_name)
+
         if registry_name in ns:
             setattr(parent, registry_name, ns[registry_name])
 
-        if registry_name not in cls._registries:
-            cls._registries.append(registry_name)
+        if registry_name not in parent._registries:
+            parent._registries.append(registry_name)
 
     def _store(self, class_dct, registry_name):
         self._store_as_key_value_pair(class_dct, registry_name)
@@ -145,7 +134,7 @@ class Registered:
 
         registry[self.name] = self
 
-    def _store_as_list(self, class_dct, registry_name, ):
+    def _store_as_list(self, class_dct, registry_name):
         """
         parent_dct["registry_name"] = [self, ...]
 

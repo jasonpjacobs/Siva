@@ -22,5 +22,5 @@ class Analysis(Component):
             c_locals['_directives'] = []
         c_locals['_directives'].append(self)
 
-    def _store(self, dct):
-        self._store_as_value(dct)
+    def _store(self,  class_dct, registry_name):
+        self._store_as_key_value_pair( class_dct=class_dct, registry_name=registry_name)
