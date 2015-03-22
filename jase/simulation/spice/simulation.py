@@ -9,8 +9,9 @@ class Simulation(BaseComponent):
         else:
             txt.append("* Simulation")
 
-        for dict_name in ['include', 'libraries']:
-            dct = getattr(self, dict_name)
-            for item in dct.values():
-                txt.append(item.card())
+        for registry_name in ['include', 'libraries']:
+            registry = getattr(self, registry_name)
+            if registry:
+                for item in registry:
+                    txt.append(item.card())
         return txt

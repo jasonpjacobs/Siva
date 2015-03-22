@@ -43,7 +43,7 @@ class BaseComponent(Component):
     def __init__(self, parent=None, children=None, name=None, params=None, measurements=None, work_dir=".",
                  log_file=None, disk_mgr=None, parallel=False):
 
-        self._registries = ["components", "params", "measurements"]
+        self._registries = []
 
         super().__init__(parent=parent, children=children, name=name)
 

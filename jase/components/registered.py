@@ -33,7 +33,7 @@ class ListRegistry(list):
         self.owner = owner
 
     def clone(self, owner):
-        new_copy = ListRegistry([copy.copy(item) for item in self], owner=owner)
+        new_copy = ListRegistry([item.clone() for item in self], owner=owner)
         return new_copy
 
 class Registered:

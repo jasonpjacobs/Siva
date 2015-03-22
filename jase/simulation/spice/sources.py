@@ -2,7 +2,7 @@ from ...components import Component
 from ...components.parameter import Float
 
 class Source(Component):
-    dict_name = "sources"
+    registry_name = "sources"
 
 class Vpulse(Source):
     v1 = Float(0.0)

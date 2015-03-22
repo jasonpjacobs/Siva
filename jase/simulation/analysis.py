@@ -6,8 +6,7 @@ from ..components.component import Component
 from ..components.directive import Directive
 
 class Analysis(Component):
-    dict_name = "analyses"
-    _directive = True
+    registry_name = "analyses"
 
     def __init__(self, *args, **kwargs):
         super().__init__(name=self.analysis_name)
