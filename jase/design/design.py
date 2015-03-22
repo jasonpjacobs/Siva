@@ -24,4 +24,22 @@ class Design(Component, metaclass=DesignMeta):
             else:
                 raise ValueError("Instance argument '{}' is not a pin or a parameter of {}".format(k, self))
 
+    @property
+    def cell_name(self):
+        return self.__class__.__name__
+
+    def instance_designs(self, dct=None):
+        """Returns a dictionary whose key are the cell names and whose value is a list of
+        all instances in the design hierarchy"""
+        if dct is None:
+            dct = {}
+        for inst in self.instances.values():
+            name = inst.cell_name
+            if name in dct:
+                dct[name].append(inst)
+            else:
+                dct[name] = [inst]
+            dct = inst.instance_designs(dct)
+        return dct
+
 

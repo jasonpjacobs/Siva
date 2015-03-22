@@ -19,16 +19,12 @@ class Nmos(Primitive):
     model = String('nmos')
 
     def card(self):
-        args = {}
+        args = self._param_dict
         args['name'] = self.name
         args['s'] = self.s.net.name
         args['g'] = self.g.net.name
         args['d'] = self.d.net.name
         args['b'] = self.b.net.name
-        args['model'] = self.model
-        args['w'] = self.w
-        args['l'] = self.l
-        args['m'] = self.m
         txt = "m{name} {s} {g} {d} {b} {model} w={w} l={l} m={m}".format(**args)
         return txt
 
@@ -38,15 +34,17 @@ class Inv(Circuit):
     n1 = Nmos(s, g, d, b, w=2e-6, l=.35e-6, m=2)
 
 class Test(Simulation):
+    """ A simple test circuit
+    """
     Include(r"P:\models\nmos_50n.model")
-    Tran(step=0.2, stop=10e-9)
+    Tran(step=.2e-9, stop=10e-9)
 
-    i = Net(name='i')
-    o = Net(name='o')
-    dut = Inv(i, o)
+    a = Net(name='a')
+    b = Net(name='b')
+    dut = Inv(a, b)
 
     # Sources
-    v1 = Vpulse(i, period=10e-9)
+    v1 = Vpulse(a, period=10e-9)
 
     # Saves
     Save(dut.i, type='v')
@@ -63,7 +61,7 @@ def test_something():
 
     a = t.analyses[0]
 
-    assert a.step == 0.2
+    assert a.step == 0.2e-9
     assert a.stop == 10e-9
 
     assert len(t.saves) is not None

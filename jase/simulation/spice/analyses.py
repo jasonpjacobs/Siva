@@ -10,6 +10,7 @@ class Analysis(Directive):
 
 class Tran(Analysis):
     analysis_name = "tran"
+    start = Float()
     step = Float()
     stop = Float()
     uic = Bool()
@@ -25,7 +26,6 @@ class Tran(Analysis):
     def card(self):
         uic = "UIC" if self.uic else ""
         start = self.start if self.start > 0 else ""
-        txt = ".TRAN {step} {stop} {start} {uic}".format(step=self.step, stop=self.stop,
-                                                         start=start, uic=uic)
+        txt = ".TRAN {step} {stop} {start} {uic}".format(**self._param_dict)
         return [txt]
 
