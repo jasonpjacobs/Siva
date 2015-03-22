@@ -142,19 +142,6 @@ class Component(Registered, metaclass=ComponentMeta):
             orig_registry = getattr(self, registry_name)
             inst_registry = orig_registry.clone(owner=clone_inst)
             setattr(clone_inst, registry_name, inst_registry)
-            """
-            inst_dict = Registry(owner=clone_inst)
-            setattr(clone_inst, registry_name, inst_dict)
-            orig_registry = getattr(self, registry_name)
-
-            for name, item in orig_registry.items():
-                if hasattr(item, 'clone'):
-                    inst_item = item.clone()
-                else:
-                    inst_item = copy.copy(item)
-                inst_item.parent = clone_inst
-                inst_dict[item.name] = inst_item
-            """
 
         # Other attributes can simply be reassigned w/o copying
         for k,v in self.__dict__.items():
@@ -241,12 +228,22 @@ class Component(Registered, metaclass=ComponentMeta):
         params = collections.OrderedDict()
 
         if self.parent:
-
             params.update(self.parent.hierarchy_params)
 
         for p in self.params.values():
             params[p.name] = p.value
         return params
+
+    @property
+    def _param_dict(self):
+        """Returns the components parameters in a dictionary
+        """
+        dct = collections.OrderedDict()
+        dct['name'] = self.name
+
+        for param in self.params.values():
+            dct[param.name] = str(param)
+        return dct
 
     def __getattr__(self, name):
         for registry_name in self._registries:

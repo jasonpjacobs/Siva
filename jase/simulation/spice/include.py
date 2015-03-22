@@ -12,8 +12,6 @@ class Include(Directive):
         self.name = name
         self.path = file
 
-
-
     def card(self):
         txt = ".INCLUDE {}".format(self.path)
-        return txt
+        return [txt]

@@ -1,4 +1,4 @@
-from ..components.parameter import Parameter, Float
+from ..components.parameter import Parameter, Float, Bool
 
 class Variable(Parameter):
     registry_name = "params"

@@ -1,4 +1,4 @@
-from ..components.directive import Directive
+from jase.components.directive import Directive
 
 class Save(Directive):
     registry_name = "saves"

@@ -27,10 +27,22 @@ class Directive(Component):
 
     def __init__(self):
         frame = inspect.currentframe()
-        c_locals = frame.f_back.f_back.f_locals
-        if '_directives' not in c_locals:
-            c_locals['_directives'] = []
-        c_locals['_directives'].append(self)
+        f_locals = frame.f_locals
+
+        # Need to go back through the stack frames to find the frame of the
+        # parent component where this directive is instantiated.
+        #
+        # If self is subclassed its ancestors will be instances of the Directive class.
+        while True:
+            if 'self' in f_locals and isinstance(f_locals['self'], Directive):
+                frame = frame.f_back
+                f_locals = frame.f_locals
+            else:
+                break
+
+        if '_directives' not in f_locals:
+            f_locals['_directives'] = []
+        f_locals['_directives'].append(self)
 
     def _store(self, class_dct=None, registry_name=None):
         self._store_as_list(class_dct=class_dct, registry_name=registry_name)

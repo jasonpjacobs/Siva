@@ -1,5 +1,7 @@
 import inspect
 from ..components.registered import Registered
+from jase.utilities.conversions import float_to_eng
+
 class Parameter(Registered):
     """ A class to define Component level attributes.
 
@@ -18,10 +20,11 @@ class Parameter(Registered):
     # will be stored in a dictionary named "registry_name"
     registry_name = "params"
 
-    def __init__(self, value=None, local=False, name=None):
+    def __init__(self, value=None, local=False, name=None, parent=None):
         self.value = value
         self.local = local
         self.name = name
+        self.parent = parent
         super().__init__()
 
     def __get__(self, instance, owner):
@@ -31,6 +34,42 @@ class Parameter(Registered):
     def __set__(self, instance, value):
         param = super().__get__(instance, None)
         param.value = value
+
+    def eval(self, globals, locals):
+        """Propagates values to the target defined by an expression.  The expression must be defined
+        in terms of names contained in the global and local namespaces provided.
+        """
+
+        # Handle formula values
+        if type(self.value) is str and self.value.startswith('='):
+            value = eval(str(self.value), globals, locals)
+        else:
+            value = self.value
+        self.evaluated_value = value
+
+        # The parameter value will be set via exec.  Need to ensure string values are enclosed in quotes.
+        if type(value) is str:
+            value = "'{}'".format(value)
+
+        # If this variable is a 'remote' variable, set its target
+        if self.target is not None:
+            try:
+                # Determine if the target expression is a callable.  This may fail
+                # with an attribute error if the target expression is an instance attribute
+                # that hasn't been created yet.
+
+                target = eval(self.target, globals, locals)
+                if callable(target):
+                    exec("{}({})".format(self.target, value), globals, locals)
+                else:
+                    exec("{}={}".format(self.target, value), globals, locals)
+            except AttributeError:
+                # If the target expression is an instance attribute created by evaluating
+                # the expression, the previous eval statement will create an AttributeError
+                # but the expression below will work.
+                exec("{}={}".format(self.target, value), globals, locals)
+            except NameError:
+                raise
 
     @property
     def value(self):
@@ -54,12 +93,23 @@ class Parameter(Registered):
     def evaluated_value(self, value):
         self._evaluated_value = value
 
+    def __str__(self):
+        return str(self.evaluated_value)
+
+
+    def clone(self):
+        return self.__class__(value=self.value, local=self.local, parent=self.parent, name=self.name)
+
 class Float(Parameter):
-    pass
+    def __str__(self):
+        return float_to_eng(self.evaluated_value)
 
 class String(Parameter):
     pass
 
 class File(Parameter):
+    pass
+
+class Bool(Parameter):
     pass
 

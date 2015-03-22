@@ -1,5 +1,3 @@
-__author__ = 'Jase'
-
 import pytest
 from ..component import Component
 from ..parameter import Parameter, Float
@@ -66,5 +64,22 @@ def test_storage(param_storage):
     assert 'pl1' in [item.name for item in c.list_param]
     assert 'pl2' in [item.name for item in c.list_param]
 
-if __name__ == '__main__':
-    unittest.main()
+
+
+def test_param_dict():
+
+    from jase.utilities.conversions import float_to_eng
+
+    assert float_to_eng('1e-6') == '1u'
+
+    class A(Component):
+        x = Float(0)
+        y = Float(10e-7)
+        z = Float(1.02e8)
+
+    a = A()
+    dct = a._param_dict
+
+    assert dct['x'] == "0"
+    assert dct['y'] == "1u"
+    assert dct['z'] == "102MEG"

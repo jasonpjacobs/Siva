@@ -24,3 +24,4 @@ class Design(Component, metaclass=DesignMeta):
             else:
                 raise ValueError("Instance argument '{}' is not a pin or a parameter of {}".format(k, self))
 
+
