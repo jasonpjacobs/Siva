@@ -1,5 +1,5 @@
 from ..components.component import Component, ComponentMeta, ComponentNamespace
-from .connections import Net
+from .connections import Net, Pin
 
 class DesignMeta(ComponentMeta):
     @classmethod
@@ -21,6 +21,8 @@ class Design(Component, metaclass=DesignMeta):
                     # TODO: Allow design instances to create nets for their parents
                     raise NotImplementedError('Defining nets via strings is not supported')
                     self.super_nets.append(Net(name=conns[i]))
+                elif isinstance(conns[i], Pin):
+                    net = conns[i].net
                 else:
                     net = conns[i]
                 port.connect(net)
@@ -34,6 +36,8 @@ class Design(Component, metaclass=DesignMeta):
                     raise NotImplementedError('Defining nets via strings is not supported')
                     net = Net(name=v)
                     elf.super_nets.append(Net(name=conns[i]))
+                elif isinstance(v, Pin):
+                    net = v.conn
                 else:
                     net = v
                 self.ports[k].connect(net)

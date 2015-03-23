@@ -10,7 +10,7 @@ class Circuit(Design):
 
         # Pin ocnnection
         for pin in self.ports.values():
-            txt.append(pin.net.name)
+            txt.append(pin.conn.name)
 
         # Design name
         txt.append(self.cell_name)

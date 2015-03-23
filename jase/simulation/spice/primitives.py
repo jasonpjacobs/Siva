@@ -28,7 +28,7 @@ class Primitive(Design):
             dct['name'] = self.token + '_' + self.name
 
         for pin in self.ports.values():
-            dct[pin.name] = pin.net.name
+            dct[pin.name] = pin.conn.name
 
         return dct
 

@@ -17,14 +17,26 @@ class Net(Registered):
 class Pin(Registered):
     registry_name = "ports"
     def __init__(self, name=None, direction=None):
+        self.net = Net(name=name)
         self.name = name
         self.direction = None
-        self.net = None
+        self.conn = None
+
 
     def connect(self, net):
-        self.net = net
+        """Connect this port to a net
+        """
+        self.conn = net
         net.add_port(self)
 
+    @property
+    def name(self):
+        return self._name
+
+    @name.setter
+    def name(self, name):
+        self._name = name
+        self.net.name = name
 
 class Input(Pin):
     pass

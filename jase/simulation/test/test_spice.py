@@ -22,10 +22,12 @@ class Inv(Circuit):
     #vdd = Supply(domain="vdd_core")
     vdd = Net('vdd')
     vss = Net('vss')
-    i = Input(name="in")
+    i = Input()
     o = Output()
-    mp1 = Pmos(vdd, i, o, '0', w=2e-6, l=.35e-6, m=2, model="p50n")
-    mn1 = Nmos(vss, i, o, '0', w=2e-6, l=.35e-6, m=2, model="n50n")
+    a = Net('a')
+    b = Net('b')
+    mp1 = Pmos(vdd, i, o, vss, w=2e-6, l=.35e-6, m=2, model="p50n")
+    mn1 = Nmos(vss, a, b, vss, w=2e-6, l=.35e-6, m=1, model="n50n")
 
 
 class Test(Simulation):
