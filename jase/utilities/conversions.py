@@ -40,8 +40,12 @@ def float_to_eng(num):
 
     import math
 
-    if num is 0:
+    if num == 0:
         return '0'
+
+    if num is None:
+        return None
+
     x = float(num)
     y = abs(x)
     exponent = int(math.log10(y))

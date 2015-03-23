@@ -27,22 +27,21 @@ class Simulation(BaseComponent):
             txt.extend(source.card())
         txt.append('')
 
-        txt.append("** Instances **")
-        for inst in self.instances.values():
-            txt.extend(inst.card())
-        txt.append('')
+        if self.instances:
+            txt.append("** Instances **")
+            for inst in self.instances.values():
+                txt.extend(inst.card())
+            txt.append('')
 
         txt.append("** Subcircuit Definitions **")
         for inst_list in self.instance_designs().values():
             if inst_list[0]:
-                try:
-                    card = inst_list[0].subckt_card()
-                except:
-                    pass
+                card = inst_list[0].subckt_card()
                 if card:
                     txt.extend(inst_list[0].subckt_card())
 
-
+        txt.append('')
+        txt.append('.END')
         return txt
 
 
@@ -51,6 +50,10 @@ class Simulation(BaseComponent):
         all instances in the design hierarchy"""
         if dct is None:
             dct = {}
+
+        if not self.instances:
+            return dct
+
         for inst in self.instances.values():
             name = inst.cell_name
             if name in dct:

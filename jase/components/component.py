@@ -38,7 +38,7 @@ class ComponentNamespace(collections.OrderedDict):
 
         # Only create defaults for names that would otherwise raise an
         # attribute error
-        if key in c_globals or key in c_locals or key in __builtins__ or key.startswith('_'):
+        if key in c_globals or key in c_locals or key in __builtins__ or key.startswith('_') or key[0].isupper() :
             raise KeyError(key)
         else:
             val = self.get_default(name=key)
@@ -67,11 +67,21 @@ class ComponentMeta(type):
 
     def __new__(cls, name, bases, dct):
         print("Calling new for ", cls, name)
-        dct['_registries'] = ['components', 'params']
+        registries = ['components', 'params']
+        if len(bases) > 0:
+            for base in bases:
+                if hasattr(base, '_registries'):
+                    for registry_name in base._registries:
+                        registries.append(registry_name)
+                        dct[registry_name] = getattr(base, registry_name).clone()
+
+        dct['_registries'] = list(set(registries))
 
         # Ensure all components have at least 'components' and 'params' dicts
-        dct['components'] = Registry(owner=cls)
-        dct['params'] = Registry(owner=cls)
+        if 'components' not in dct:
+            dct['components'] = Registry(owner=cls)
+        if 'params' not in dct:
+            dct['params'] = Registry(owner=cls)
 
         # Go through the instances created during class definition
         # and handle any items that request registration
@@ -242,7 +252,7 @@ class Component(Registered, metaclass=ComponentMeta):
         dct['name'] = self.name
 
         for param in self.params.values():
-            dct[param.name] = str(param)
+            dct[param.name] = str(param) if param.value is not None else None
         return dct
 
     def __getattr__(self, name):

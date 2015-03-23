@@ -20,11 +20,12 @@ class Parameter(Registered):
     # will be stored in a dictionary named "registry_name"
     registry_name = "params"
 
-    def __init__(self, value=None, local=False, name=None, parent=None):
+    def __init__(self, value=None, local=False, name=None, parent=None, optional=False):
         self.value = value
         self.local = local
         self.name = name
         self.parent = parent
+        self.optional = optional
         super().__init__()
 
     def __get__(self, instance, owner):
@@ -96,11 +97,14 @@ class Parameter(Registered):
     def __str__(self):
         return str(self.evaluated_value)
 
-
     def clone(self):
-        return self.__class__(value=self.value, local=self.local, parent=self.parent, name=self.name)
+        return self.__class__(value=self.value, local=self.local, parent=self.parent, name=self.name, optional=self.optional)
 
 class Float(Parameter):
+    def __str__(self):
+        return float_to_eng(self.evaluated_value)
+
+class Integer(Parameter):
     def __str__(self):
         return float_to_eng(self.evaluated_value)
 
