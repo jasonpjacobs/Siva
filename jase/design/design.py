@@ -78,4 +78,19 @@ class Design(Component, metaclass=DesignMeta):
             dct = inst.instance_designs(dct)
         return dct
 
+    @property
+    def path(self):
+        if self.parent is not None and isinstance(self.parent, Design):
+            return self.parent.path + "." + str(self.name)
+        else:
+            return str(self.name)
+
+    @property
+    def path_components(self):
+        if self.parent is not None and isinstance(self.parent, Design):
+            path =  self.parent.path_components
+            path.append(self)
+            return path
+        else:
+            return [self]
 

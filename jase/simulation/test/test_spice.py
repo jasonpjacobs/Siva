@@ -54,12 +54,16 @@ class Test(Simulation):
     # Saves
     #Save(dut.i, type='v')
 
+    Save(dut.mn1.pwr)
+
 
 
 def test_something():
+
+
     t = Test()
 
-    '''
+
     assert t is not None
 
     assert len(t.analyses) > 0
@@ -69,16 +73,22 @@ def test_something():
     assert a.step == 0.2e-9
     assert a.stop == 10e-9
 
-    assert len(t.saves) is not None
 
-    assert len(t.sources) == 1
+
+    assert len(t.sources) == 2
 
     assert 'v1' in t.sources
     assert t.v1 is t.sources['v1']
 
     assert t.v1.period == 10e-9
     assert t.v1.width == 4.5e-09
-    '''
+
+    #assert len(t.saves) is not None
+    #assert len(t.saves) == 1
+    assert t.saves[0].parent is t
+
+    #assert t.saves[0].items[0].card() == ''
+
 
     txt = t.netlist()
     print("\n".join(txt))

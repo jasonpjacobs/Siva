@@ -1,5 +1,6 @@
 from ...design import Design, Pin
 from ...components.parameter import Parameter, Float, String
+from .save import Power, V, I
 
 __all__ = ['Nmos', 'Pmos', 'R', 'L', 'C']
 
@@ -58,6 +59,10 @@ class Mos(Primitive):
         txt = "{name} {s} {g} {d} {b} {model} w={w} l={l} m={m}".format(**self.card_dict())
         return txt
 
+    # Output/measurement requests
+    @property
+    def pwr(self):
+        return Power(p=self.d, n=self.s)
 
 class Nmos(Mos):
     """N-type MOSFET"""

@@ -14,6 +14,10 @@ class Net(Registered):
     def net(self):
         return self
 
+    @property
+    def path(self):
+        return self.parent.path + '.' + self.name
+
 class Pin(Registered):
     registry_name = "ports"
     def __init__(self, name=None, direction=None):
@@ -38,8 +42,19 @@ class Pin(Registered):
         self._name = name
         self.net.name = name
 
+    @property
+    def path(self):
+        return self.parent.path + ':' + self.name
+
 class Input(Pin):
     pass
 
 class Output(Pin):
     pass
+
+class Global(Net):
+    '''A global signal is a net that is available at all levels of hierarchy w/o
+        being brought in through an explicit pin'''
+    pass
+
+GND = Global(name=0)

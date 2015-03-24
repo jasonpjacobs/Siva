@@ -1,4 +1,4 @@
-from ..variable import Variable, Float, Bool
+from ..variable import Float, Bool
 from ...components.directive import Directive
 
 class Analysis(Directive):

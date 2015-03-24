@@ -20,6 +20,7 @@ class Save(Command):
             txt = str(self.item.path)
         return "{}{}({})".format(self.token, str(self.pin), txt)
 
+
 class V(Save):
     token = "V"
 

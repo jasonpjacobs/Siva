@@ -39,6 +39,12 @@ class Simulation(BaseComponent):
                 card = inst_list[0].subckt_card()
                 if card:
                     txt.extend(inst_list[0].subckt_card())
+        txt.append('')
+
+        txt.append("** Output Requests **")
+        if self.saves:
+            for save in self.saves:
+                txt.extend(save.card())
 
         txt.append('')
         txt.append('.END')

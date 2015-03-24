@@ -1,6 +1,6 @@
 from ..components.parameter import Parameter, Float, Bool
 
-class Variable(Parameter):
+class XXVariable(Parameter):
     registry_name = "params"
 
     def __init__(self, value=None, name=None, target=None, desc=None, local=False):
