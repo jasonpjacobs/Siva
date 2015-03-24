@@ -1,14 +1,22 @@
-from ...design import Design
+from ...design.design import Design, DesignMeta
+from ...components.component import ComponentNamespace
+from .connections import Net
 
-class Circuit(Design):
+class CircuitMeta(DesignMeta):
+    @classmethod
+    def __prepare__(metacls, name, bases):
+        return ComponentNamespace(default=Net)
+
+class Circuit(Design, metaclass=CircuitMeta):
 
     def card(self):
         txt = []
 
         # Inst name
-        txt.append("X_{name}".format(name=self.name))
+        txt.append("{name}".format(name=self.inst_name))
 
-        # Pin ocnnection
+        # Pin connections
+        # Pin connections
         for pin in self.ports.values():
             txt.append(pin.conn.name)
 
@@ -28,8 +36,15 @@ class Circuit(Design):
         pin_txt = " ".join(self.ports)
         txt.append(".SUBCKT {} {}".format(self.cell_name, pin_txt))
         for inst in self.instances.values():
-            txt.append("  " + inst.card())
+            txt.extend(inst.card())
         txt.append(".ENDS")
         return txt
+
+    @property
+    def inst_name(self):
+        """Called during netlisting to convert our internal name to one
+        compatible with a target design language
+        """
+        return "X_" + str(self.name)
 
 

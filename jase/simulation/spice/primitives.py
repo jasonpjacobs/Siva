@@ -1,10 +1,17 @@
-from ...design import Design, Pin
+from ...design.design import Design, DesignMeta
+from .connections import Net, Pin
 from ...components.parameter import Parameter, Float, String
+from ...components.component import ComponentNamespace
 from .save import Power, V, I
 
 __all__ = ['Nmos', 'Pmos', 'R', 'L', 'C']
 
-class Primitive(Design):
+class SpiceMeta(DesignMeta):
+    @classmethod
+    def __prepare__(metacls, name, bases):
+        return ComponentNamespace(default=Net)
+
+class Primitive(Design, metaclass=SpiceMeta):
     prefix = ""
 
     def card(self):
@@ -42,6 +49,15 @@ class Primitive(Design):
                 words.append("{}={}".format(param.name, value[param.name]))
         return " ".join(words)
 
+    @property
+    def path(self, format=None):
+        if format is None:
+            return super().path
+        if format == "spice":
+            return super().path
+
+
+
 class Mos(Primitive):
     token = "M"
 
@@ -57,7 +73,7 @@ class Mos(Primitive):
 
     def card(self):
         txt = "{name} {s} {g} {d} {b} {model} w={w} l={l} m={m}".format(**self.card_dict())
-        return txt
+        return [txt]
 
     # Output/measurement requests
     @property

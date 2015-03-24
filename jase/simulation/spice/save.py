@@ -8,6 +8,10 @@ class Save(Directive):
     def __init__(self, *requests, analysis=None, format='raw'):
         super().__init__()
         self.analysis = analysis
+
+        for request in requests:
+            assert isinstance(request, Output)
+
         self.requests = requests
         self.format = format
 
@@ -21,8 +25,9 @@ class Save(Directive):
 
         for request in self.requests:
             for output in request.outputs():
-                cards.append(".PRINT {analysis} format={format} {output}".format(analysis=analysis, format=self.format,
-                                                                               output=output))
+                cards.append(".PRINT {analysis} format={format} {output}".format(analysis=analysis,
+                    format=self.format, output=output))
+
         return cards
 
 class Output:

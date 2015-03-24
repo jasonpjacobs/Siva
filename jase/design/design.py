@@ -35,9 +35,9 @@ class Design(Component, metaclass=DesignMeta):
                     # TODO: Allow design instances to create nets for their parents
                     raise NotImplementedError('Defining nets via strings is not supported')
                     net = Net(name=v)
-                    elf.super_nets.append(Net(name=conns[i]))
+                    self.super_nets.append(Net(name=conns[i]))
                 elif isinstance(v, Pin):
-                    net = v.conn
+                    net = v.net
                 else:
                     net = v
                 self.ports[k].connect(net)
@@ -81,9 +81,9 @@ class Design(Component, metaclass=DesignMeta):
     @property
     def path(self):
         if self.parent is not None and isinstance(self.parent, Design):
-            return self.parent.path + "." + str(self.name)
+            return self.parent.path + "." + self.inst_name
         else:
-            return str(self.name)
+            return self.inst_name
 
     @property
     def path_components(self):
@@ -93,4 +93,17 @@ class Design(Component, metaclass=DesignMeta):
             return path
         else:
             return [self]
+
+    @property
+    def inst_name(self):
+        """Netlisting hook to preprocess our internal name when a reference
+        to our instance in a particular design language.
+
+        This could be done for several reasons.
+        E.g.:
+        - Append the library name to the cell name to prevent a namespace collision
+        - Prefix the name with a token (E.g., spice will append "X" to all subckt instances
+        - Alter a name to prevent a keyword collision in a target design language
+        """
+        return str(self.name)
 

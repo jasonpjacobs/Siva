@@ -24,8 +24,17 @@ class Tran(Analysis):
         self.uic = uic
 
     def card(self):
-        uic = "UIC" if self.uic else ""
-        start = self.start if self.start > 0 else ""
         txt = ".TRAN {step} {stop} {start} {uic}".format(**self._param_dict)
         return [txt]
 
+    @property
+    def _param_dict(self):
+        dct = super()._param_dict
+
+        if self.uic is not True:
+            dct['uic'] = ""
+
+        if self.start == 0:
+            dct['start'] = ''
+
+        return dct
