@@ -10,11 +10,9 @@ class Table:
         if columns is not None:
             for col_name in columns:
                 self.columns[col_name] = []
-
-        # Default column width.  Place holder for more explicit formatting
+        # Default printed column width.  Place holder for more explicit formatting
         # options that will be developed later
         self.w = 8
-
 
     def add_row(self, *columns, row=None):
         """Adds a row to the table to the specified row.  If the row is not
@@ -77,7 +75,13 @@ class Table:
 
     @property
     def num_rows(self):
+        if len(self.columns) == 0:
+            return 0
         return max([len(col) for col in self.columns.values()])
+
+    @property
+    def is_empty(self):
+        return self.num_rows == 0
 
     def __getitem__(self, item):
         return self.columns[item]
