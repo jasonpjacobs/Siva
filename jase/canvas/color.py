@@ -83,6 +83,7 @@ class Color(QtGui.QColor):
             vals == 4
         except:
             pdb.set_trace()
+            raise
 
         if len(vals) == 4:
             r, g, b, a = vals
@@ -125,6 +126,7 @@ class Color(QtGui.QColor):
             return Color(*values)
         except:
             pdb.set_trace()
+            raise
 
     def __repr__(self):
         r = self.red()

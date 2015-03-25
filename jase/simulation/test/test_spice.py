@@ -62,9 +62,11 @@ class Test(Simulation):
 
 
 def test_something():
-    t = Test()
+    t = Test(name='Simulation Test')
     assert t is not None
     assert len(t.analyses) > 0
+
+    assert t.root is not None
 
     a = t.analyses[0]
 
@@ -88,8 +90,9 @@ def test_something():
 
     #assert t.saves[0].items[0].card() == ''
 
+    t.start()
 
-    txt = t.netlist()
-    print("\n".join(txt))
+    #txt = t.netlist()
+    #print("\n".join(txt))
     assert False
 

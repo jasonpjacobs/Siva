@@ -4,10 +4,8 @@ from ..simulation.table import Table
 
 import logging
 import threading
-import h5py
+import sys
 import os
-
-import collections
 
 class Status:
     pass
@@ -43,11 +41,7 @@ class BaseComponent(Component):
     def __init__(self, parent=None, children=None, name=None, params=None, measurements=None, work_dir=".",
                  log_file=None, disk_mgr=None, parallel=False):
 
-        self._registries = []
-
         super().__init__(parent=parent, children=children, name=name)
-
-
 
         # If 'vars' was specified, we assume the procedural interface is being used to define the loop variables.
         # If the declarative interface is used, loop_vars will already be populated
@@ -57,21 +51,21 @@ class BaseComponent(Component):
                 params = params.values()
 
             for param in params:
-                param.register_from_inst(parent=self, name=param.name, cls=self.__class__)
+                param.register_from_inst(parent=self, name=param.name)
 
         if measurements is not None:
             if hasattr(measurements, 'values'):
                 measurements = measurements.values()
 
             for measurement in measurements:
-                measurement.register_from_inst(parent=self, name=measurement.name, cls=self.__class__)
+                measurement.register_from_inst(parent=self, name=measurement.name)
 
 
         self.work_dir = work_dir
         self.results = Table()
 
         self.log_file = log_file
-        self.log = None
+        self.logger = None
 
         self.disk_mgr = disk_mgr
         self.parallel = parallel
@@ -81,7 +75,7 @@ class BaseComponent(Component):
         self.master = self
         self.index = None
 
-        self.lock = threading.Lock()
+        self.lock = threading.RLock()
 
     @property
     def disk_mgr(self):
@@ -121,7 +115,12 @@ class BaseComponent(Component):
         if len(self.threads) > 0:
             if self.parallel:
                 for thread in self.threads:
-                    thread.start()
+                    # "Once a thread object is created, its activity must be started by calling the 
+                    # thread’s start() method. This invokes the run() method in a separate thread of control."
+                    # 
+                    # Our run method will then call execute(), then start each of the child components.
+                    # When those finish running, our own measure() method will be called.
+                    thread.start()  #--> self.run()
                 # Wait for all to finish
                 if wait:
                     for thread in self.threads:
@@ -135,7 +134,7 @@ class BaseComponent(Component):
             self.final()
 
     def run(self):
-        """Called by a thread
+        """Called by a thread's start() method.
         """
         self.execute()
         for component in self.components.values():
@@ -155,49 +154,58 @@ class BaseComponent(Component):
         * Creates local directories on the work disk.
         """
 
+        self.setup_work_area()
+
+        with self.lock:
+            if self is self.master:
+                self.setup_logging()
+
+        # Create a results table
+        self.results = Table()
+
+        self.status = Initialized
+
+    def setup_work_area(self):
+
         # Create work area.
         root = self.root
         disk_mgr = root.disk_mgr
         if self is self.root and disk_mgr is not None:
             disk_mgr.start()
-
         for comp in self.path_components:
             if comp.name is None:
                 raise ValueError("Component must have a name: {}".format(self))
-        subdirs = [comp.inst_name for comp in self.path_components]
 
+        subdirs = [comp.inst_name for comp in self.path_components]
         if disk_mgr:
             request = disk_mgr.request(job=self, subdirs=subdirs)
             self.work_dir = request.path
 
-        # Create a log file
-        self.setup_logging()
-
-        # Create a results table
-        with self.lock:
-            self.results = Table()
-
-        self.status = Initialized
-
     def setup_logging(self):
-        if self.log_file is not None:
+        assert self.master is self
+        if self.log_file is not None and self.logger is None:
             path = os.path.join(self.work_dir, self.log_file)
-            self.log = logging.getLogger(self.log_file)
-            logging.basicConfig(filename=path, level=logging.DEBUG)
 
-            ch = logging.StreamHandler()
-            ch.setLevel(logging.DEBUG)
-            formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+            self.logger = logging.getLogger(self.path)
+            self.logger.setLevel(logging.DEBUG)
+
+            formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+
+            ch = logging.StreamHandler(sys.stdout)
             ch.setFormatter(formatter)
+            self.logger.addHandler(ch)
 
-            # add ch to logger
-            self.log.addHandler(ch)
-
+            fh = logging.FileHandler(path, mode='w')
+            fh.setFormatter(formatter)
+            self.logger.addHandler(fh)
+            self.logger.info("Log file for {} created.".format(self.path))
             self.log_file = path
+        else:
+            self.logger = None
+            self.log_file = None
 
     def measure(self):
-        if self.root.log:
-            self.root.log.debug("{} ({}): Evaluating measurements".format(self.inst_name, id(self)))
+        self.debug("{} ({}): Evaluating measurements".format(self.inst_name, id(self)))
 
         # Evaluate all measurement statements
         for m in self.measurements.values():
@@ -213,12 +221,15 @@ class BaseComponent(Component):
             record[m.name] = m.value
 
         # Add it to the master's results table
+        self.debug("  About to add results: {}".format(self.path))
         with self.lock:
             self.master.results.add_row(record, row=self.index)
+            self.debug("  Results added.")
         self.status = Measured
 
     def final(self):
-        pass
+        self.status = Finalized
+        self.info("Done.")
 
     def __iter__(self):
         self._i = 0
@@ -238,24 +249,30 @@ class BaseComponent(Component):
         pass
 
     @property
-    def inst_name(self):
-        if hasattr(self, '_inst_name') and self._inst_name is not None:
-            return self._inst_name
-        else:
-            return self.name
-    
-    @inst_name.setter
-    def inst_name(self, value):
-        self._inst_name = value
-
-
-    @property
     def root(self):
         return super().root.master
-
-
 
     def __repr__(self):
         name = "{}(name={})".format(self.__class__.__name__, self.inst_name)
         return name
+
+    def debug(self, msg):
+        if self.logger is not None:
+            with self.lock:
+                self.master.logger.debug(msg)
+
+    def info(self, msg):
+        if self.logger is not None:
+            with self.lock:
+                self.master.logger.info(msg)
+
+    def warn(self, msg):
+        if self.logger is not None:
+            with self.lock:
+                self.logger.warn(msg)
+
+    def error(self, msg):
+        if self.logger is not None:
+            with self.lock:
+                self.logger.error(msg)
 

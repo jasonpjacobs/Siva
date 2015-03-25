@@ -97,8 +97,10 @@ class Parameter(Registered):
     def __str__(self):
         return str(self.evaluated_value)
 
-    def clone(self):
-        return self.__class__(value=self.value, local=self.local, parent=self.parent, name=self.name, optional=self.optional)
+    def clone(self, owner=None):
+        if owner is None:
+            owner = self.parent
+        return self.__class__(value=self.value, local=self.local, parent=owner, name=self.name, optional=self.optional)
 
 class Float(Parameter):
     def __str__(self):

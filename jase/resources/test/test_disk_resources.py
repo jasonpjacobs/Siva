@@ -41,8 +41,6 @@ def test_disk_timeout(work_dir):
     with pytest.raises(TimeoutError):
         disk = mgr.request(job, size=1e6, timeout=2)
 
-    #mgr.stop()
-
 
 def test_subdir_creation(work_dir):
     mgr = LocalDiskManager(root=work_dir)

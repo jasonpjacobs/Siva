@@ -14,6 +14,7 @@ class Save(Directive):
 
         self.requests = requests
         self.format = format
+        self.name = 'save'
 
     def card(self):
         cards = []

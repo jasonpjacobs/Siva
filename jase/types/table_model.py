@@ -198,6 +198,7 @@ class TableModel(QtCore.QAbstractTableModel):
             except:
                 import pdb
                 pdb.set_trace()
+                raise
         # Default action
         return None
 

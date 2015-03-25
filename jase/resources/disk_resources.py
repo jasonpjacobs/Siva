@@ -44,8 +44,9 @@ class DiskManager(ResourceManager):
             raise FileNotFoundError("Root directory, {} does not exist.")
 
         super().__init__(polling_time=polling_time, log_file=log_file)
-        if self.logger:
-            self.logger.info("Disk manager started on {}. Max size: {}".format(root, max_size))
+
+        self.info("Disk manager started on {}. Max size: {}".format(root, max_size))
+        self.info("Polling time is {} seconds".format(self.polling_time))
 
         self.root = root
         self.max_size = max_size
@@ -62,8 +63,7 @@ class LocalDiskManager(DiskManager):
         """
 
         request = DiskRequest(job=job, size=size, subdirs=subdirs)
-        if self.logger:
-            self.logger.info("Disk requested: {}, dirs={}, size={}".format(job.name, subdirs, size))
+        self.info("Disk requested: {}, dirs={}, size={}".format(job.name, subdirs, size))
         resource = self.enqueue_request(request, timeout=timeout)
         return resource
 
@@ -88,11 +88,9 @@ class LocalDiskManager(DiskManager):
                     subdirs = [request.name]
                 job_dir = os.path.join(self.root, *subdirs)
                 resource = DiskResource(path=job_dir, mgr=self, size=request.size)
-                if self.logger:
-                    self.logger.info("Disk granted to {}".format(job_dir))
+                self.info("Disk granted to {}".format(job_dir))
                 self.resources.append(resource)
                 return resource
             else:
-                if self.logger:
-                    self.logger.info("Waiting for more disk space")
+                self.info("Waiting for more disk space")
                 time.sleep(self.polling_time)

@@ -158,7 +158,7 @@ class ListModel(QtCore.QAbstractListModel):
                 if descriptor.desc is not None:
                     return QtCore.QString(descriptor.desc)
             except:
-                pass
+                raise
         # Default action
         return None
 

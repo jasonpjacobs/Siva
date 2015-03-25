@@ -2,13 +2,13 @@ import pytest
 import logging
 import os
 
+xfail = pytest.mark.xfail
 
 import numpy as np
 from ..loop_component import LoopVariable, LoopComponent
 from ..measurement import Measurement
-from ...simulation.variable import Variable
-import copy
-LOG = []
+from ..table import Table
+
 class Mock:
     def __init__(self, int_var=0, str_var='string', float_var = 0.0):
         self.int_var = int_var
@@ -59,8 +59,6 @@ def simple_loop(mock):
     m3 = Measurement(name='str_result', expr='Loop.str_var')
 
     loop = LoopComponent(parent=None, vars=[a,b,c], name='Loop', measurements=[m1, m2, m3], work_dir=None)
-
-
     return loop
 
 def test_loop_variable_creation(mock):
@@ -120,8 +118,7 @@ def test_callable_loop_variable():
     loop = LoopComponent(vars = [var,], name='Loop', measurements=[ms,], work_dir=None)
     loop.M = m
     results = []
-    loop.start()
-    loop.wait()
+    loop.start(wait=True)
 
     assert loop.results is not None
 
@@ -135,9 +132,32 @@ def test_simple_loop(simple_loop):
 
     loop = simple_loop
 
+    # Check that this loop is the root of the component hierarchy
+    assert loop.root is loop
+    assert loop.parent is None
+
+    assert loop.master is loop
+
+    # Should not have any child components
+    assert len(loop.components) == 0
+
+    # Check vars
+    for var in ('float', 'int', 'str'):
+        # Check that the parameter registry is populated
+        assert var in loop.params
+
+        # And mirrors in the loop_vars registry
+        assert var in loop.loop_vars
+        assert loop.params[var] is loop.loop_vars[var]
+
+    # Check measurements
     assert 'int_result' in loop.measurements
     assert 'float_result' in loop.measurements
     assert 'str_result' in loop.measurements
+
+    # Check that the results table is present, but empty
+    assert isinstance(loop.results, Table)
+    assert loop.results.is_empty
 
     loop.start()
     results = loop.results
@@ -146,6 +166,8 @@ def test_simple_loop(simple_loop):
     # This is the outer loop variable,
     # So there should be 3*3 (9) unique
     # values
+    assert len(results.columns) > 0
+
     int = np.array(results['int'])
     assert int.max() == 9
     assert int.min() == 1
@@ -196,7 +218,6 @@ def hierarchical_loops(mock):
     L1.root_dir = work_dir
     L1.disk_mgr = LocalDiskManager(root=work_dir)
     return L1
-
 
 def test_hierarchical_loops(hierarchical_loops):
     loop = hierarchical_loops

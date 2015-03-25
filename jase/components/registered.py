@@ -79,7 +79,7 @@ class Registered:
         try:
             self._store(class_dct=class_dct, registry_name=registry_name)
         except:
-            pass
+            raise
         if registry_name not in class_dct['_registries']:
             class_dct['_registries'].append(registry_name)
 

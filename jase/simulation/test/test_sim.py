@@ -1,6 +1,7 @@
 import pytest
 
-from ..variable import Variable
+
+from ...components.parameter import Parameter
 from ..loop_component import LoopComponent, LoopVariable
 from ..base_component import BaseComponent
 from ..measurement import Measurement
@@ -9,7 +10,7 @@ import time
 import tempfile
 
 class Sim(BaseComponent):
-    x = Variable(10)
+    x = Parameter(10)
     m1 = Measurement(expr='self.y')
 
     def execute(self):
@@ -22,6 +23,7 @@ class Char(LoopComponent):
     sim = Sim()
     m1 = Measurement(expr='sim.m1')
 
+@pytest.mark.skipif(False, reason="Isolating debug case")
 def test_sim():
     s = Sim()
 
@@ -45,12 +47,27 @@ def test_sim():
 
 def test_char():
     work_dir = tempfile.mkdtemp()
+
+    work_dir = r'P:\work\test_sim'
+    import os, shutil
+    if len(os.listdir(work_dir)):
+        for file_object in os.listdir(work_dir):
+            file_object_path = os.path.join(work_dir, file_object)
+            if os.path.isfile(file_object_path):
+                os.remove(file_object_path)
+            else:
+                shutil.rmtree(file_object_path)
+    import os
+
+    print("Work dir is", work_dir)
     c = Char(name="Char", work_dir=work_dir, log_file="char.log")
 
     assert c is not None
     assert c.sim is not None
     assert 'x' in c.params
 
+
+    assert 'loop_vars' in c._registries
     assert 'loop_vars' in Char._registries
 
     assert 'x' in c.loop_vars

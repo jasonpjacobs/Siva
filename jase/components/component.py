@@ -128,10 +128,16 @@ class Component(Registered, metaclass=ComponentMeta):
             registry = getattr(cls, registry_name)
 
             # Create a copy
-            inst_dict = registry.clone(owner=inst)
+            try:
+                inst_dict = registry.clone(owner=inst)
+            except:
+                raise
 
             # Add it to the instance
             setattr(inst, registry_name, inst_dict)
+
+        # Make sure the instance knows its registries
+        inst._registries = list(cls._registries)
 
         return inst
 
@@ -185,9 +191,20 @@ class Component(Registered, metaclass=ComponentMeta):
     @property
     def path(self):
         if self.parent is not None:
-            return self.parent.path + "." + str(self.name)
+            return self.parent.path + "." + str(self.inst_name)
         else:
-            return str(self.name)
+            return str(self.inst_name)
+
+    @property
+    def inst_name(self):
+        if hasattr(self, '_inst_name') and self._inst_name is not None:
+            return self._inst_name
+        else:
+            return self.name
+
+    @inst_name.setter
+    def inst_name(self, value):
+        self._inst_name = value
 
     @property
     def path_components(self):
@@ -260,6 +277,7 @@ class Component(Registered, metaclass=ComponentMeta):
             registry = self.__getattribute__(registry_name)
             if name in registry:
                 return registry[name]
+        raise AttributeError
 
     def __repr__(self):
         name = "{}(name={})".format(self.__class__.__qualname__, self.name)
@@ -274,4 +292,4 @@ class Component(Registered, metaclass=ComponentMeta):
         inst.name = name
         inst.parent = self
 
-        inst.register_from_inst(self, cls=self.__class__, name=name)
+        inst.register_from_inst(parent=self, name=name)

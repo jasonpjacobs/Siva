@@ -22,6 +22,7 @@ class Tran(Analysis):
         self.stop = stop
         self.step = step
         self.uic = uic
+        self.name = 'tran'
 
     def card(self):
         txt = ".TRAN {step} {stop} {start} {uic}".format(**self._param_dict)

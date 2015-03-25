@@ -4,9 +4,12 @@ import itertools
 import collections
 
 from .base_component import BaseComponent, Running
-from .variable import Variable
 from ..components.parameter import Parameter
-class LoopVariable(Variable):
+#from .variable import Variable
+from ..components.parameter import Parameter
+
+
+class LoopVariable(Parameter):
     registry_name = "params"
     def __init__(self, target=None, start=None, stop=None, step=None, n=None,
                  values=None, endpoint=True, space="linear", name=None, desc=None):
@@ -59,10 +62,9 @@ class LoopVariable(Variable):
         # can keep track of them.
         super().register(parent=parent, class_dct=class_dct, name=name, key="loop_vars")
 
-    def register_from_inst(self, parent, name, cls, key=None):
-        super().register_from_inst(parent, name, cls, key=None)
-        super().register_from_inst(parent, name, cls, key="loop_vars")
-
+    def register_from_inst(self, parent, name, key=None):
+        super().register_from_inst(parent, name, key=None)
+        super().register_from_inst(parent, name, key="loop_vars")
 
     def __iter__(self):
         self.reset()
@@ -100,8 +102,7 @@ class LoopComponent(BaseComponent):
         return np.product([len(var) for var in self.loop_vars.values()])
 
     def __iter__(self):
-        if self.root.log:
-            self.root.log.debug("{}: Loop __iter__".format(self.inst_name))
+        self.debug("{}: Loop __iter__".format(self.inst_name))
         self._iterators = itertools.product(*self.loop_vars.values())
         self._i = 0
         return self
@@ -109,8 +110,8 @@ class LoopComponent(BaseComponent):
     def __next__(self):
         values = self._iterators.__next__()
         self._i += 1
-        if self.root.log:
-            self.root.log.debug("{}: Loop __next__ ({})".format(self.inst_name, self._i,))
+
+        self.debug("{}: Loop __next__ ({})".format(self.inst_name, self._i,))
 
         var_vals = list(zip([v.name for v in self.loop_vars.values()], values))
         inst_name = self.name + "_" + str(self._i)
@@ -119,8 +120,8 @@ class LoopComponent(BaseComponent):
         # TODO:  Can we do this using descriptors?
         for var, val in var_vals:
             loop_iteration.params[var].value = val
-            if self.root.log:
-                self.root.log.debug("{}:    {} -> {}".format(self.inst_name, var, loop_iteration.params[var].value))
+            if self.root.logger:
+                self.root.logger.debug("{}:    {} -> {}".format(self.inst_name, var, loop_iteration.params[var].value))
         return loop_iteration
 
     # BaseComponent interface
@@ -133,8 +134,7 @@ class LoopComponent(BaseComponent):
     def execute(self):
         self.status = Running
         for param in self.params.values():
-            if self.root.log:
-                self.root.log.debug("{}: Setting {} to {}".format(self.inst_name, param.name, param.value))
+            self.debug("{}: Setting {} to {}".format(self.inst_name, param.name, param.value))
             param.eval(globals(), self.hierarchy_namespace)
 
 

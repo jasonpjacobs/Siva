@@ -154,8 +154,33 @@ def hier_with_params():
     a = A(name='a')
     return a
 
-def test_component_namespaces(hier_with_params):
-    a = hier_with_params
+
+def hier_with_params_procedural():
+    """ Procedurally create a component hierarchy for testing.
+    """
+
+
+    c = Component(params = Parameter(923478, name='z'))
+
+    b = Component(name='b',
+                  params=[
+                      Parameter('234l',name='z')
+                  ],
+        children=[c,])
+
+    a = Component(name='a',
+                  params=[
+                      Parameter(167.2, local=True, name='d'),
+                      Parameter(1111, name='z')
+                  ],
+                  children=[b,])
+
+
+@pytest.fixture
+def a(hier_with_params):
+    return hier_with_params
+
+def test_component_namespaces(a):
     assert a is not None
 
     ns = a.namespace
@@ -169,8 +194,7 @@ def test_component_namespaces(hier_with_params):
     assert 'x' not in a.namespace
     assert a.namespace
 
-def test_namespace_order(hier_with_params):
-    a = hier_with_params
+def test_namespace_order(a):
 
     # When called from C, the parameter value
     # should be C's z parameter (923478)
@@ -194,8 +218,7 @@ def test_instance_naming():
     assert c.b2.name == 'b2'
 
 
-def test_clone(hier_with_params):
-    a = hier_with_params
+def test_clone(a):
 
     a2 = a.clone(name='a2')
 
@@ -205,13 +228,16 @@ def test_clone(hier_with_params):
     assert a2.b.c.parent is not a.b
     assert a2.b.c.parent is a2.b
 
+@pytest.mark.skipif(True, reason="Not implemented")
+def test_procedural_model(procedural_model):
+    a = procedural_model
+    test_clone(a)
+    test_namespace_order(a)
 
-def test_param_descriptors(hier_with_params):
 
-    a = hier_with_params
 
+def test_param_descriptors(a):
     assert a.d == 167.2
-
     a.d = 42.3
     assert a.d == 42.3
     assert a.params['d'].value == 42.3

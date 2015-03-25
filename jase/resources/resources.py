@@ -26,7 +26,12 @@ class Request(threading.Event):
 
         self.resource = None
 
+    def __repr__(self):
+        return "{}(job={})".format(self.__class__.__name__, str(self.job))
+
 class ResourceManager(threading.Thread):
+    log_name = "Unnamed Resource Manager"
+
     def __init__(self, polling_time=1, log_file=None):
         super().__init__()
         # Queue to store incoming requests
@@ -41,21 +46,8 @@ class ResourceManager(threading.Thread):
         # Keep track of allocated resources
         self.resources = []
 
-        if log_file is not None:
-            self.logger = logging.getLogger(self.log_name)
-            self.logger.setLevel(logging.DEBUG)
-            self.logger.info("Local resource manager created at {}".format(log_file))
-            formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-
-            ch = logging.StreamHandler(sys.stdout)
-            ch.setFormatter(formatter)
-            self.logger.addHandler(ch)
-
-            fh = logging.FileHandler(log_file)
-            fh.setFormatter(formatter)
-            self.logger.addHandler(fh)
-        else:
-            self.logger = None
+        # Logging
+        self.setup_logging(log_file=log_file, log_name=self.log_name)
 
     def request(self, job, timeout=None):
         """ Called by the job dispatcher to request a resource.  The execution of this method is
@@ -75,10 +67,9 @@ class ResourceManager(threading.Thread):
         if not self._running:
             self.start()
         self.queue.put(request)
-        request.wait(timeout)
-
-        # Check to see if the request timed out
-        if request.resource is None:
+        # The wait method will not return until the process_request loop
+        # has called the request's set() method.
+        if not request.wait(timeout):
             raise ResourceTimeoutError
 
         return request.resource
@@ -88,11 +79,14 @@ class ResourceManager(threading.Thread):
         when the start method is called.
         """
         self._running = True
-        if self.logger:
-            self.logger.info("Resource manager started.".format(self.log_name))
-        while True:
+        self.info("Resource manager started.".format(self.log_name))
+        while self._running:
             time.sleep(self.polling_time)
             self.process_requests()
+        self.debug('Run method is now halting.')
+
+    def stop(self):
+        self._running = False
 
     def process_requests(self):
         """ Simple processing loop that gets requests from the queue and waits for the resource to
@@ -103,14 +97,15 @@ class ResourceManager(threading.Thread):
         """
         if not self.queue.empty():
             request = self.queue.get()
-            if self.logger:
-                self.logger.debug("Processing request: {}".format(request))
+            self.debug("Making request: {}".format(request))
+            # get_resource will block if the the requested resource
+            # is not available
             request.resource = self.get_resource(request)
+            self.debug("Request granted: {}".format(request))
             request.set()
         else:
-            if self.logger:
-                pass
-                #self.logger.debug("Request queue empty.")
+            pass
+            #self.debug("Request queue empty.")
 
     def get_resource(self, request):
         """ Called by the Resource base class to get a resource.  This method is responsible
@@ -123,6 +118,43 @@ class ResourceManager(threading.Thread):
 
     def delete_resource(self, resource):
         self.resources.remove(resource)
+
+
+    def setup_logging(self, log_file=None, log_name="Resource", level=logging.DEBUG):
+        if log_file is not None:
+            self.logger = logging.getLogger(log_name)
+            self.logger.setLevel(level)
+
+            formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+
+            ch = logging.StreamHandler(sys.stdout)
+            ch.setFormatter(formatter)
+            self.logger.addHandler(ch)
+
+            fh = logging.FileHandler(log_file, mode='w')
+            fh.setFormatter(formatter)
+            self.logger.addHandler(fh)
+            self.logger.info("Local resource manager created at {}".format(log_file))
+        else:
+            self.logger = None
+
+    def debug(self, msg):
+        if self.logger is not None:
+            self.logger.debug(msg)
+
+    def info(self, msg):
+        if self.logger is not None:
+            self.logger.info(msg)
+
+    def warn(self, msg):
+        if self.logger is not None:
+            self.logger.warn(msg)
+
+    def error(self, msg):
+        if self.logger is not None:
+            self.logger.error(msg)
+
+
 
 
 

@@ -51,7 +51,8 @@ def sim_tree():
 
     A.name = 'a'
     work_dir = tempfile.mkdtemp()
-    a = A(name='a', work_dir=work_dir)
+    word_dir = r'P:\work\test_sim_tree'
+    a = A(name='a', work_dir=work_dir, log_file="sim.log")
     return a
 
 def test_model(sim_tree):
@@ -65,7 +66,7 @@ def test_model(sim_tree):
     try:
         a.start()
     except:
-        pass
+        raise
 
     print(MockComponent.LOG)
 
