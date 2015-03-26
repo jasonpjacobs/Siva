@@ -18,7 +18,12 @@ class DiskResource:
         self.mgr = mgr
         self.size=size
 
-        os.makedirs(self.path, exist_ok=False)
+        try:
+            if os.path.exists(self.path) and not os.listdir(self.path) == "":
+                shutil.rmtree(self.path)
+            os.makedirs(self.path, exist_ok=False)
+        except PermissionError:
+            raise
 
     def __enter__(self):
         if not os.path.exists(self.path):
@@ -87,6 +92,7 @@ class LocalDiskManager(DiskManager):
                 else:
                     subdirs = [request.name]
                 job_dir = os.path.join(self.root, *subdirs)
+
                 resource = DiskResource(path=job_dir, mgr=self, size=request.size)
                 self.info("Disk granted to {}".format(job_dir))
                 self.resources.append(resource)

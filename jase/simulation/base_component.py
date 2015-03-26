@@ -59,10 +59,12 @@ class BaseComponent(Component):
 
             for measurement in measurements:
                 measurement.register_from_inst(parent=self, name=measurement.name)
+        else:
+            if not hasattr(self, 'measurements'):
+                self.measurements = {}
 
 
         self.work_dir = work_dir
-        self.results = Table()
 
         self.log_file = log_file
         self.logger = None
@@ -205,6 +207,7 @@ class BaseComponent(Component):
             self.log_file = None
 
     def measure(self):
+
         self.debug("{} ({}): Evaluating measurements".format(self.inst_name, id(self)))
 
         # Evaluate all measurement statements

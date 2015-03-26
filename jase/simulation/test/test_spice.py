@@ -61,8 +61,8 @@ class Test(Simulation):
 
 
 
-def test_something():
-    t = Test(name='Simulation Test')
+def test_simulation():
+    t = Test(name='Simulation Test', work_dir=r'P:\work\test_spice')
     assert t is not None
     assert len(t.analyses) > 0
 

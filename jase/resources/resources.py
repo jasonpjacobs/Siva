@@ -103,9 +103,6 @@ class ResourceManager(threading.Thread):
             request.resource = self.get_resource(request)
             self.debug("Request granted: {}".format(request))
             request.set()
-        else:
-            pass
-            #self.debug("Request queue empty.")
 
     def get_resource(self, request):
         """ Called by the Resource base class to get a resource.  This method is responsible
