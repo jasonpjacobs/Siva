@@ -20,7 +20,7 @@ class Pin(connections.Pin):
         their own flavor of Net subclass.
         """
         if self._net is None:
-            self._net = Net(name=self.name)
+            self._net = Net(name=self.name, parent=self.parent)
         return self._net
 
 class Net(connections.Net):

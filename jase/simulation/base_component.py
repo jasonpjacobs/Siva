@@ -14,22 +14,23 @@ class Status:
 class Uninitialized(Status):
     pass
 
-
 class Initialized(Status):
     pass
-
 
 class Running(Status):
     pass
 
-
 class Measured(Status):
     pass
-
 
 class Finalized(Status):
     pass
 
+class Error(Status):
+    pass
+
+class ExecutionError(Exception):
+    '''An exception raised when a Component encounters a problem during execution'''
 
 class BaseComponent(Component):
     """ Base class for all simulation components
@@ -138,10 +139,14 @@ class BaseComponent(Component):
     def run(self):
         """Called by a thread's start() method.
         """
-        self.execute()
-        for component in self.components.values():
-            component.start(wait=True)
-        self.measure()
+        try:
+            self.execute()
+            for component in self.components.values():
+                component.start(wait=True)
+            self.measure()
+        except ExecutionError:
+            self.status = Error
+            raise
 
     def wait(self):
         """Waits for all running threads to complete

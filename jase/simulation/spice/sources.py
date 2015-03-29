@@ -53,7 +53,7 @@ class Vpulse(Source):
 
 
     def card(self):
-        txt = "{name} {p} {n} PULSE({v1} {v2} {delay} {rise} {width} {period})".format(**self.card_dict())
+        txt = "{name} {p} {n} PULSE({v1} {v2} {delay} {rise} {fall} {width} {period})".format(**self.card_dict())
         return [txt]
 
 

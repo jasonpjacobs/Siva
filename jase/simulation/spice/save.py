@@ -1,38 +1,51 @@
 from ...components.directive import Directive
-from .global_nets import GND
 
 class Save(Directive):
     registry_name = "saves"
     token = ""
 
-    def __init__(self, *requests, analysis=None, format='raw'):
+
+    def __init__(self, *args, analysis=None, format='raw'):
+        from .connections import Net, Pin, GND
+
         super().__init__()
+
         self.analysis = analysis
 
-        for request in requests:
-            assert isinstance(request, Output)
+        requests = []
+        for arg in args:
+            # TODO:  Check if net, pins are voltage or current domain to determine the correct save type
+            if isinstance(arg, Net):
+                requests.append(arg.V)
+            elif isinstance(arg, Pin):
+                requests.append(arg.pin.net.V)
+            elif isinstance(arg, Output):
+                requests.append(arg)
+            else:
+                raise TypeError("Argument to Save must be a net, pin, or output request.")
 
         self.requests = requests
         self.format = format
         self.name = 'save'
 
-    def card(self):
+    @staticmethod
+    def card(outputs, format='raw', analysis='tran'):
         cards = []
-
-        if self.analysis is None:
-            analysis = self.parent.analyses[0].analysis_name
-        else:
-            analysis = self.analysis
-
-        for request in self.requests:
-            for output in request.outputs():
-                cards.append(".PRINT {analysis} format={format} {output}".format(analysis=analysis,
-                    format=self.format, output=output))
+        cards.append(".PRINT {analysis} format={format} {outputs}".format(analysis=analysis,
+                format=format, outputs=" ".join(outputs)))
 
         return cards
 
+    def outputs(self):
+        # [item for sublist in l for item in sublist]
+        outputs = []
+        for request in self.requests:
+            outputs.extend(request.outputs())
+        return outputs
+
+
 class Output:
-    """ An output (waveform) request)
+    """ An output (waveform) save request)
     """
 
 class Power(Output):
@@ -52,7 +65,14 @@ class Power(Output):
 
 class V(Output):
     token = "V"
-    def __init__(self, p, n=GND):
+
+
+    def __init__(self, p, n=None):
+
+
+        from .connections import GND
+        if n is None:
+            n = GND
         self.p = p
         self.n = n
 

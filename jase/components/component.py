@@ -7,7 +7,6 @@ Spice, as well as modules in Verilog will be descendants of this Component class
 
 A less obvious use will be for defining a complex simulation suite.  The simulation analysis itself will be one
 component.  Loops (over parameters, voltage, temperature), searches, and optimizations will also be defined as
-components.
 """
 
 import collections
@@ -66,7 +65,6 @@ class ComponentMeta(type):
         return dict
 
     def __new__(cls, name, bases, dct):
-        print("Calling new for ", cls, name)
         registries = ['components', 'params']
         if len(bases) > 0:
             for base in bases:

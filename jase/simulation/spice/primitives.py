@@ -72,7 +72,7 @@ class Mos(Primitive):
     model = String('nmos')
 
     def card(self):
-        txt = "{name} {s} {g} {d} {b} {model} w={w} l={l} m={m}".format(**self.card_dict())
+        txt = "{name} {d} {g} {s} {b} {model} w={w} l={l} m={m}".format(**self.card_dict())
         return [txt]
 
     # Output/measurement requests

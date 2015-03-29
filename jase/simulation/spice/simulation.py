@@ -4,8 +4,10 @@ import struct
 import pdb
 
 import numpy as np
+import h5py
 
-from ..base_component import BaseComponent
+from ..base_component import BaseComponent, ExecutionError
+from .save import Save
 
 class Simulation(BaseComponent):
 
@@ -59,8 +61,16 @@ class Simulation(BaseComponent):
 
         txt.append("** Output Requests **")
         if self.saves:
+            outputs = []
             for save in self.saves:
-                txt.extend(save.card())
+                outputs.extend(save.outputs())
+            card = Save.card(outputs, format='raw', analysis=self.analyses[0].analysis_name)
+            txt.extend(card)
+
+        if hasattr(self, 'options'):
+            txt.append("** Options")
+            for option in self.options:
+                txt.extend(option.card())
 
         txt.append('')
         txt.append('.END')
@@ -96,7 +106,9 @@ class Simulation(BaseComponent):
         return path
 
     def execute(self):
-        """
+        """ Runs a Spice simulation.
+
+        Creates a netlist, then call
 
         """
         self.info("Starting simulation.")
@@ -104,20 +116,94 @@ class Simulation(BaseComponent):
         self.results_file = os.path.join(self.work_dir, "output.raw")
         self.log_file = os.path.join(self.work_dir, "sim.log")
 
-        result = subprocess.call([self.simulator_path, "-l", self.log_file, "-o", self.results_file, self.netlist_path])
+        try:
+            result = subprocess.check_output([self.simulator_path, "-l", self.log_file, "-o", self.results_file, self.netlist_path], stderr=subprocess.STDOUT)
+        except subprocess.CalledProcessError as e:
+            msg = ["Simulation failed with error:", "    " +str(e.output), "    Return code: {}".format(e.returncode)]
+            self.error("\n".join(msg))
+            raise ExecutionError("Simulation failed")
 
-        if result == 0:
-            self.info("Simulation finished.")
-            try:
-                self.sim_results = self.load_results()
-            except FileNotFoundError:
-                print("No results for:", self.work_dir)
+        self.info("Simulation finished.")
+        try:
+            self.sim_results = self.load_results(self.results_file)
+        except FileNotFoundError:
+            self.error("No results for:", self.work_dir)
+            raise
 
-                raise
-        else:
-            self.error("Simulation error")
 
-    def load_results(self, format="binary"):
+    def load_results(self, results_file, output_file="sim.hdf5", results_name='tran'):
+        """Reads the Python native, but simulator specific simulation results
+        and converts it into a high level set of simulation results.
+        """
+        assert os.path.exists(results_file)
+
+        raw_data = self.load_raw_results(results_file)
+
+
+        results = h5py.File(os.path.join(self.work_dir,output_file),'w-')
+
+        root = results.create_group(results_name)     #Tran, AC, DC, etc
+
+        results_name = self.analyses[0].analysis_name
+        for entry in raw_data:
+
+            # Entry will be either a keyword:  TIME, FREQ, V etc.
+            if entry in ("TIME",):
+                data = raw_data[entry]
+                root['x'] = data
+
+            if '(' in entry:
+                (output_type, path, node) = self.parse_results_entry(entry)
+                if not output_type in root:
+                    root.create_group(output_type)
+                group = root[output_type]
+
+                full_path = "/".join(path + [node])
+                group[full_path] = raw_data[entry]
+
+        results.flush()
+        self.simulation_data = results
+
+    @staticmethod
+    def parse_results_entry(entry):
+        """ Exrancts output type, hierarchy, and node/net info from the labels in the results file.
+        :param entry: V(XDUT.XI0.R1:p) --> (V, [dut, i0, r1], p)
+        :return:
+        """
+        if '(' in entry:
+            output_type = entry.split('(')[0]
+
+            path = entry[entry.find("(")+1:entry.find(")")]
+
+            if ":" in path:
+                path, node_net = path.split(":")
+            else:
+                node_net = path
+                path = ''
+
+            if path is '':
+                path = []
+            elif "." in path:
+                path = path.split('.')
+            else:
+                path = [path]
+
+            orig_path = path
+            path = []
+            for name in orig_path:
+                if name.startswith('X'):
+                    name = name[1:]
+                path.append(name.lower())
+
+            return (output_type.lower(), path, node_net.lower())
+
+
+
+    def load_raw_results(self, results_file, format="binary",):
+        """Reads the raw simulation data and converts it into a low level, simulator specific,
+        native Python format (Numpy arrays)
+        """
+
         if format == "binary":
             bytes_read = open(self.results_file, "rb").read()
 
@@ -162,7 +248,7 @@ class Simulation(BaseComponent):
             elif data_format == "complex":
                 cols_per_value = 2
             else:
-                print("ERROR:  XYCE results file wasn't formatted properly")
+                self.error("XYCE results file wasn't formatted properly")
                 pdb.set_trace()
 
             try:

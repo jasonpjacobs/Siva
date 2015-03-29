@@ -3,10 +3,10 @@ from ..components import Registered
 
 class Net(Registered):
     registry_name = "nets"
-    def __init__(self, name, *args):
+    def __init__(self, name, parent=None):
         self.name = name
         self.ports = []
-        self.parent = None
+        self.parent = parent
 
     def add_port(self, port):
         self.ports.append(port)
@@ -17,8 +17,8 @@ class Net(Registered):
 
     @property
     def path(self):
-        if self.parent is not None:
-            return self.parent.path + ':' + self.name
+        from ..design.design import Design
+        if self.parent is not None and isinstance(self.parent, Design):
             return self.parent.path + ':' + self.name
         else:
             return self.name
@@ -26,15 +26,14 @@ class Net(Registered):
 class Pin(Registered):
     registry_name = "ports"
 
-    def __init__(self, name=None, direction=None):
+    def __init__(self, name=None, direction=None, parent=None):
 
-        # Setting our name attribute will also set our net attribute.  This needs to be first.
         self._net = None
+        self._parent = parent
+        self._name = name
 
-        self.name = name
         self.direction = None
         self.conn = None
-
 
     @property
     def net(self):
@@ -65,8 +64,22 @@ class Pin(Registered):
         self.net.name = name
 
     @property
+    def parent(self):
+        return self._parent
+
+    @parent.setter
+    def parent(self, value):
+        self._parent = value
+        if self.net is not None:
+            self.net.parent = value
+
+    @property
     def path(self):
-        return self.parent.path + ':' + self.name
+        from ..design.design import Design
+        if self.parent is not None and isinstance(self.parent, Design):
+            return self.parent.path + ':' + self.name
+        else:
+            return self.name
 
 class Input(Pin):
     pass
