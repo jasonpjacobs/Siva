@@ -275,7 +275,8 @@ class Component(Registered, metaclass=ComponentMeta):
             registry = self.__getattribute__(registry_name)
             if name in registry:
                 return registry[name]
-        raise AttributeError
+        raise AttributeError('{}({}) does not have an attributed named "{}"'.format(
+            self.name, self.__class__.__name__, name))
 
     def __repr__(self):
         name = "{}(name={})".format(self.__class__.__qualname__, self.name)
