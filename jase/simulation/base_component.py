@@ -133,7 +133,7 @@ class BaseComponent(Component):
                     thread.start()
                     thread.join()
         # Final clean up
-        if wait:
+        if wait and self.status is not Error:
             self.final()
 
     def run(self):
@@ -146,7 +146,6 @@ class BaseComponent(Component):
             self.measure()
         except ExecutionError:
             self.status = Error
-            raise
 
     def wait(self):
         """Waits for all running threads to complete
@@ -168,7 +167,8 @@ class BaseComponent(Component):
                 self.setup_logging()
 
         # Create a results table
-        self.results = Table()
+        with self.lock:
+            self.master.results = Table()
 
         self.status = Initialized
 
