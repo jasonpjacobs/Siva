@@ -32,7 +32,7 @@ exponents_to_units = {
     +15: 'P'
 
 }
-def float_to_eng(num):
+def float_to_eng(num, width=3, precision=3):
     """Returns a string representation of the input using engineering notation.
 
     Adapted from http://stackoverflow.com/a/12311220
@@ -53,12 +53,14 @@ def float_to_eng(num):
 
     z = y/10**engr_exponent
 
-    # Would it be prettier as an integer?  1e-5 --> 10u
-    if z - int(z) == 0:
-        z = int(z)
+    format_str = "{:" + str(width) + "." + str(precision) + "f}"
+
+    str_z = format_str.format(z)
+    if str_z.endswith("." + "0"*precision):
+        str_z = str_z.split('.')[0]
 
     sign = '-' if x < 0 else ''
-    return sign+str(z) + exponents_to_units[engr_exponent]
+    return sign + str_z + exponents_to_units[engr_exponent]
 
 
 
