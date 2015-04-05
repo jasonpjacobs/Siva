@@ -1,5 +1,8 @@
+import os
 
 from collections import OrderedDict
+from jase.utilities.conversions import float_to_eng
+
 class Table:
     """ Simple table structure implemented a table as a dict of lists.
     Used as a temporary storage for simulation data for conversion to
@@ -49,8 +52,6 @@ class Table:
                 if key in values_dict:
                     col[row] = values_dict[key]
 
-
-
     def __str__(self):
         # Check for empty table
         if len(self.columns) == 0:
@@ -68,7 +69,20 @@ class Table:
 
         # Rows
         for row_num in range(self.num_rows):
-            line = "  ".join(col_format.format(c[row_num]) for c in self.columns.values())
+            values = []
+            # line = "  ".join(col_format.format(c[row_num]) for c in self.columns.values())
+            for col in self.columns.values():
+                value = col[row_num]
+                if not type(value) is str:
+                    try:
+                        value = col_format.format(float_to_eng(value))
+                    except TypeError:
+                        # Perhaps value was a list or class. Str should be able to handle it
+                        value = col_format.format(value)
+                else:
+                    value = col_format.format(value)
+                values.append(value)
+            line = "  ".join(values)
             lines.append(line)
 
         return "\n".join(lines)
@@ -108,6 +122,51 @@ class Table:
         row = self.get_row(self._current_row)
         self._current_row += 1
         return row
+
+
+    def append(self, other_table, extra_cols={}):
+        '''Appends the data from another table to ourselves.  If the other table is missing
+        some column entries, the data from the 'extra_cols' dictionary will be used instead.
+        '''
+
+        for row in other_table:
+            for col in extra_cols:
+                if col not in row:
+                    row[col] = extra_cols[col]
+            self.add_row(row)
+
+    def save(self, file_name=None, dir=None, format='hdf5', **kwargs):
+        if format == 'hdf5':
+            return self.save_as_hdf5(file_name=file_name, dir=dir, **kwargs)
+
+
+    def save_as_hdf5(self, file_name, dir=".", group=None):
+        import h5py
+        import numpy as np
+
+        path = os.path.join(dir, file_name)
+
+        fp = h5py.File(path, 'w-')
+
+        if group is None:
+            ds = fp
+        else:
+            ds = fp.create_group(group)
+
+        for col in self.columns:
+            data = self.columns[col]
+
+            try:
+                ds[col] = data
+            except TypeError:
+                # HDF5 does not support Numpy's unicode strings directly.
+                # See http://docs.h5py.org/en/latest/strings.html#exceptions-for-python-3 for more info
+                if type(data[0]) is str:
+                    ds[col] = np.string_(data)
+        fp.flush()
+        return fp
+
+
 
 
 
