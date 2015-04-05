@@ -20,12 +20,13 @@ class Parameter(Registered):
     # will be stored in a dictionary named "registry_name"
     registry_name = "params"
 
-    def __init__(self, value=None, local=False, name=None, parent=None, optional=False):
+    def __init__(self, value=None, local=False, name=None, parent=None, target=None, optional=False):
         self.value = value
         self.local = local
         self.name = name
         self.parent = parent
         self.optional = optional
+        self.target = target
         super().__init__()
 
     def __get__(self, instance, owner):
@@ -54,23 +55,29 @@ class Parameter(Registered):
 
         # If this variable is a 'remote' variable, set its target
         if self.target is not None:
-            try:
-                # Determine if the target expression is a callable.  This may fail
-                # with an attribute error if the target expression is an instance attribute
-                # that hasn't been created yet.
+            if len(self.target) == 1:
+                targets = [self.target]
+            else:
+                targets = self.target
 
-                target = eval(self.target, globals, locals)
-                if callable(target):
-                    exec("{}({})".format(self.target, value), globals, locals)
-                else:
-                    exec("{}={}".format(self.target, value), globals, locals)
-            except AttributeError:
-                # If the target expression is an instance attribute created by evaluating
-                # the expression, the previous eval statement will create an AttributeError
-                # but the expression below will work.
-                exec("{}={}".format(self.target, value), globals, locals)
-            except NameError:
-                raise
+            for target in targets:
+                try:
+                    # Determine if the target expression is a callable.  This may fail
+                    # with an attribute error if the target expression is an instance attribute
+                    # that hasn't been created yet.
+
+                    target = eval(target, globals, locals)
+                    if callable(target):
+                        exec("{}({})".format(target, value), globals, locals)
+                    else:
+                        exec("{}={}".format(target, value), globals, locals)
+                except AttributeError:
+                    # If the target expression is an instance attribute created by evaluating
+                    # the expression, the previous eval statement will create an AttributeError
+                    # but the expression below will work.
+                    exec("{}={}".format(target, value), globals, locals)
+                except NameError:
+                    raise
 
     @property
     def value(self):
@@ -108,7 +115,7 @@ class Float(Parameter):
 
 class Integer(Parameter):
     def __str__(self):
-        return float_to_eng(self.evaluated_value)
+        return str(self.evaluated_value)
 
 class String(Parameter):
     pass
