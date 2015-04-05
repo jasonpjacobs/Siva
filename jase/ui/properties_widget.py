@@ -1,4 +1,4 @@
-from ..api import Qt, QtCore, QtGui
+from ..qt_bindings import Qt, QtCore, QtGui
 
 class PropertiesWidget(QtGui.QTableWidget):
     def __init__(self):
