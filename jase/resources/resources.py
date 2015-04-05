@@ -117,7 +117,7 @@ class ResourceManager(threading.Thread):
         self.resources.remove(resource)
 
 
-    def setup_logging(self, log_file=None, log_name="Resource", level=logging.DEBUG):
+    def setup_logging(self, log_file=None, log_name="Resource", level=logging.WARNING):
         if log_file is not None:
             self.logger = logging.getLogger(log_name)
             self.logger.setLevel(level)
