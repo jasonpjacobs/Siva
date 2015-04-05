@@ -41,7 +41,6 @@ class LoopVariable(Parameter):
                     values = np.logpace(start, stop, n, endpoint)
 
         self.name = name
-        self.target = target
         self.start = start
         self.stop = stop
         self.n = n
