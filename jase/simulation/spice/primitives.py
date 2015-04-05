@@ -113,7 +113,7 @@ class C(Primitive):
     ic = Float(0, optional=True)
 
     def card(self):
-        txt = "{name} {p} {n} C={c}".format(**self.card_dict())
+        txt = "{name} {p} {n} C={c} ic={ic}".format(**self.card_dict())
         return [txt]
 
 

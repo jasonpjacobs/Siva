@@ -8,6 +8,7 @@ import h5py
 
 from ..base_component import BaseComponent, ExecutionError
 from .save import Save
+from ..base_component import Error
 
 class Simulation(BaseComponent):
 
@@ -16,12 +17,31 @@ class Simulation(BaseComponent):
     def __init__(self, parent=None, children=None, name='Simulation', params=None, measurements=None, work_dir=".",
                  log_file=None, disk_mgr=None, parallel=False):
 
-        assert self.simulator_path is not None
+
 
         super().__init__(parent=parent, children=children, name=name, params=params, measurements=measurements,
                 work_dir=work_dir, log_file=log_file, disk_mgr=disk_mgr, parallel=parallel)
 
+
+    def validate(self):
+        """Ensure the simulation is setup correctly before processing to the netlist/simulation phase
+        """
+
+        # Make sure an analysis was specified
+        if not hasattr(self, 'analyses') or len(self.analyses) == 0:
+            self.status = Error
+            raise ValueError("Simulation need to have an analysis defined")
+
+        # Make sure outputs are requested
+        if not hasattr(self, 'saves') or len(self.saves) == 0:
+            self.status = Error
+            self.warn("No simulation outputs were requested")
+            self.saves = []
+            # raise ValueError("No simulation outputs were requested")
+
+
     def netlist(self):
+        assert self.simulator_path is not None
         txt = []
 
         if self.__doc__:
@@ -30,7 +50,7 @@ class Simulation(BaseComponent):
             txt.append("* Simulation")
         txt.append('')
 
-        if self.includes:
+        if hasattr(self, 'includes') and self.includes:
             for include in self.includes:
                 txt.extend(include.card())
             txt.append('')
@@ -76,7 +96,6 @@ class Simulation(BaseComponent):
         txt.append('.END')
         return "\n".join(txt)
 
-
     def instance_designs(self, dct=None):
         """Returns a dictionary whose key are the cell names and whose value is a list of
         all instances in the design hierarchy"""
@@ -112,12 +131,17 @@ class Simulation(BaseComponent):
 
         """
         self.info("Starting simulation.")
+        self.validate()
         self.create_netlist()
         self.results_file = os.path.join(self.work_dir, "output.raw")
         self.log_file = os.path.join(self.work_dir, "sim.log")
 
         try:
-            result = subprocess.check_output([self.simulator_path, "-l", self.log_file, "-o", self.results_file, self.netlist_path], stderr=subprocess.STDOUT)
+            # XYCE:
+            # result = subprocess.check_output([self.simulator_path, "-l", self.log_file, "-o", self.results_file, self.netlist_path], stderr=subprocess.STDOUT)
+            # NGspice
+            result = subprocess.check_output([self.simulator_path, "-b", "-o", self.log_file, "-r", self.results_file, self.netlist_path], stderr=subprocess.STDOUT)
+
         except subprocess.CalledProcessError as e:
             msg = ["Simulation failed with error:", "    " +str(e.output), "    Return code: {}".format(e.returncode)]
             self.error("\n".join(msg))
@@ -125,11 +149,10 @@ class Simulation(BaseComponent):
 
         self.info("Simulation finished.")
         try:
-            self.sim_results = self.load_results(self.results_file)
+            self.sim_results = self.load_results(self.results_file, results_name=self.analyses[0].analysis_name.lower())
         except FileNotFoundError:
             self.error("No results for:", self.work_dir)
             raise
-
 
     def load_results(self, results_file, output_file="sim.hdf5", results_name='tran'):
         """Reads the Python native, but simulator specific simulation results
@@ -139,7 +162,6 @@ class Simulation(BaseComponent):
 
         raw_data = self.load_raw_results(results_file)
 
-
         results = h5py.File(os.path.join(self.work_dir,output_file),'w-')
 
         root = results.create_group(results_name)     #Tran, AC, DC, etc
@@ -148,7 +170,7 @@ class Simulation(BaseComponent):
         for entry in raw_data:
 
             # Entry will be either a keyword:  TIME, FREQ, V etc.
-            if entry in ("TIME",):
+            if entry.lower() in ("time","frequency"):
                 data = raw_data[entry]
                 root['x'] = data
 
@@ -198,7 +220,6 @@ class Simulation(BaseComponent):
             return (output_type.lower(), path, node_net.lower())
 
 
-
     def load_raw_results(self, results_file, format="binary",):
         """Reads the raw simulation data and converts it into a low level, simulator specific,
         native Python format (Numpy arrays)
@@ -237,9 +258,18 @@ class Simulation(BaseComponent):
                     VARS_FOUND = True
                     continue
                 elif VARS_FOUND:
+                    """
+                    Variables:
+                    0	frequency	frequency	grid=3
+                    1	v(g)	voltage
+                    2	v(d)	voltage
+                    3	v(s)	voltage
+                    4	v(vdd)	voltage
+                    5	v(m_dut#gate)	voltage
+                    """
                     txt = line.replace("\\t", " ")
-                    n, name, sig_type = txt.split()
-                    headers[int(n)] = (int(n), name, sig_type)
+                    n, *rest = txt.split()
+                    headers[int(n)] = (int(n), rest[0], rest[1])
                 else:
                     continue
 
@@ -248,7 +278,7 @@ class Simulation(BaseComponent):
             elif data_format == "complex":
                 cols_per_value = 2
             else:
-                self.error("XYCE results file wasn't formatted properly")
+                self.error("Spice results file wasn't formatted properly")
                 pdb.set_trace()
 
             try:
@@ -256,7 +286,6 @@ class Simulation(BaseComponent):
             except:
                 raise
                 pdb.set_trace()
-
 
             if num_points is None:
                 num_points = int(len(array)/(num_vars*cols_per_value))

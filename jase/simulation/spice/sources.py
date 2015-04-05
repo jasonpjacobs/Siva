@@ -2,9 +2,19 @@
 from .primitives import Primitive
 from ...components.parameter import Float, String, File
 from ...design import Pin, Net
+from .save import V, I_src
 
 class Source(Primitive):
     registry_name = "sources"
+
+    @property
+    def I(self):
+        return I_src(self)
+
+    @property
+    def V(self):
+        return V(self.p, self.n)
+
 
 class Vdc(Source):
     token = "V"
@@ -21,7 +31,12 @@ class Vdc(Source):
         super().__init__(p=p, n=n, v=v, ac=ac)
 
     def card(self):
-        txt = "{name} {p} {n} {v}V".format(**self.card_dict())
+        dct = self.card_dict()
+        if self.ac is not None:
+            dct['ac'] = "AC {ac}".format(ac=self.ac)
+        else:
+            dct['ac'] = ''
+        txt = "{name} {p} {n} {v}V {ac}".format(**dct)
         return [txt]
 
 class Vpulse(Source):

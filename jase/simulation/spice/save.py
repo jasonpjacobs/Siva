@@ -87,4 +87,20 @@ class I(Output):
 
     def outputs(self):
         txt = str(self.pin.parent.path)
-        return ["{}{}({})".format(self.token, str(self.pin.name), txt)]
+        # Xyce format:
+        # return ["{}{}({})".format(self.token, str(self.pin.name), txt)]
+
+        # Spice/NGspice format:
+        return ["{}({})".format(self.token, txt)]
+
+class I_src(Output):
+    """Probe request for a the current of a voltage source"""
+
+    token = "I"
+    def __init__(self, src):
+        self.src = src
+
+    def outputs(self):
+        txt = str(self.src.path)
+        # Spice/NGspice format:
+        return ["{}({})".format(self.token, txt)]
