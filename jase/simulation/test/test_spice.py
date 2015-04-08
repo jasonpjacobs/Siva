@@ -5,6 +5,8 @@ from ..spice.connections import Pin, Net, Input, Output, GND
 
 assert Include.registry_name == "includes"
 
+Simulation.simulator_path = ''
+
 """
 .INCLUDE P:\models\nmos_50n.model
 .DC VVd 0 1.2 0.01

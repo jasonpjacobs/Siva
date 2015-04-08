@@ -15,7 +15,7 @@ except:
     app = QtGui.QApplication.instance()
 
 pw = PlotWidget(name="main")
-#pw.setGeometry(100,100, 1000, 800)
+pw.setGeometry(100,100, 1000, 800)
 
 if False:
     p = Plot()
@@ -45,7 +45,7 @@ def test_random():
 def test_multiple_plots():
 
     if True:
-        pw.plot(x=[0,10], y=[0, 0], strip="Wave", name="1", color="red")
+        pw.plot(x=[0,10], y=[0, 0], strip="Wave", name="1", color="red", height=20)
 
     if True:
         pw.plot(x=[0,10], y=[0, 1], strip="Wave", name="2", color="green")
@@ -89,11 +89,14 @@ def test_single_plot():
         f=4e12
         y = np.random.random(10)
         pw.plot(x=x, y=y, style="line", strip="Wave", name="sin")
+        pw.plot(x=x, y=y, style="line", strip="Wave", name="sin")
+
 
 #multiple_plots()
 
-test_small_scales()
+#test_small_scales()
 #test_multiple_plots()
 #test_single_plot()
+test_empty_plot()
 pw.show()
 sys.exit(app.exec_())
