@@ -7,6 +7,9 @@ import threading
 import sys
 import os
 
+import concurrent
+from concurrent.futures import ThreadPoolExecutor
+
 class Status:
     pass
 
@@ -39,8 +42,10 @@ class BaseComponent(Component):
     """
     _registries = ["components", "params", "measurements"]
 
-    def __init__(self, parent=None, children=None, name=None, params=None, measurements=None, work_dir=".",
-                 log_file=None, disk_mgr=None, parallel=False):
+    num_threads = 1000
+
+    def __init__(self, parent=None, children=None, name=None, params=None, measurements=None, work_dir=None,
+                 log_file=None, disk_mgr=None, parallel=False, log_severity=logging.INFO):
 
         super().__init__(parent=parent, children=children, name=name)
 
@@ -64,31 +69,41 @@ class BaseComponent(Component):
             if not hasattr(self, 'measurements'):
                 self.measurements = {}
 
+        self.lock = threading.RLock()
 
-        self.work_dir = work_dir
+        self._work_dir = work_dir
+        self._work_dir_resource = None
 
         self.log_file = log_file
         self.logger = None
+        self.log_severity = log_severity
 
-        self.disk_mgr = disk_mgr
+        self._disk_mgr = disk_mgr
+
         self.parallel = parallel
-
         self.status = Uninitialized
 
         self.master = self
         self.index = None
 
-        self.lock = threading.RLock()
+        self.results = Table()
 
     @property
     def disk_mgr(self):
-        if self._disk_mgr is None and self.work_dir is not None:
-            return LocalDiskManager(root=self.work_dir)
+        if self is not self.root:
+            return self.root.disk_mgr
+
+        if self._disk_mgr is None and self._work_dir is not None:
+            try:
+                self._disk_mgr = LocalDiskManager(root=self._work_dir)
+            except OSError:
+                raise
         return self._disk_mgr
 
     @disk_mgr.setter
     def disk_mgr(self, value):
-        self._disk_mgr = value
+        if self is self.root:
+            self._disk_mgr = value
 
     def start(self, wait=True):
         """ Starts this component's portion of the analysis.
@@ -98,43 +113,52 @@ class BaseComponent(Component):
 
         # This component may spawn several variants to run in their own threads.  (E.g., loop iterations).
         # These lists will keep track of them.
-        self.threads = []
+        #self.threads = []
         self.variants = []
+        self.futures = []
 
-        for index, iteration in enumerate(self):
-            thread = threading.Thread(target=iteration.run)
-            self.threads.append(thread)
-            self.variants.append(iteration)
+        if self.parallel is False:
+             num_threads = 1
+        else:
+            num_threads = self.num_threads
 
-            # Make sure variant knows who the master is, so they can report
-            # results to the same location
-            iteration.master = self
+        with ThreadPoolExecutor(max_workers=num_threads) as executor:
+            for index, iteration in enumerate(self):
 
-            # The variant should also know its index, so it
-            # can add its results to the correct row in the results table
-            iteration.index = index
+                self.variants.append(iteration)
 
-        # Execute the threads
-        if len(self.threads) > 0:
-            if self.parallel:
-                for thread in self.threads:
-                    # "Once a thread object is created, its activity must be started by calling the 
-                    # thread’s start() method. This invokes the run() method in a separate thread of control."
-                    # 
-                    # Our run method will then call execute(), then start each of the child components.
-                    # When those finish running, our own measure() method will be called.
-                    thread.start()  #--> self.run()
-                # Wait for all to finish
-                if wait:
-                    for thread in self.threads:
-                        thread.join()
-            else:
-                for thread in self.threads:
-                    thread.start()
-                    thread.join()
+                # Make sure variant knows who the master is, so they can report
+                # results to the same location
+                iteration.master = self
+
+                # The variant should also know its index, so it
+                # can add its results to the correct row in the results table
+                iteration.index = index
+
+                # Submit the job
+                future = executor.submit(iteration.run)
+                future.job = iteration
+                self.futures.append(future)
+
+            # Wait for all schedules jobs to complete
+            for future in concurrent.futures.as_completed(self.futures):
+                if future.exception() is not None:
+                    msg = future.result()
+                    self.error("Problem running job: {}".format(msg))
+                    future.job.status = Error(msg)
+                self.info("Job {} completed".format(future.job.inst_name))
+
+
         # Final clean up
         if wait and self.status is not Error:
             self.final()
+            for variant in self.variants:
+                if variant.status is not Error and variant is not self:
+                    self.info("Cleaning up {}".format(variant.inst_name))
+                    variant.clean()
+
+        del self.variants
+        del self.futures
 
     def run(self):
         """Called by a thread's start() method.
@@ -163,8 +187,9 @@ class BaseComponent(Component):
         self.setup_work_area()
 
         with self.lock:
-            if self is self.master:
+            if self is self.root.master:
                 self.setup_logging()
+                self.info("Setting up logging")
 
         # Create a results table
         with self.lock:
@@ -184,17 +209,20 @@ class BaseComponent(Component):
                 raise ValueError("Component must have a name: {}".format(self))
 
         subdirs = [comp.inst_name for comp in self.path_components]
+
         if disk_mgr:
-            request = disk_mgr.request(job=self, subdirs=subdirs)
-            self.work_dir = request.path
+            resource = disk_mgr.request(job=self, subdirs=subdirs)
+            self._work_dir_resource = resource
+            self._work_dir = resource.path
+            self.info("Got disk area: ".format(self._work_dir))
 
     def setup_logging(self):
-        assert self.master is self
+        assert self.root.master is self
         if self.log_file is not None and self.logger is None:
-            path = os.path.join(self.work_dir, self.log_file)
+            path = os.path.join(self._work_dir, self.log_file)
 
             self.logger = logging.getLogger(self.path)
-            self.logger.setLevel(logging.DEBUG)
+            self.logger.setLevel(self.log_severity)
 
             formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 
@@ -211,9 +239,15 @@ class BaseComponent(Component):
             self.logger = None
             self.log_file = None
 
+    def close_logging(self):
+        if self.log_file is not None and self.logger is not None:
+            for handler in self.logger.handlers:
+                if hasattr(handler, 'close'):
+                    handler.close()
+
     def measure(self):
 
-        self.debug("{} ({}): Evaluating measurements".format(self.inst_name, id(self)))
+        self.info("{} ({}): Evaluating measurements".format(self.inst_name, id(self)))
 
         # Evaluate all measurement statements
         for m in self.measurements.values():
@@ -237,7 +271,25 @@ class BaseComponent(Component):
 
     def final(self):
         self.status = Finalized
+        self.info("Creating summary")
+        self.summarize()
+        self.results.close()
         self.info("Done.")
+        self.close_logging()
+
+    def summarize(self):
+        """ Called after all child processes are finished to
+        aggregate and summarize the data.
+        """
+        pass
+
+    def clean(self):
+        """Clean up work area and file handles.  This is called by the parent after
+        the final() method has been called.
+        """
+        if self._work_dir_resource:
+            self.info("Cleaning up work area for {}:{}".format(self.inst_name, self._work_dir_resource.path))
+            self._work_dir_resource.clean()
 
     def __iter__(self):
         self._i = 0
@@ -252,6 +304,22 @@ class BaseComponent(Component):
         #return self.clone()
         return self
 
+    def clone(self, master=None, clone_inst=None, **kwargs):
+        clone = super().clone(clone_inst=clone_inst, **kwargs)
+        clone.master = master
+        return clone
+
+    @property
+    def master(self):
+        if self._master is None:
+            return self
+        else:
+            return self._master
+
+    @master.setter
+    def master(self, value):
+        self._master = value
+
     @property
     def editor(self):
         pass
@@ -260,27 +328,38 @@ class BaseComponent(Component):
     def root(self):
         return super().root.master
 
+    @property
+    def results(self):
+        if self is self.master:
+            return self._results
+        else:
+            return self.master.results
+
+    @results.setter
+    def results(self, value):
+        self._results = value
+
     def __repr__(self):
         name = "{}(name={})".format(self.__class__.__name__, self.inst_name)
         return name
 
     def debug(self, msg):
-        if self.logger is not None:
-            with self.lock:
-                self.master.logger.debug(msg)
+        if self.root.master.logger is not None:
+            with self.root.master.lock:
+                self.root.master.logger.debug(msg)
 
     def info(self, msg):
-        if self.logger is not None:
-            with self.lock:
-                self.master.logger.info(msg)
+        if self.root.master.logger is not None:
+            with self.root.master.lock:
+                self.root.master.logger.info(msg)
 
     def warn(self, msg):
-        if self.logger is not None:
-            with self.lock:
-                self.logger.warn(msg)
+        if self.root.master.logger is not None:
+            with self.root.master.lock:
+                self.root.master.logger.warn(msg)
 
     def error(self, msg):
-        if self.logger is not None:
-            with self.lock:
-                self.logger.error(msg)
+        if self.root.master.logger is not None:
+            with self.root.master.lock:
+                self.root.master.logger.error(msg)
 

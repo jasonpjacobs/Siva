@@ -17,11 +17,8 @@ class Simulation(BaseComponent):
     def __init__(self, parent=None, children=None, name='Simulation', params=None, measurements=None, work_dir=".",
                  log_file=None, disk_mgr=None, parallel=False):
 
-
-
         super().__init__(parent=parent, children=children, name=name, params=params, measurements=measurements,
                 work_dir=work_dir, log_file=log_file, disk_mgr=disk_mgr, parallel=parallel)
-
 
     def validate(self):
         """Ensure the simulation is setup correctly before processing to the netlist/simulation phase
@@ -115,10 +112,10 @@ class Simulation(BaseComponent):
         return dct
 
     def create_netlist(self, file_name="netlist.cir"):
-        if not os.path.isdir(self.work_dir):
-            os.mkdir(self.work_dir)
+        if not os.path.isdir(self._work_dir):
+            os.mkdir(self._work_dir)
 
-        path = os.path.join(self.work_dir, file_name)
+        path = os.path.join(self._work_dir, file_name)
         self.netlist_path = path
         with open(path,'w') as netlist:
             netlist.write(self.netlist())
@@ -133,14 +130,14 @@ class Simulation(BaseComponent):
         self.info("Starting simulation.")
         self.validate()
         self.create_netlist()
-        self.results_file = os.path.join(self.work_dir, "output.raw")
-        self.log_file = os.path.join(self.work_dir, "sim.log")
+        self.results_file = os.path.join(self._work_dir, "output.raw")
+        self.log_file = os.path.join(self._work_dir, "sim.log")
 
         try:
             # XYCE:
             # result = subprocess.check_output([self.simulator_path, "-l", self.log_file, "-o", self.results_file, self.netlist_path], stderr=subprocess.STDOUT)
             # NGspice
-            result = subprocess.check_output([self.simulator_path, "-b", "-o", self.log_file, "-r", self.results_file, self.netlist_path], stderr=subprocess.STDOUT)
+            result = subprocess.check_output([self.simulator_path, "-b", "-o", self.log_file, "-r", self.results_file, self.netlist_path])
 
         except subprocess.CalledProcessError as e:
             msg = ["Simulation failed with error:", "    " +str(e.output), "    Return code: {}".format(e.returncode)]
@@ -151,7 +148,7 @@ class Simulation(BaseComponent):
         try:
             self.sim_results = self.load_results(self.results_file, results_name=self.analyses[0].analysis_name.lower())
         except FileNotFoundError:
-            self.error("No results for:", self.work_dir)
+            self.error("No results for:", self._work_dir)
             raise
 
     def load_results(self, results_file, output_file="sim.hdf5", results_name='tran'):
@@ -162,7 +159,7 @@ class Simulation(BaseComponent):
 
         raw_data = self.load_raw_results(results_file)
 
-        results = h5py.File(os.path.join(self.work_dir,output_file),'w-')
+        results = h5py.File(os.path.join(self._work_dir,output_file),'w-')
 
         root = results.create_group(results_name)     #Tran, AC, DC, etc
 
@@ -226,7 +223,8 @@ class Simulation(BaseComponent):
         """
 
         if format == "binary":
-            bytes_read = open(self.results_file, "rb").read()
+            with open(results_file, "rb") as fp:
+                bytes_read = fp.read()
 
             marker = bytes('Binary:\n', "utf-8")
             start = bytes_read.find(marker) + len(marker)
@@ -300,3 +298,8 @@ class Simulation(BaseComponent):
                     results[name] = data[:,2*n] + data[:,2*n+1]*1j
             return results
 
+
+    def clean(self):
+        self.simulation_data.close()
+        del(self.simulation_data)
+        super().clean()

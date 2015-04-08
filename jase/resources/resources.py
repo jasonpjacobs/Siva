@@ -135,6 +135,11 @@ class ResourceManager(threading.Thread):
         else:
             self.logger = None
 
+    def close(self):
+        for handler in self.logger.handlers:
+            if hasattr(handler, 'close'):
+                handler.close()
+
     def debug(self, msg):
         if self.logger is not None:
             self.logger.debug(msg)

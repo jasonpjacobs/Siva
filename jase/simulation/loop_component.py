@@ -14,7 +14,7 @@ class LoopVariable(Parameter):
     def __init__(self, target=None, start=None, stop=None, step=None, n=None,
                  values=None, endpoint=True, space="linear", name=None, desc=None):
 
-        super().__init__(name, target, desc)
+        super().__init__(name=name, target=target, desc=desc)
 
         if values is not None:
             self.values = values
@@ -114,7 +114,7 @@ class LoopComponent(BaseComponent):
 
         var_vals = list(zip([v.name for v in self.loop_vars.values()], values))
         inst_name = self.name + "_" + str(self._i)
-        loop_iteration = self.clone(inst_name=inst_name)
+        loop_iteration = self.clone(inst_name=inst_name, master=self)
 
         # TODO:  Can we do this using descriptors?
         for var, val in var_vals:

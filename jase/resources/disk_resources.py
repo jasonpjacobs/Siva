@@ -31,8 +31,11 @@ class DiskResource:
 
     def __exit__(self, type, value, traceback):
         if type is None:
-            shutil.rmtree(self.path)
-            self.mgr.delete_resource(self)
+            self.clean()
+
+    def clean(self):
+        shutil.rmtree(self.path)
+        self.mgr.delete_resource(self)
 
 class DiskManager(ResourceManager):
     """A generic resource for disk space.
