@@ -20,13 +20,14 @@ class Parameter(Registered):
     # will be stored in a dictionary named "registry_name"
     registry_name = "params"
 
-    def __init__(self, value=None, local=False, name=None, parent=None, target=None, optional=False):
+    def __init__(self, value=None, local=False, name=None, parent=None, target=None, optional=False, desc=None):
         self.value = value
         self.local = local
         self.name = name
         self.parent = parent
         self.optional = optional
         self.target = target
+        self.desc = desc
         super().__init__()
 
     def __get__(self, instance, owner):
@@ -55,7 +56,8 @@ class Parameter(Registered):
 
         # If this variable is a 'remote' variable, set its target
         if self.target is not None:
-            if len(self.target) == 1:
+            # If an non-string iterable wasn't given, wrap it in a list
+            if type(self.target) is str:
                 targets = [self.target]
             else:
                 targets = self.target
@@ -66,8 +68,8 @@ class Parameter(Registered):
                     # with an attribute error if the target expression is an instance attribute
                     # that hasn't been created yet.
 
-                    target = eval(target, globals, locals)
-                    if callable(target):
+                    evaled_target = eval(target, globals, locals)
+                    if callable(evaled_target):
                         exec("{}({})".format(target, value), globals, locals)
                     else:
                         exec("{}={}".format(target, value), globals, locals)
@@ -77,6 +79,11 @@ class Parameter(Registered):
                     # but the expression below will work.
                     exec("{}={}".format(target, value), globals, locals)
                 except NameError:
+                    raise
+                except:
+                    error_msg = "Error in parameter evaluation: {}={}".format(target, value)
+                    self.parent.error(error_msg)
+                    print(error_msg)
                     raise
 
     @property
@@ -107,7 +114,8 @@ class Parameter(Registered):
     def clone(self, owner=None):
         if owner is None:
             owner = self.parent
-        return self.__class__(value=self.value, local=self.local, parent=owner, name=self.name, optional=self.optional)
+        return self.__class__(value=self.value, local=self.local, parent=owner, name=self.name, optional=self.optional,
+                              target=self.target, desc=self.desc)
 
 class Float(Parameter):
     def __str__(self):
