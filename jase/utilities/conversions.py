@@ -46,9 +46,15 @@ def float_to_eng(num, width=3, precision=3):
     if num is None:
         return None
 
+    if num is math.isnan(num):
+        return "NaN"
+
     x = float(num)
     y = abs(x)
-    exponent = int(math.log10(y))
+    try:
+        exponent = int(math.log10(y))
+    except:
+        raise
     engr_exponent = exponent - exponent%3
 
     z = y/10**engr_exponent
@@ -60,7 +66,11 @@ def float_to_eng(num, width=3, precision=3):
         str_z = str_z.split('.')[0]
 
     sign = '-' if x < 0 else ''
-    return sign + str_z + exponents_to_units[engr_exponent]
+    if engr_exponent in exponents_to_units:
+        return sign + str_z + exponents_to_units[engr_exponent]
+    else:
+        #TODO:  Scale to the nearest SI unit
+        return sign + str_z + "E" + str(engr_exponent)
 
 
 
