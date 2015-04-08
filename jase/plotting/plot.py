@@ -6,9 +6,10 @@ from .scale import Scale
 from .plot_items import StyleFactory, LinePlot, StemPlot, BarPlot, StatePlot, LogicPlot
 from .plot_group import PlotGroup
 
-class Plot(QtGui.QGraphicsWidget):
+class Plot(QtGui.QGraphicsItemGroup):
     """
     The Plot class is responsible for rendering waveforms, axes, titles, annotations, etc.
+
     """
 
     # Place holder:  Will implement a more formal theme later on.
@@ -22,9 +23,9 @@ class Plot(QtGui.QGraphicsWidget):
         "state" : StatePlot,
     }
 
-    def __init__(self, parent=None, width=400, height=800, x_scale=None, y_scale=None, style_factory=None, title=None,
+    def __init__(self, parent=None, width=400, height=100, x_scale=None, y_scale=None, style_factory=None, title=None,
                  subtitle=None, view=None):
-        QtGui.QGraphicsWidget.__init__(self, parent=parent)
+        QtGui.QGraphicsItemGroup.__init__(self, parent=parent)
 
         self.view = view
         self.title = title
@@ -58,18 +59,15 @@ class Plot(QtGui.QGraphicsWidget):
 
         self.width=width
         self.height=height
-        self.setSizePolicy(QtGui.QSizePolicy.MinimumExpanding, QtGui.QSizePolicy.MinimumExpanding)
+        #self.setSizePolicy(QtGui.QSizePolicy.MinimumExpanding, QtGui.QSizePolicy.MinimumExpanding)
 
         # The plot_rect is the scene region where the waveforms should be rendered.
         # It is the size of the plot after allocating space for title, axes, and legends.
         self.set_plot_rect(QtCore.QRect(0, 0, width, height))
 
-
-
-
     @property
     def margins(self):
-        margins = {"left": 40, "right": 10, "top": 10, "bottom": 20}
+        margins = {"left": 40, "right": 10, "top": 20, "bottom": 20}
         return margins
 
     def drawBackground(self, painter, rect):
@@ -105,6 +103,7 @@ class Plot(QtGui.QGraphicsWidget):
         if title is not None:
             title_rect = QtCore.QRect(self.margins['left'], self.pos().y(), self.width, self.margins['top'])
             self.draw_title(painter, title_rect, title)
+
         # Axis rendering is performed relative to the plot.
         painter.translate(self.pos())
         self.x_scale.draw_axis(painter, plot_rect, side="bottom", padding=40, plot=self, margins=self.margins)
@@ -116,7 +115,7 @@ class Plot(QtGui.QGraphicsWidget):
         so axis ticks and labels can be clearly read.
         """
         #TODO:  Parameterize the background color
-        color = QtGui.QColor(Qt.white)
+        color = QtGui.QColor(Qt.yellow)
 
         # Find the portion of the plot area that is visible.
         bounding_rect = self.boundingRect()
@@ -146,9 +145,8 @@ class Plot(QtGui.QGraphicsWidget):
         pixel = self.x_scale.pixel
 
         #TODO: Parameterize the title area
-        height = 20
         font = QtGui.QFont('Helvetica')
-        font.setPixelSize(14)
+        font.setPixelSize(16)
         font.setBold(True)
         painter.setFont(font)
 
@@ -161,8 +159,6 @@ class Plot(QtGui.QGraphicsWidget):
         painter.drawText(rect,Qt.AlignCenter | Qt.AlignTop, title)
         painter.restore()
 
-
-
     def set_plot_rect(self, view_rect):
         """Determines the portion of the viewable plot area that is used for rendering plot data vs.
         margin for axes, title, and legend annotations.
@@ -171,7 +167,7 @@ class Plot(QtGui.QGraphicsWidget):
         rect_f = QtCore.QRectF(view_rect)
 
         # Determine how much of this plot's area is visible
-        visible_rect = rect_f.intersected(QtCore.QRect(self.pos().x(), self.pos().y(), self.width, self.height))
+        visible_rect = rect_f.intersected(QtCore.QRectF(self.pos().x(), self.pos().y(), self.width, self.height))
 
         y = (view_rect.top() - self.pos().y() )if view_rect.top() > self.pos().y() else 0
         x = (view_rect.left() - self.pos().x())  if view_rect.left() > self.pos().x() else 0
@@ -214,6 +210,7 @@ class Plot(QtGui.QGraphicsWidget):
             name = "Plot_{}".format(len(self.plot_items) + 1)
 
         self.plot_items.append(plot_item)
+        self.addToGroup(plot_item)
         plot_item.setParentItem(self)
 
         # Update the scales
@@ -271,7 +268,7 @@ class Plot(QtGui.QGraphicsWidget):
     #    Event Handling Methods
     # --------------------------------------------------------
     def coords(self, event):
-        'Converts event (screen) coordinates to data space coordinates'
+        '''Converts event (screen) coordinates to data space coordinates'''
         pos = self.mapToScene(event.pos())
         x = self.x_scale.to_data(pos.x())
         y = self.y_scale.to_data(pos.y())

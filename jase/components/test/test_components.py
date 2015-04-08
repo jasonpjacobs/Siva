@@ -132,6 +132,7 @@ def test_hierarchy():
 
     assert a.b.c.root is a
     assert a.b.root is a
+    assert a.root is a
 
     assert a.b.c.path == 'a.b.c'
 
