@@ -2,6 +2,7 @@ import os
 
 from collections import OrderedDict
 from jase.utilities.conversions import float_to_eng
+import numpy as np
 
 class Table:
     """ Simple table structure implemented a table as a dict of lists.
@@ -52,6 +53,19 @@ class Table:
                 if key in values_dict:
                     col[row] = values_dict[key]
 
+    def add_column(self, column):
+        """ Adds one or more columns to this table.  Columns must be specified
+        as a dictionary mapping a column name to a list of row values.
+        """
+
+        for name in column.keys():
+            if name in self.columns:
+                raise ValueError("Column {} already exists in this table.".format(name))
+
+            self.columns[name] = column[name]
+
+
+
     def __str__(self):
         # Check for empty table
         if len(self.columns) == 0:
@@ -72,7 +86,11 @@ class Table:
             values = []
             # line = "  ".join(col_format.format(c[row_num]) for c in self.columns.values())
             for col in self.columns.values():
-                value = col[row_num]
+                # Handle missing data
+                if len(col) > row_num:
+                    value = col[row_num]
+                else:
+                    value = "----"
                 if not type(value) is str:
                     try:
                         value = col_format.format(float_to_eng(value))
@@ -98,7 +116,10 @@ class Table:
         return self.num_rows == 0
 
     def __getitem__(self, item):
-        return self.columns[item]
+        if item in self.columns:
+            return np.array(self.columns[item])
+
+        raise KeyError("Table does not have a column named {}".format(item))
 
     def __len__(self):
         return self.num_rows
@@ -167,7 +188,36 @@ class Table:
         return fp
 
 
+    def sort(self, column):
+        """Sorts the rows in a table by the values in the given column
+        """
+        import numpy as np
+        index = np.array(self.columns[column]).argsort()
+        for column in self.columns:
+            self.columns[column] = np.array(self.columns[column])[index]
 
 
+    def dataframe(self):
+        """Returns the table data as a Pandas DataFrame object
+        """
+        import pandas as pd
+        return pd.DataFrame(self.columns)
+
+
+    def select(self, columns, where=True, group_by=None):
+        """
+
+
+
+        """
+        df = self.dataframe()
+        results = []
+
+        df[columns]
+
+
+
+    def close(self):
+        pass
 
 
