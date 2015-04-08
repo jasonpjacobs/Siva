@@ -3,44 +3,52 @@ from .tree import Tree, Node
 
 import pdb
 
-class PlotGroup(Node, QtGui.QGraphicsWidget):
+class PlotGroup(Node, QtGui.QGraphicsItemGroup):
     """ A Tree node structure to store groups of plots.
     """
     def __init__(self, view=None, expanded=True, height=200, width=800):
-        QtGui.QGraphicsWidget.__init__(self)
+        QtGui.QGraphicsItemGroup.__init__(self)
         Node.__init__(self)
 
-        self.view = view
+        # self.view = view -- Not used. Should delete.
         self.plot_axes = []
         self.expanded = expanded
 
         self.width = width
 
         # Plots are stored in a set of vertical strips
-        self.layout = QtGui.QGraphicsLinearLayout(Qt.Vertical)
-        self.setLayout(self.layout)
+        #self.layout = QtGui.QGraphicsLinearLayout(Qt.Vertical)
+        #self.setLayout(self.layout)
         self.spacing = 10
-
 
     def add_plot(self, item, name=None):
         if name is None:
             name = "plot_{}".format(len(self.children) + 1)
             item.name = name
 
-        self.layout.addItem(item)
+        #self.layout.addItem(item)
+        self.addToGroup(item)
         self.children[name] = item
 
-
+    '''
     @property
     def height(self):
         """The height of the plot group, in screen coordinates
         """
         if self.children and self.expanded:
-            h= sum([c.height for c in self.children])
+            h= sum([c.height for c in self.children.values()])
         else:
             # Empty plot
             h = 100
         return h
+
+    @height.setter
+    def height(self, value):
+        self._height = value
+        if self.children and self.expanded:
+            h = self.height/len(self.children)
+            for child in self.children.values():
+                child.height = h
 
     @property
     def width(self):
@@ -60,7 +68,7 @@ class PlotGroup(Node, QtGui.QGraphicsWidget):
     @spacing.setter
     def spacing(self, value):
         self.__spacing = value
-
+    '''
     """
     def paint(self, painter, option, widget):
         for plot in self.children.values():
@@ -77,12 +85,10 @@ class PlotGroup(Node, QtGui.QGraphicsWidget):
 
     def drawForeground(self, painter, rect):
         for child in self.children.values():
-            child.set_plot_rect(rect)
             child.drawForeground(painter, rect)
 
     def drawBackground(self, painter, rect):
         for child in self.children.values():
-            child.set_plot_rect(rect)
             child.drawBackground(painter, rect)
 
     def boundingRect(self):

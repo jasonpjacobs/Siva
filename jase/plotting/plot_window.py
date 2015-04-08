@@ -6,6 +6,8 @@ import pdb
 
 class PlotWidget(QtGui.QWidget):
     """ A Plot Widget that can hold multiple PlotViews in a grid.
+
+
     """
     def __init__(self, name, parent=None):
         super().__init__(parent)

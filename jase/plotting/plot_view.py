@@ -1,14 +1,12 @@
 from ..qt_bindings import QtGui, QtCore, Qt, Signal
-from PySide.QtCore import Qt
 
 from .plot_group import PlotGroup
 from .plot import Plot
 from .scale import Scale
 
 class PlotView(QtGui.QGraphicsView):
-    """ QGraphicsView/Scene combination that holds one or more plots in a set of vertical strips.
-
-    All plots within the view will share the same X-axis.
+    """ QGraphicsView/Scene combination that holds one or more plots (contained in a PlotGroup)
+     in a set of vertical strips.  All plots within the view will share the same X-axis.
     """
     viewChanged = Signal()
 
@@ -23,7 +21,7 @@ class PlotView(QtGui.QGraphicsView):
 
         self.scene = scene = QtGui.QGraphicsScene(parent=self)
         #scene.setSceneRect(0, 0, width, height)
-        self.setGeometry(0, 0, width, height)
+        self.setGeometry(100, 100, width, height)
 
         self.setScene(scene)
         if x_scale is None:
@@ -33,16 +31,17 @@ class PlotView(QtGui.QGraphicsView):
 
         # Plots are stored hierarchically via PlotGroups.
         # The PlotView just keeps a reference to the top-level plot group.
-        self.top = PlotGroup(expanded=True, view=self, width=self.width())
-        self.top.setPos(QtCore.QPoint(0,0))
-        self.scene.addItem(self.top)
-        self.current_plot_group = self.top
+        #self.top = PlotGroup(expanded=True, view=self, width=self.width())
+        #self.top.setPos(QtCore.QPoint(0,0))
+        #self.scene.addItem(self.top)
+        #self.current_plot_group = self.top
 
         # View configuration
         self.setAlignment(Qt.AlignCenter)
         self.setTransformationAnchor(QtGui.QGraphicsView.NoAnchor)
         self.setViewportUpdateMode(QtGui.QGraphicsView.FullViewportUpdate)
         self.setMouseTracking(True)
+
 
     def drawForeground(self, painter, rect):
         """
@@ -53,16 +52,18 @@ class PlotView(QtGui.QGraphicsView):
         else:
             subtitle = self.subtitle
         """
-
-        self.top.drawForeground(painter, rect)
+        super().drawForeground()
+        #self.top.drawForeground(painter, rect)
         pass
 
     def drawBackground(self, painter, rect):
         """Responsible for rendering grid lines, axis ticks"""
+        super().drawBackground()
         self.top.drawBackground(painter, rect)
 
     def resizeEvent(self, *args, **kwargs):
         self.top.width = self.width()
+        self.top.height = self.height()
         self.update()
 
     def update_view(self):
@@ -72,11 +73,17 @@ class PlotView(QtGui.QGraphicsView):
     def plot(self, *args, name=None, **kwargs):
         """ Creates a new Plot and adds it to the current PlotGroup
         """
-        pg = self.current_plot_group
+        #pg = self.current_plot_group
+        pg = None
+        # Create a new plot object
+        plot = Plot(parent=pg, width=1.0*self.width(), x_scale=self.x_scale, view=self)
 
-        plot = Plot(parent=pg, width=pg.width, x_scale=self.x_scale, view=self)
+        # Plot the data
         plot.plot(name=name, *args, **kwargs)
-        pg.add_plot(plot)
+
+        # Add to the scene
+        #pg.add_plot(plot)
+        self.scene.addItem(plot)
 
         plot.zoom_fit()
 

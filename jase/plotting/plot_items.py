@@ -1,3 +1,8 @@
+""" Contains class definitions for the various types of plot item, including simple line plots, logic plots,
+state plots, bar plots, etc.
+
+"""
+
 from ..qt_bindings import QtGui, QtCore, Qt
 
 from .style import Style
@@ -6,6 +11,9 @@ import numpy as np
 import pdb
 
 class Annotation(QtGui.QGraphicsItem):
+    """ A text object drawn as part of the plots at a specific location in data space.  Used, for example,
+    by the StatePlot to label the state names.
+    """
     def __init__(self, txt="", font=None, rect=None, style=None):
         self.txt = txt
         self.font = font
@@ -26,7 +34,7 @@ class PlotItem(QtGui.QGraphicsItem):
         args = (obj is not None, x is not None, y is not None)
         if args == (True, True, False):
             x = np.array(obj) # The 1st argument passed to *this* method
-            y = np.array(x) # The 2nd argument passed to *this* method
+            y = np.array(x)   # The 2nd argument passed to *this* method
         elif args == (False, True, True):
             x = np.array(x)
             y = np.array(y)
@@ -53,12 +61,11 @@ class PlotItem(QtGui.QGraphicsItem):
         self.annotations = []
         self.style = style
 
-        self.setFlags( QtGui.QGraphicsItem.ItemIsSelectable)
+        self.setFlags(QtGui.QGraphicsItem.ItemIsSelectable)
         self.setAcceptsHoverEvents(True)
 
         self.plot_type = "PlotItem"
 
-        color = "green"
         if style is None:
             import random
 
@@ -157,7 +164,6 @@ class StemPlot(PlotItem):
         x = self.data[0]
         for x,y in zip(x[1:], y[1:]):
             path.lineTo(x,y)
-
 
         self.path = path
         return path
