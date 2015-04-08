@@ -257,7 +257,7 @@ class Wave:
         else:
             return Wave(x=self.x[key], y=self.y[key])
 
-    def __call__(self, values,  kind=None, bounds_error=False ):
+    def __call__(self, values,  kind='linear', bounds_error=False ):
         return self.interpolate(values, kind, bounds_error)
 
 
@@ -356,7 +356,8 @@ class Wave:
         return Wave(x=self.x, y=np.cumsum(self.y))
 
     def derivative(self):
-        return Wave(x=self.x[:-1], y=np.diff(self.y)/np.diff(self.x), name = "dx/dy({})".format(self.name))
+        y = np.diff(self.y)/np.diff(self.x)
+        return Wave(x=self.x[:-1], y=y, name = "dx/dy({})".format(self.name))
 
     def diff(self):
         """Returns the first difference of the waveform's y-axis values"""
@@ -460,6 +461,8 @@ class Wave:
     def interpolate(self, values, kind=None, bounds_error=False):
         import scipy
         from scipy import interpolate
+
+
         if kind is None:
             kind = self.interp
 
@@ -467,7 +470,20 @@ class Wave:
         # Alias 'step' with 'zero'
         if (kind == "step"):
             kind = 'zero'
-        f=interpolate.interp1d(self.x,self.y, kind=kind, bounds_error=bounds_error)
+
+
+        #  f=interpolate.interp1d(self.x,self.y, kind=kind, bounds_error=bounds_error)
+
+        # Using Univariate Spline gives us extrapolation too
+        kind_order = {'linear' : 1,
+                      'zero' : 0,
+                      'slinear' : 0,
+                      'quadratic' : 2,
+                      'cubic': 3,
+                      'step': 0
+                      }
+
+        f = interpolate.InterpolatedUnivariateSpline(self.x, self.y, k=kind_order[kind])
 
         # Convert lists and numbers into ndarrays
         if not isinstance(values, np.ndarray):
