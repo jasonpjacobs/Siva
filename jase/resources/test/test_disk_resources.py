@@ -16,7 +16,11 @@ class Job:
 
 @pytest.fixture
 def work_dir():
-    return tempfile.mkdtemp()
+    #return tempfile.mkdtemp()
+    path = "p:\work\disk_text"
+    if not os.path.exists(path):
+        os.mkdir(path)
+    return path
 
 @pytest.fixture
 def local_disk(work_dir):
