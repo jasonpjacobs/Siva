@@ -20,8 +20,6 @@ class Simulation(BaseComponent):
         super().__init__(parent=parent, children=children, name=name, params=params, measurements=measurements,
                 work_dir=work_dir, log_file=log_file, disk_mgr=disk_mgr, parallel=parallel)
 
-        self.simulation_data = None
-
     def validate(self):
         """Ensure the simulation is setup correctly before processing to the netlist/simulation phase
         """
@@ -59,36 +57,32 @@ class Simulation(BaseComponent):
             txt.extend(analysis.card())
         txt.append('')
 
-        if hasattr(self, 'sources'):
-            txt.append("** Sources **")
-            for source in self.sources.values():
-                txt.extend(source.card())
+        txt.append("** Sources **")
+        for source in self.sources.values():
+            txt.extend(source.card())
+        txt.append('')
+
+        if self.instances:
+            txt.append("** Instances **")
+            for inst in self.instances.values():
+                txt.extend(inst.card())
             txt.append('')
 
-        if hasattr(self, 'instances'):
-            if self.instances:
-                txt.append("** Instances **")
-                for inst in self.instances.values():
-                    txt.extend(inst.card())
-                txt.append('')
+        txt.append("** Subcircuit Definitions **")
+        for inst_list in self.instance_designs().values():
+            if inst_list[0]:
+                card = inst_list[0].subckt_card()
+                if card:
+                    txt.extend(inst_list[0].subckt_card())
+        txt.append('')
 
-
-            txt.append("** Subcircuit Definitions **")
-            for inst_list in self.instance_designs().values():
-                if inst_list[0]:
-                    card = inst_list[0].subckt_card()
-                    if card:
-                        txt.extend(inst_list[0].subckt_card())
-            txt.append('')
-
-        if hasattr(self,'saves'):
-            txt.append("** Output Requests **")
-            if self.saves:
-                outputs = []
-                for save in self.saves:
-                    outputs.extend(save.outputs())
-                card = Save.card(outputs, format='raw', analysis=self.analyses[0].analysis_name)
-                txt.extend(card)
+        txt.append("** Output Requests **")
+        if self.saves:
+            outputs = []
+            for save in self.saves:
+                outputs.extend(save.outputs())
+            card = Save.card(outputs, format='raw', analysis=self.analyses[0].analysis_name)
+            txt.extend(card)
 
         if hasattr(self, 'options'):
             txt.append("** Options")
@@ -125,7 +119,6 @@ class Simulation(BaseComponent):
         self.netlist_path = path
         with open(path,'w') as netlist:
             netlist.write(self.netlist())
-            self._files.append(path)
         return path
 
     def execute(self):
@@ -134,47 +127,24 @@ class Simulation(BaseComponent):
         Creates a netlist, then call
 
         """
-        self.info("Starting simulation: {}".format(self.path))
+        self.info("Starting simulation.")
         self.validate()
         self.create_netlist()
         self.results_file = os.path.join(self._work_dir, "output.raw")
         self.log_file = os.path.join(self._work_dir, "sim.log")
 
-
-        # The component is leaking file descriptors somewhere.  Perhaps the STDERR and STDOUT used by
-        # the subprocess modeul are the problem.
-        # Creating explicit STDERR and STDOUT files so they can be manually closed after the simulation is run.
-        err_path = os.path.join(self._work_dir, "sim.err")
-        out_path = os.path.join(self._work_dir, "sim.out")
-        err_fp = open(err_path,'w')
-        out_fp = open(out_path,'w')
-        self.err_path = err_path
-        self.out_path = out_path
-
-        self._files.extend([self.results_file, self.log_file, self.err_path, self.out_path, self.netlist_path])
         try:
             # XYCE:
             # result = subprocess.check_output([self.simulator_path, "-l", self.log_file, "-o", self.results_file, self.netlist_path], stderr=subprocess.STDOUT)
             # NGspice
-            """
-            Need to take special care here on Windows machines:
-            http://mihalop.blogspot.gr/2014/05/python-subprocess-and-file-descriptors.html
+            result = subprocess.check_output([self.simulator_path, "-b", "-o", self.log_file, "-r", self.results_file, self.netlist_path])
 
-            """
-            result = subprocess.check_output([self.simulator_path, "-b", "-o", self.log_file, "-r", self.results_file, self.netlist_path],
-                                             stderr=err_fp)
-
-            pass
         except subprocess.CalledProcessError as e:
             msg = ["Simulation failed with error:", "    " +str(e.output), "    Return code: {}".format(e.returncode)]
             self.error("\n".join(msg))
-            raise ExecutionError("Simulation failed: {}".format(self.path))
-        finally:
-            err_fp.close()
-            out_fp.close()
+            raise ExecutionError("Simulation failed")
 
-
-        self.info("Simulation finished: {}".format(self.path))
+        self.info("Simulation finished.")
         try:
             self.sim_results = self.load_results(self.results_file, results_name=self.analyses[0].analysis_name.lower())
         except FileNotFoundError:
@@ -330,7 +300,6 @@ class Simulation(BaseComponent):
 
 
     def clean(self):
-        if self.simulation_data:
-            self.simulation_data.close()
+        self.simulation_data.close()
         del(self.simulation_data)
         super().clean()

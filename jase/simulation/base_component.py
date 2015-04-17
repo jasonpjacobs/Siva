@@ -42,7 +42,7 @@ class BaseComponent(Component):
     """
     _registries = ["components", "params", "measurements"]
 
-    num_threads = 100
+    num_threads = 1000
 
     def __init__(self, parent=None, children=None, name=None, params=None, measurements=None, work_dir=None,
                  log_file=None, disk_mgr=None, parallel=False, log_severity=logging.INFO):
@@ -88,9 +88,6 @@ class BaseComponent(Component):
 
         self.results = Table()
 
-        # Keep a list of files created by this component, to aid housecleaning
-        self._files = []
-
     @property
     def disk_mgr(self):
         if self is not self.root:
@@ -121,11 +118,11 @@ class BaseComponent(Component):
         self.futures = []
 
         if self.parallel is False:
-            num_threads = 1
+             num_threads = 1
         else:
             num_threads = self.num_threads
 
-        with ThreadPoolExecutor(max_workers=num_threads) as pool:
+        with ThreadPoolExecutor(max_workers=num_threads) as executor:
             for index, iteration in enumerate(self):
 
                 self.variants.append(iteration)
@@ -139,19 +136,17 @@ class BaseComponent(Component):
                 iteration.index = index
 
                 # Submit the job
-                future = pool.submit(iteration.run)
+                future = executor.submit(iteration.run)
                 future.job = iteration
                 self.futures.append(future)
 
             # Wait for all schedules jobs to complete
-            if wait:
-                for future in concurrent.futures.as_completed(self.futures):
-                    if future.exception() is not None:
-                        msg = future.result()
-                        self.error("Problem running job: {}".format(msg))
-                        future.job.status = Error(msg)
-                    else:
-                        self.info("Job {} completed".format(future.job.path))
+            for future in concurrent.futures.as_completed(self.futures):
+                if future.exception() is not None:
+                    msg = future.result()
+                    self.error("Problem running job: {}".format(msg))
+                    future.job.status = Error(msg)
+                self.info("Job {} completed".format(future.job.inst_name))
 
 
         # Final clean up
@@ -179,12 +174,9 @@ class BaseComponent(Component):
     def wait(self):
         """Waits for all running threads to complete
         """
-        raise NotImplementedError()
-        """
         if self.threads is not None:
             for thread in self.threads:
                 thread.join()
-        """
 
     def initialize(self):
         """ The first step in a simulation.
@@ -222,7 +214,7 @@ class BaseComponent(Component):
             resource = disk_mgr.request(job=self, subdirs=subdirs)
             self._work_dir_resource = resource
             self._work_dir = resource.path
-            self.info("Got disk area: {}".format(self._work_dir))
+            self.info("Got disk area: ".format(self._work_dir))
 
     def setup_logging(self):
         assert self.root.master is self
@@ -279,13 +271,10 @@ class BaseComponent(Component):
 
     def final(self):
         self.status = Finalized
-        self.info("Creating summary: {}".format(self.path))
+        self.info("Creating summary")
         self.summarize()
-
-        for child in self.children:
-            child.clean()
         self.results.close()
-        self.info("{}: Done.".format(self.path))
+        self.info("Done.")
         self.close_logging()
 
     def summarize(self):
@@ -298,17 +287,8 @@ class BaseComponent(Component):
         """Clean up work area and file handles.  This is called by the parent after
         the final() method has been called.
         """
-        if self.status is Error:
-            return
-
-        self.info("Cleaning up work area for {}".format(self.path))
-        for file in self._files:
-            try:
-                os.remove(file)
-            except OSError as e:
-                self.error("Could not remove file: {} ({})".format(file, self.path))
-
         if self._work_dir_resource:
+            self.info("Cleaning up work area for {}:{}".format(self.inst_name, self._work_dir_resource.path))
             self._work_dir_resource.clean()
 
     def __iter__(self):
@@ -363,34 +343,23 @@ class BaseComponent(Component):
         name = "{}(name={})".format(self.__class__.__name__, self.inst_name)
         return name
 
-
-    @property
-    def log_msg_prefix(self):
-        return ". "*len(self.path_components)
-
     def debug(self, msg):
         if self.root.master.logger is not None:
             with self.root.master.lock:
-                self.root.master.logger.debug(self.log_msg_prefix + msg)
+                self.root.master.logger.debug(msg)
 
     def info(self, msg):
         if self.root.master.logger is not None:
             with self.root.master.lock:
-                self.root.master.logger.info(self.log_msg_prefix + msg)
+                self.root.master.logger.info(msg)
 
     def warn(self, msg):
         if self.root.master.logger is not None:
             with self.root.master.lock:
-                self.root.master.logger.warn(self.log_msg_prefix + msg)
+                self.root.master.logger.warn(msg)
 
     def error(self, msg):
         if self.root.master.logger is not None:
             with self.root.master.lock:
-                self.root.master.logger.error(self.log_msg_prefix + msg)
+                self.root.master.logger.error(msg)
 
-
-class Root(BaseComponent):
-    """ The root component for any analysis.  Contains resource managers, final results table.
-    """
-
-    pass

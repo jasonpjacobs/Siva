@@ -161,20 +161,13 @@ class Table:
             return self.save_as_hdf5(file_name=file_name, dir=dir, **kwargs)
 
 
-    def save_as_hdf5(self, file_name, dir=".", group=None, mode='w-'):
+    def save_as_hdf5(self, file_name, dir=".", group=None):
         import h5py
         import numpy as np
 
         path = os.path.join(dir, file_name)
 
-        try:
-            fp = h5py.File(path, mode)
-        except OSError as e:
-            print("Error creating HDF5 file")
-            from jase.utilities.file_handles import list_file_handles
-            print(list_file_handles())
-            raise
-
+        fp = h5py.File(path, 'w-')
 
         if group is None:
             ds = fp
@@ -191,8 +184,8 @@ class Table:
                 # See http://docs.h5py.org/en/latest/strings.html#exceptions-for-python-3 for more info
                 if type(data[0]) is str:
                     ds[col] = np.string_(data)
-        fp.close()
-        return True
+        fp.flush()
+        return fp
 
 
     def sort(self, column):

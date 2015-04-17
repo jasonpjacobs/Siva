@@ -21,9 +21,8 @@ class DiskResource:
         try:
             if os.path.exists(self.path) and not os.listdir(self.path) == "":
                 shutil.rmtree(self.path)
-            os.makedirs(self.path, exist_ok=True)
+            os.makedirs(self.path, exist_ok=False)
         except PermissionError:
-            "http://bugs.python.org/issue14252"
             raise
 
     def __enter__(self):
@@ -35,7 +34,7 @@ class DiskResource:
             self.clean()
 
     def clean(self):
-        os.removedirs(self.path)
+        shutil.rmtree(self.path)
         self.mgr.delete_resource(self)
 
 class DiskManager(ResourceManager):
