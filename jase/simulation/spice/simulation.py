@@ -22,6 +22,8 @@ class Simulation(BaseComponent):
 
         self.simulation_data = None
 
+        self.results_file = "sim.raw"
+
     def validate(self):
         """Ensure the simulation is setup correctly before processing to the netlist/simulation phase
         """
@@ -134,10 +136,10 @@ class Simulation(BaseComponent):
         Creates a netlist, then call
 
         """
+
         self.info("Starting simulation: {}".format(self.path))
         self.validate()
         self.create_netlist()
-        self.results_file = os.path.join(self._work_dir, "output.raw")
         self.log_file = os.path.join(self._work_dir, "sim.log")
 
 
@@ -162,7 +164,7 @@ class Simulation(BaseComponent):
 
             """
             result = subprocess.check_output([self.simulator_path, "-b", "-o", self.log_file, "-r", self.results_file, self.netlist_path],
-                                             stderr=err_fp)
+                                             stderr=err_fp, cwd=self._work_dir)
 
             pass
         except subprocess.CalledProcessError as e:
@@ -173,19 +175,27 @@ class Simulation(BaseComponent):
             err_fp.close()
             out_fp.close()
 
-
+        # Make sure simulation finished correctly
+        try:
+            assert os.path.exists(os.path.join(self._work_dir, self.results_file))
+            assert os.path.getsize(os.path.join(self._work_dir, self.results_file)) > 0
+        except AssertionError:
+            raise
         self.info("Simulation finished: {}".format(self.path))
         try:
             self.sim_results = self.load_results(self.results_file, results_name=self.analyses[0].analysis_name.lower())
         except FileNotFoundError:
             self.error("No results for:", self._work_dir)
-            raise
+            raise ExecutionError("Results file not found.")
+        except Exception:
+            raise ExecutionError("Could not parse results: {}: {}/{}".format(self.path, self._work_dir, self.results_file))
 
     def load_results(self, results_file, output_file="sim.hdf5", results_name='tran'):
         """Reads the Python native, but simulator specific simulation results
         and converts it into a high level set of simulation results.
         """
-        assert os.path.exists(results_file)
+        results_path = os.path.join(self._work_dir, results_file)
+        assert os.path.exists(results_path)
 
         raw_data = self.load_raw_results(results_file)
 
@@ -251,9 +261,9 @@ class Simulation(BaseComponent):
         """Reads the raw simulation data and converts it into a low level, simulator specific,
         native Python format (Numpy arrays)
         """
-
+        results_path = os.path.join(self._work_dir, results_file)
         if format == "binary":
-            with open(results_file, "rb") as fp:
+            with open(results_path, "rb") as fp:
                 bytes_read = fp.read()
 
             marker = bytes('Binary:\n', "utf-8")
@@ -306,19 +316,22 @@ class Simulation(BaseComponent):
             elif data_format == "complex":
                 cols_per_value = 2
             else:
-                self.error("Spice results file wasn't formatted properly")
-                pdb.set_trace()
+                self.error("Spice results file were not formatted properly. ({})".format(self.path))
+                raise ValueError("Spice results were not formatted correctly.")
 
             try:
                 array = np.array(struct.unpack(format, bytes(data)))
             except:
+                self.error("Cannot parse sim results: {}".format(self.path))
                 raise
-                pdb.set_trace()
 
             if num_points is None:
                 num_points = int(len(array)/(num_vars*cols_per_value))
 
-            data = array.reshape((num_points, num_vars*cols_per_value))
+            try:
+                data = array.reshape((num_points, num_vars*cols_per_value))
+            except:
+                raise
             results = {}
             for n in headers:
                 n, name, sig_type = headers[n]
@@ -332,5 +345,5 @@ class Simulation(BaseComponent):
     def clean(self):
         if self.simulation_data:
             self.simulation_data.close()
-        del(self.simulation_data)
+        #del(self.simulation_data)
         super().clean()

@@ -114,7 +114,7 @@ class LoopComponent(BaseComponent):
 
         var_vals = list(zip([v.name for v in self.loop_vars.values()], values))
         inst_name = self.name + "_" + str(self._i)
-        loop_iteration = self.clone(inst_name=inst_name, master=self)
+        loop_iteration = self.clone(inst_name=inst_name, master=self, is_variant=True)
 
         # TODO:  Can we do this using descriptors?
         for var, val in var_vals:

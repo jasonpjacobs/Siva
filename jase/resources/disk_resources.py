@@ -2,7 +2,7 @@ import os, sys
 import shutil
 import time
 import logging
-
+from ..utilities import disk_utils
 from .resources import Request, ResourceManager, ResourceTimeoutError
 
 class DiskRequest(Request):
@@ -35,7 +35,7 @@ class DiskResource:
             self.clean()
 
     def clean(self):
-        os.removedirs(self.path)
+        disk_utils.remove(self.path)
         self.mgr.delete_resource(self)
 
 class DiskManager(ResourceManager):

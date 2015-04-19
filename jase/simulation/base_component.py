@@ -1,36 +1,38 @@
 from ..components import Component
 from ..resources.disk_resources import LocalDiskManager
 from ..simulation.table import Table
+from ..utilities import disk_utils
 
 import logging
 import threading
 import sys
 import os
+import glob
+
 
 import concurrent
 from concurrent.futures import ThreadPoolExecutor
 
 class Status:
-    pass
-
+    name = "BaseStatus"
 
 class Uninitialized(Status):
-    pass
+    name = "Uninitialized"
 
 class Initialized(Status):
-    pass
+    name = "Initialized"
 
 class Running(Status):
-    pass
+    name = "Running"
 
 class Measured(Status):
-    pass
+    name = "Measured"
 
 class Finalized(Status):
-    pass
+    name = "Finalized"
 
 class Error(Status):
-    pass
+    name = "Error"
 
 class ExecutionError(Exception):
     '''An exception raised when a Component encounters a problem during execution'''
@@ -45,7 +47,7 @@ class BaseComponent(Component):
     num_threads = 100
 
     def __init__(self, parent=None, children=None, name=None, params=None, measurements=None, work_dir=None,
-                 log_file=None, disk_mgr=None, parallel=False, log_severity=logging.INFO):
+                 log_file=None, disk_mgr=None, parallel=False, log_severity=logging.INFO, is_variant=False):
 
         super().__init__(parent=parent, children=children, name=name)
 
@@ -88,8 +90,10 @@ class BaseComponent(Component):
 
         self.results = Table()
 
-        # Keep a list of files created by this component, to aid housecleaning
+        # Keep a list of files created by this component, to aid cleanup
         self._files = []
+
+        self.is_variant = is_variant
 
     @property
     def disk_mgr(self):
@@ -114,11 +118,10 @@ class BaseComponent(Component):
         # Initialize:  Get disk space, logs, etc.
         self.initialize()
 
-        # This component may spawn several variants to run in their own threads.  (E.g., loop iterations).
+        # This component may spawn several variants of itself to run in their own threads.  (E.g., loop iterations).
         # These lists will keep track of them.
-        #self.threads = []
         self.variants = []
-        self.futures = []
+        self.futures = []  # http://en.wikipedia.org/wiki/Futures_and_promises
 
         if self.parallel is False:
             num_threads = 1
@@ -126,26 +129,29 @@ class BaseComponent(Component):
             num_threads = self.num_threads
 
         with ThreadPoolExecutor(max_workers=num_threads) as pool:
-            for index, iteration in enumerate(self):
+            for index, variant in enumerate(self):
+                self.variants.append(variant)
 
-                self.variants.append(iteration)
-
+                #TODO:  These two attributes should be set during the __next__ method call
                 # Make sure variant knows who the master is, so they can report
                 # results to the same location
-                iteration.master = self
+                variant.master = self
 
                 # The variant should also know its index, so it
                 # can add its results to the correct row in the results table
-                iteration.index = index
+                variant.index = index
 
                 # Submit the job
-                future = pool.submit(iteration.run)
-                future.job = iteration
+                future = pool.submit(variant.run)
+                future.job = variant
                 self.futures.append(future)
 
-            # Wait for all schedules jobs to complete
+            # Wait for all scheduled jobs to complete
+            num_complete = 0
             if wait:
                 for future in concurrent.futures.as_completed(self.futures):
+                    num_complete += 1
+                    self.info("Job {}/{} finished. ({})".format(num_complete, len(self.futures), self.path))
                     if future.exception() is not None:
                         msg = future.result()
                         self.error("Problem running job: {}".format(msg))
@@ -153,13 +159,16 @@ class BaseComponent(Component):
                     else:
                         self.info("Job {} completed".format(future.job.path))
 
+        # Once all the variants finish running, collect and summarize the results
+        self.info("Creating summary: {}".format(self.path))
+        self.summarize()
 
         # Final clean up
         if wait and self.status is not Error:
             self.final()
             for variant in self.variants:
                 if variant.status is not Error and variant is not self:
-                    self.info("Cleaning up {}".format(variant.inst_name))
+                    self.info("Cleaning up {}".format(variant.path))
                     variant.clean()
 
         del self.variants
@@ -169,22 +178,23 @@ class BaseComponent(Component):
         """Called by a thread's start() method.
         """
         try:
+            self.info("Running {}".format(self.path))
+            self.initialize()
             self.execute()
-            for component in self.components.values():
-                component.start(wait=True)
-            self.measure()
+            for child in self.children:
+                child.start(wait=True)
         except ExecutionError:
             self.status = Error
 
-    def wait(self):
-        """Waits for all running threads to complete
-        """
-        raise NotImplementedError()
-        """
-        if self.threads is not None:
-            for thread in self.threads:
-                thread.join()
-        """
+        try:
+            self.measure()
+        except Exception as e:
+            self.status = Error
+            self.error("Exception occurred during measurement: {} ({})".format(e.args, self.path))
+
+        for child in self.children:
+            child.clean()   # Child only cleans up if no error was encountered (for debug)
+
 
     def initialize(self):
         """ The first step in a simulation.
@@ -194,14 +204,14 @@ class BaseComponent(Component):
 
         self.setup_work_area()
 
-        with self.lock:
-            if self is self.root.master:
+        if self is self.root.master:
+            with self.lock:
                 self.setup_logging()
                 self.info("Setting up logging")
 
-        # Create a results table
-        with self.lock:
-            self.master.results = Table()
+                # Create a results table
+                with self.lock:
+                    self.master.results = Table()
 
         self.status = Initialized
 
@@ -217,6 +227,10 @@ class BaseComponent(Component):
                 raise ValueError("Component must have a name: {}".format(self))
 
         subdirs = [comp.inst_name for comp in self.path_components]
+
+
+        # Ensure the work area of variants are sub directories of their master
+        #  ['loop1', 'sim3', 'ac_sim_1'] --> ['loop1', 'sim3', 'ac_sim', 'ac_sim1']
 
         if disk_mgr:
             resource = disk_mgr.request(job=self, subdirs=subdirs)
@@ -254,7 +268,6 @@ class BaseComponent(Component):
                     handler.close()
 
     def measure(self):
-
         self.info("{} ({}): Evaluating measurements".format(self.inst_name, id(self)))
 
         # Evaluate all measurement statements
@@ -279,11 +292,7 @@ class BaseComponent(Component):
 
     def final(self):
         self.status = Finalized
-        self.info("Creating summary: {}".format(self.path))
-        self.summarize()
 
-        for child in self.children:
-            child.clean()
         self.results.close()
         self.info("{}: Done.".format(self.path))
         self.close_logging()
@@ -298,18 +307,39 @@ class BaseComponent(Component):
         """Clean up work area and file handles.  This is called by the parent after
         the final() method has been called.
         """
+        self.info("Cleaning up: {}".format(self.path))
         if self.status is Error:
             return
 
+        # Remove all files from the work directory
+        files = glob.glob(self._work_dir + "/*")
+        _num_tries = 3
+        i = 0
+        for file in files:
+            try:
+                disk_utils.remove(file, num_tries=3)
+            except PermissionError as e:
+                raise
+
+        # This should delete the directory and release the resource
+        if self._work_dir_resource:
+            try:
+                self._work_dir_resource.clean()
+            except:
+                raise
+
+    def clean_temp_files(self):
+        """ Removes temporary/scratch files from work area, leaving only final results.
+        """
         self.info("Cleaning up work area for {}".format(self.path))
         for file in self._files:
             try:
                 os.remove(file)
             except OSError as e:
                 self.error("Could not remove file: {} ({})".format(file, self.path))
+            except PermissionError as e:
+                self.error("Could not remove file: {} ({})".format(file, self.path))
 
-        if self._work_dir_resource:
-            self._work_dir_resource.clean()
 
     def __iter__(self):
         self._i = 0
@@ -359,10 +389,33 @@ class BaseComponent(Component):
     def results(self, value):
         self._results = value
 
+    @property
+    def path_components(self):
+        if self.parent is not None:
+            path =  self.parent.path_components
+            path.append(self.master)
+        else:
+            path = [self.master]
+
+        # Variants are subordinate to the master
+        if self.is_variant:
+            path.append(self)
+        return path
+
     def __repr__(self):
         name = "{}(name={})".format(self.__class__.__name__, self.inst_name)
         return name
 
+
+    @property
+    def status(self):
+        return self._status
+
+    @status.setter
+    def status(self, value):
+        if hasattr(self, '_status'):
+            self.info("Status change: {} -> {} ({})".format(self._status.name, value.name, self.path))
+        self._status = value
 
     @property
     def log_msg_prefix(self):
