@@ -87,3 +87,27 @@ class Vpwl(Primitive):
         points_txt = " ".join( ["{} {}".format( str(p[0]), str(p[1])) for p in self.points])
         txt += " PWL {}".format(points_txt)
         return txt
+
+
+class Idc(Source):
+    token = "I"
+
+    p = Pin()
+    n = Pin('0')
+    i = Float()
+    ac = Float(optional=True)
+
+    def __init__(self, p, n=None, i=100e-6, ac=None):
+        if n is None:
+            n = Net(name='0')
+
+        super().__init__(p=p, n=n, i=i, ac=ac)
+
+    def card(self):
+        dct = self.card_dict()
+        if self.ac is not None:
+            dct['ac'] = "AC {ac}".format(ac=self.ac)
+        else:
+            dct['ac'] = ''
+        txt = "{name} {p} {n} {i} {ac}".format(**dct)
+        return [txt]
