@@ -159,6 +159,8 @@ class Table:
     def save(self, file_name=None, dir=None, format='hdf5', **kwargs):
         if format == 'hdf5':
             return self.save_as_hdf5(file_name=file_name, dir=dir, **kwargs)
+        if format == 'csv':
+            return self.save_as_csv(file_name=file_name, dir=dir, **kwargs)
 
 
     def save_as_hdf5(self, file_name, dir=".", group=None, mode='w-'):
@@ -194,6 +196,16 @@ class Table:
         fp.close()
         return True
 
+    def save_as_csv(self, file_name, dir="."):
+
+        path = os.path.join(dir, file_name)
+
+        with open(path,'w') as fp:
+            fp.write(", ".join([str(c) for c in self.columns]) + "\n")
+            for row in self:
+                fp.write(", ".join([str(v) for v in row.values()]) + "\n")
+
+        return True
 
     def sort(self, column):
         """Sorts the rows in a table by the values in the given column
