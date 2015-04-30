@@ -37,6 +37,10 @@ class Circuit(Design, metaclass=CircuitMeta):
         txt.append(".SUBCKT {} {}".format(self.cell_name, pin_txt))
         for inst in self.instances.values():
             txt.extend(inst.card())
+
+        for source in self.sources.values():
+            txt.extend(source.card())
+
         txt.append(".ENDS")
         return txt
 
