@@ -15,7 +15,10 @@ class Option(Directive):
     def card(self):
         cards = []
         category = self.category if self.category is not None else ''
+        if not self.options:
+            txt = ".OPTION {}".format(category)
+
         for name, value in self.options.items():
-            txt = ".OPTIONs {} {}={}".format(category, name, value)
+            txt = ".OPTION {} {}={}".format(category, name, value)
             cards.append(txt)
         return [txt]
