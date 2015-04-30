@@ -8,12 +8,19 @@ import threading
 import sys
 import os
 import glob
+import time
 
 
 import concurrent
 from concurrent.futures import ThreadPoolExecutor
 
 class Status:
+    def __init__(self, notes):
+        self.notes=notes
+
+    def __repr__(self):
+        return "{}({})".format(self.name, self.notes)
+
     name = "BaseStatus"
 
 class Uninitialized(Status):
@@ -183,13 +190,15 @@ class BaseComponent(Component):
             self.execute()
             for child in self.children:
                 child.start(wait=True)
-        except ExecutionError:
-            self.status = Error
+        except ExecutionError as e:
+            self.status = Error(e.args)
+            raise
 
         try:
             self.measure()
         except Exception as e:
             self.status = Error
+            ex_type, ex, tb = sys.exc_info()
             self.error("Exception occurred during measurement: {} ({})".format(e.args, self.path))
 
         for child in self.children:
@@ -220,7 +229,7 @@ class BaseComponent(Component):
         # Create work area.
         root = self.root
         disk_mgr = root.disk_mgr
-        if self is self.root and disk_mgr is not None:
+        if self is self.root and disk_mgr is not None and not disk_mgr._started:
             disk_mgr.start()
         for comp in self.path_components:
             if comp.name is None:
@@ -317,7 +326,8 @@ class BaseComponent(Component):
         i = 0
         for file in files:
             try:
-                disk_utils.remove(file, num_tries=3)
+                if os.path.exists(file):
+                    disk_utils.remove(file, num_tries=3)
             except PermissionError as e:
                 raise
 
