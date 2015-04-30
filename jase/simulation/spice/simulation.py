@@ -4,11 +4,11 @@ import struct
 import pdb
 
 import numpy as np
-import h5py
 
 from ..base_component import BaseComponent, ExecutionError
 from .save import Save
 from ..base_component import Error
+from ..results import Results
 
 class Simulation(BaseComponent):
 
@@ -183,51 +183,69 @@ class Simulation(BaseComponent):
             raise
         self.info("Simulation finished: {}".format(self.path))
         try:
-            self.sim_results = self.load_results(self.results_file, results_name=self.analyses[0].analysis_name.lower())
+            self.sim_results = self.load_results(self.results_file)
         except FileNotFoundError:
             self.error("No results for:", self._work_dir)
             raise ExecutionError("Results file not found.")
-        except Exception:
-            raise ExecutionError("Could not parse results: {}: {}/{}".format(self.path, self._work_dir, self.results_file))
+        except Exception as e:
+            raise ExecutionError("Could not parse results: {} -- {}: {}/{}".format(e.args, self.path, self._work_dir, self.results_file))
 
-    def load_results(self, results_file, output_file="sim.hdf5", results_name='tran'):
+    def load_results(self, results_file, output_file="sim.hdf5"):
         """Reads the Python native, but simulator specific simulation results
         and converts it into a high level set of simulation results.
         """
         results_path = os.path.join(self._work_dir, results_file)
         assert os.path.exists(results_path)
 
-        raw_data = self.load_raw_results(results_file)
+        sim_results = self.load_raw_results(results_file)
 
-        results = h5py.File(os.path.join(self._work_dir,output_file),'w-')
+        results = Results(os.path.join(self._work_dir,output_file),'w-')
 
-        root = results.create_group(results_name)     #Tran, AC, DC, etc
+        for results_name, raw_data in sim_results.items():
+            print(raw_data)
+            root = results.select(results_name)     #Tran, AC, DC, etc
 
-        results_name = self.analyses[0].analysis_name
-        for entry in raw_data:
+            if results_name == "op":
+                # Operating point data is a scalar, without an index
+                for entry in raw_data:
+                    (output_type, path, node) = self.parse_results_entry(entry)
+                    full_path = "/".join(path + [node])
+                    # Operating point paths can be a little wierd.  E.g.:  'm.x_dut.m1_p#dbody'
+                    # Lets make the path a little friendlier
+                    results.add_scalar(path=full_path, name=output_type, value=raw_data[entry][0])
+            else:
+                index=None
+                # Search for the index first
+                for entry in raw_data:
+                    # Entry will be either a keyword:  TIME, FREQ, V etc.
+                    if entry.lower() in ("time","frequency"):
+                        # Set the shared index as a vector in the root of the hierarchy
+                        index = results.add_vector(path="/{}".format(results_name),
+                                                   vector=raw_data[entry], name=entry.lower())
+                        index.attrs['name']=entry.lower()
 
-            # Entry will be either a keyword:  TIME, FREQ, V etc.
-            if entry.lower() in ("time","frequency"):
-                data = raw_data[entry]
-                root['x'] = data
+                if index is None:
+                    raise ValueError("Results database does not have in index")
 
-            if '(' in entry:
-                (output_type, path, node) = self.parse_results_entry(entry)
-                if not output_type in root:
-                    root.create_group(output_type)
-                group = root[output_type]
-
-                full_path = "/".join(path + [node])
-                group[full_path] = raw_data[entry]
+                for entry in raw_data:
+                    if '(' in entry:
+                        # For the remaining waveforms, add them as a waveform, but provide
+                        # a reference to the shared index.
+                        (output_type, path, node) = self.parse_results_entry(entry)
+                        full_path = "/".join(path + [node])
+                        results.add_waveform(path=full_path, y=raw_data[entry], x=index,
+                                             y_name=output_type, x_name=index.attrs['name'])
 
         results.flush()
         self.simulation_data = results
 
     @staticmethod
     def parse_results_entry(entry):
-        """ Exrancts output type, hierarchy, and node/net info from the labels in the results file.
-        :param entry: V(XDUT.XI0.R1:p) --> (V, [dut, i0, r1], p)
-        :return:
+        """ Extracts output type, hierarchy, and node/net info from the labels in the Spice results file
+        and converts the hierarchy to the expected path description used by the Design module
+        V(XDUT.XI0.R1:p) --> (V, [dut, i0, r1], p)
+
+        v(m.x_dut.m1_p#body) --> v (dut, m1_p, body)
         """
         if '(' in entry:
             output_type = entry.split('(')[0]
@@ -236,16 +254,20 @@ class Simulation(BaseComponent):
 
             if ":" in path:
                 path, node_net = path.split(":")
+            elif "#" in path:
+                path, node_net = path.split("#")
             else:
-                node_net = path
-                path = ''
+                node_net = None
 
-            if path is '':
-                path = []
-            elif "." in path:
-                path = path.split('.')
-            else:
-                path = [path]
+            path = path.split('.')
+
+            if node_net is None:
+                if len(path) == 1:
+                    node_net = path[0]
+                    path = []
+                else:
+                    node_net = path[-1]
+                    path = path[0:-1]
 
             orig_path = path
             path = []
@@ -264,86 +286,121 @@ class Simulation(BaseComponent):
         results_path = os.path.join(self._work_dir, results_file)
         if format == "binary":
             with open(results_path, "rb") as fp:
-                bytes_read = fp.read()
+                byte_block = fp.read()
 
-            marker = bytes('Binary:\n', "utf-8")
-            start = bytes_read.find(marker) + len(marker)
-            header = str(bytes_read[:start])
-            lines = header.split("\\n")
-            data = bytes_read[start:]
-
-            size = len(data)/len(struct.pack('d',0.0))
-            format = "{}d".format(int(size))
-
-            # Parse the header to get wave names, number of vars and points
-            headers = {}
-            VARS_FOUND = False
-            data_format = None
-            for line in lines:
-                if line == "Binary:":
+            # See how many different analyses results are present
+            loc = 0
+            locs = []
+            while True:
+                loc = byte_block.find(bytes('Title:', "utf-8"), loc)
+                if loc == -1:
                     break
-                elif "No. Variables:" in line:
-                    num_vars = int(line.split(":")[1])
-                elif "No. Points:" in line:
-                    try:
-                        num_points = int([l for l in lines if "No. Points" in l][0].split(":")[1])
-                    except ValueError:
-                        # XYCE doesn't always fill in this field
-                        num_points = None
-                elif "Flags:" in line:
-                    data_format = line.split(":")[1].strip()
-                elif line == "Variables:":
-                    VARS_FOUND = True
-                    continue
-                elif VARS_FOUND:
-                    """
-                    Variables:
-                    0	frequency	frequency	grid=3
-                    1	v(g)	voltage
-                    2	v(d)	voltage
-                    3	v(s)	voltage
-                    4	v(vdd)	voltage
-                    5	v(m_dut#gate)	voltage
-                    """
-                    txt = line.replace("\\t", " ")
-                    n, *rest = txt.split()
-                    headers[int(n)] = (int(n), rest[0], rest[1])
-                else:
-                    continue
+                locs.append(loc)
+                loc += 1
+                
+            blocks = []
 
-            if data_format == "real":
-                cols_per_value = 1
-            elif data_format == "complex":
-                cols_per_value = 2
-            else:
-                self.error("Spice results file were not formatted properly. ({})".format(self.path))
-                raise ValueError("Spice results were not formatted correctly.")
+            for i in range(len(locs[:-1])):
+                blocks.append(byte_block[locs[i]:locs[i-1]])
+            blocks.append(byte_block[locs[-1]:])
 
-            try:
-                array = np.array(struct.unpack(format, bytes(data)))
-            except:
-                self.error("Cannot parse sim results: {}".format(self.path))
-                raise
 
-            if num_points is None:
-                num_points = int(len(array)/(num_vars*cols_per_value))
-
-            try:
-                data = array.reshape((num_points, num_vars*cols_per_value))
-            except:
-                raise
             results = {}
-            for n in headers:
-                n, name, sig_type = headers[n]
-                if data_format == "real":
-                    results[name] = data[:,n]
-                else:
-                    results[name] = data[:,2*n] + data[:,2*n+1]*1j
-            return results
+            for block in blocks:
+                name, data = self.parse_byte_block(block)
+                results[name] = data
+
+        return results
+
+
+    def parse_byte_block(self, byte_block):
+        marker = bytes('Binary:\n', "utf-8")
+        start = byte_block.find(marker) + len(marker)
+        header = str(byte_block[:start])
+        lines = header.split("\\n")
+        data = byte_block[start:]
+
+        size = len(data)/len(struct.pack('d',0.0))
+        format = "{}d".format(int(size))
+
+        # Parse the header to get wave names, number of vars and points
+        headers = {}
+        VARS_FOUND = False
+        data_format = None
+        for line in lines:
+            if line == "Binary:":
+                break
+            elif "No. Variables:" in line:
+                num_vars = int(line.split(":")[1])
+            elif "No. Points:" in line:
+                try:
+                    num_points = int([l for l in lines if "No. Points" in l][0].split(":")[1])
+                except ValueError:
+                    # XYCE doesn't always fill in this field
+                    num_points = None
+            elif "Flags:" in line:
+                data_format = line.split(":")[1].strip()
+            elif "Plotname:" in line:
+                key = line.split(":")[1].strip()
+                analysis = {'AC Analysis':'ac',
+                            'AC Operating Point':'op',
+                            }[key]
+
+            elif line == "Variables:":
+                VARS_FOUND = True
+                continue
+            elif VARS_FOUND:
+                """
+                Variables:
+                0	frequency	frequency	grid=3
+                1	v(g)	voltage
+                2	v(d)	voltage
+                3	v(s)	voltage
+                4	v(vdd)	voltage
+                5	v(m_dut#gate)	voltage
+                """
+                txt = line.replace("\\t", " ")
+                n, *rest = txt.split()
+                headers[int(n)] = (int(n), rest[0], rest[1])
+            else:
+                continue
+
+        if data_format == "real":
+            cols_per_value = 1
+        elif data_format == "complex":
+            cols_per_value = 2
+        else:
+            self.error("Spice results file were not formatted properly. ({})".format(self.path))
+            raise ValueError("Spice results were not formatted correctly.")
+
+        try:
+            array = np.array(struct.unpack(format, bytes(data)))
+        except:
+            self.error("Cannot parse sim results: {}".format(self.path))
+            raise
+
+        if num_points is None:
+            num_points = int(len(array)/(num_vars*cols_per_value))
+
+        try:
+            data = array.reshape((num_points, num_vars*cols_per_value))
+        except:
+            raise
+        results = {}
+        for n in headers:
+            n, name, sig_type = headers[n]
+            if data_format == "real":
+                results[name] = data[:,n]
+            else:
+                results[name] = data[:,2*n] + data[:,2*n+1]*1j
+        return analysis, results
 
 
     def clean(self):
         if self.simulation_data:
             self.simulation_data.close()
         #del(self.simulation_data)
-        super().clean()
+        try:
+            super().clean()
+        except PermissionError:
+            self.error("Could not delete {}.  Moving on...".format(self._work_dir))
