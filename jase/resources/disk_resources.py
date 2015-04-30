@@ -20,11 +20,14 @@ class DiskResource:
 
         try:
             if os.path.exists(self.path) and not os.listdir(self.path) == "":
-                shutil.rmtree(self.path)
+                disk_utils.remove(self.path)
             os.makedirs(self.path, exist_ok=True)
         except PermissionError:
             "http://bugs.python.org/issue14252"
-            raise
+            # Try sleeping a bit, then retrying
+            import time
+            time.sleep(1)
+            os.makedirs(self.path, exist_ok=True)
 
     def __enter__(self):
         if not os.path.exists(self.path):
