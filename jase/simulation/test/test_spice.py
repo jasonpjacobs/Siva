@@ -20,6 +20,20 @@ MM1 d g vss vss n50n W=5e-08 L=5e-08 M=1
 .END
 """
 
+
+def test_parse_results():
+    type, path, net = Simulation.parse_results_entry('v(m.x_dut.m1_n#gate)')
+
+    assert type == 'v'
+    assert path == ['m', 'x_dut', 'm1_n']
+    assert net == 'gate'
+
+
+    type, path, net = Simulation.parse_results_entry('v(x_dut.vs_p)')
+    assert type == 'v'
+    assert path == ['x_dut']
+    assert net == 'vs_p'
+
 class Inv(Circuit):
     #vdd = Supply(domain="vdd_core")
 
