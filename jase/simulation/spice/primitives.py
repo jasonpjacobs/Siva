@@ -131,3 +131,13 @@ class L(Primitive):
     def card(self):
         txt = "{name} {p} {n} L={l}".format(**self.card_dict())
         return [txt]
+
+class Cmd(Primitive):
+    """ A native simulator command
+    """
+    token = ""
+
+    cmd = String()
+
+    def card(self):
+        return ["{}".format(**self.card_dict())]
