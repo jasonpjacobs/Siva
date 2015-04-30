@@ -71,3 +71,7 @@ def test_add_column(simple_table):
     # And that the new column is correct
     for i,row in enumerate(t):
         assert row["ID"] == i
+
+
+def test_write_csv(simple_table):
+    simple_table.save_as_csv("test.csv", dir=r"P:\work")
