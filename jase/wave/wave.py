@@ -257,9 +257,8 @@ class Wave:
         else:
             return Wave(x=self.x[key], y=self.y[key])
 
-    def __call__(self, values,  kind='linear', bounds_error=False ):
+    def __call__(self, values,  kind=None, bounds_error=False ):
         return self.interpolate(values, kind, bounds_error)
-
 
     def clip(self, *args, **kwargs):
         return Wave(x=self.x,  y=self.y.clip(*args, **kwargs))
@@ -359,7 +358,7 @@ class Wave:
         y = np.diff(self.y)/np.diff(self.x)
         return Wave(x=self.x[:-1], y=y, name = "dx/dy({})".format(self.name))
 
-    def diff(self):
+    def difference(self):
         """Returns the first difference of the waveform's y-axis values"""
         return Wave(x=self.x[:-1], y=np.diff(self.y))
 
@@ -471,10 +470,6 @@ class Wave:
         if (kind == "step"):
             kind = 'zero'
 
-
-        #  f=interpolate.interp1d(self.x,self.y, kind=kind, bounds_error=bounds_error)
-
-        # Using Univariate Spline gives us extrapolation too
         kind_order = {'linear' : 1,
                       'zero' : 0,
                       'slinear' : 0,
@@ -482,8 +477,11 @@ class Wave:
                       'cubic': 3,
                       'step': 0
                       }
-
-        f = interpolate.InterpolatedUnivariateSpline(self.x, self.y, k=kind_order[kind])
+        if kind == 'zero':
+            f = interpolate.interp1d(self.x,self.y, kind='zero', bounds_error=bounds_error)
+        else:
+            # Using Univariate Spline gives us extrapolation too
+            f = interpolate.InterpolatedUnivariateSpline(self.x, self.y, k=kind_order[kind])
 
         # Convert lists and numbers into ndarrays
         if not isinstance(values, np.ndarray):
@@ -556,6 +554,90 @@ class Wave:
     def xmin(self):
         ymin = self.y.argmin()
         return self.x[ymin]
+
+
+class Diff(Wave):
+    """A differential waveform, described in terms of positive/negative or differential/common mode components.
+
+    """
+    def __init__(self, data=None, x=None, pos=None, neg=None, diff=None, cm=None,
+                 name=None, desc=None, interp='linear', default=None):
+
+        if pos is not None or neg is not None:
+            if (diff is not None) or (cm is not None):
+                raise ValueError("Differntial signals must be specified with pos/neg or diff/cm components")
+            self._pos = pos
+            self._neg = neg
+
+        if diff is not None or cm is not None:
+            if (pos is not None) or (neg is not None):
+                raise ValueError("Differntial signals must be specified with pos/neg or diff/cm components")
+            self._diff = diff
+            self._cm = cm
+
+        super().__init__(x=x, name=name, desc=desc, interp=interp, default=default)
+
+    @property
+    def y(self):
+        return self.diff
+
+    @y.setter
+    def y(self, value):
+        self.diff = value
+
+    @property
+    def diff(self):
+        if self._diff is None:
+            self._diff = self._pos - self._neg
+        return self._diff
+
+    @diff.setter
+    def diff(self, value):
+        self._diff = value
+
+        # Reset the pos/neg comonents
+        self._pos = None
+        self._neg = None
+
+    @property
+    def cm(self):
+        if self._cm is None:
+            self._cm = (self.p + self.n)/2
+        return self._cm
+
+    @cm.setter
+    def cm(self, value):
+        self._cm = value
+
+        # Reset the pos/neg components
+        self._pos = None
+        self._neg = None
+
+
+    @property
+    def pos(self):
+        if self._pos is None:
+            self._pos = self._diff/2 + self._cm
+        return self._pos
+
+    @pos.setter
+    def pos(self, value):
+        self._pos = value
+
+        # Reset diff/cm components
+        self._cm = None
+        self._diff = None
+
+    @property
+    def neg(self):
+        if self._neg is None:
+            self._neg = -1*(self._diff)/2 + self._cm
+
+        # Reset diff/cm components
+        self._cm = None
+        self._diff = None
+
+
 
 if __name__ == "__main__":
 
