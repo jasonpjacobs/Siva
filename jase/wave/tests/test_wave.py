@@ -4,6 +4,9 @@ import numpy as np
 from jase.wave.wave import Wave
 
 import pdb
+
+epsilon =  np.finfo(float).eps
+
 class TestWave(unittest.TestCase):
 
     def setUp(self):
@@ -146,7 +149,7 @@ class TestWave(unittest.TestCase):
 
         for i in range(1,13):
             v = 1/i
-            self.assertEqual(n(v).y, w(v).y)
+            self.assertTrue( n(v).y - w(v).y < epsilon)
 
 
     def test_minmax(self):
@@ -191,7 +194,7 @@ class TestWave(unittest.TestCase):
         t = np.linspace(-np.pi/2,np.pi/2,2000)
         y = np.sin(2*np.pi*1*t)
         sin = Wave(t,y,name="sin")
-        b  = sin.diff()
+        b  = sin.difference()
         c = b.cumsum()
         dy = (sin[0].y - c[0].y)
         d = sin-dy
