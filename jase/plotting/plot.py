@@ -59,7 +59,6 @@ class Plot(QtGui.QGraphicsItemGroup):
 
         self.width=width
         self.height=height
-        #self.setSizePolicy(QtGui.QSizePolicy.MinimumExpanding, QtGui.QSizePolicy.MinimumExpanding)
 
         # The plot_rect is the scene region where the waveforms should be rendered.
         # It is the size of the plot after allocating space for title, axes, and legends.

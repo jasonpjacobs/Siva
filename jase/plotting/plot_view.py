@@ -20,7 +20,7 @@ class PlotView(QtGui.QGraphicsView):
         self.setHorizontalScrollBarPolicy(policy)
 
         self.scene = scene = QtGui.QGraphicsScene(parent=self)
-        #scene.setSceneRect(0, 0, width, height)
+        self.scene.setSceneRect(0, 0, width, height)
         self.setGeometry(100, 100, width, height)
 
         self.setScene(scene)
@@ -31,10 +31,10 @@ class PlotView(QtGui.QGraphicsView):
 
         # Plots are stored hierarchically via PlotGroups.
         # The PlotView just keeps a reference to the top-level plot group.
-        #self.top = PlotGroup(expanded=True, view=self, width=self.width())
-        #self.top.setPos(QtCore.QPoint(0,0))
-        #self.scene.addItem(self.top)
-        #self.current_plot_group = self.top
+        self.top = PlotGroup(expanded=True, view=self, width=self.width())
+        self.top.setPos(QtCore.QPoint(0,0))
+        self.scene.addItem(self.top)
+        self.current_plot_group = self.top
 
         # View configuration
         self.setAlignment(Qt.AlignCenter)
@@ -46,20 +46,23 @@ class PlotView(QtGui.QGraphicsView):
     def drawForeground(self, painter, rect):
         """
          TODO:  PlotView Title/Subtitle feature
+        """
 
+        '''
         if self.subtitle is None:
             subtitle = datetime.datetime.now().strftime("%A, %d. %B %Y %I:%M%p")
         else:
             subtitle = self.subtitle
-        """
-        super().drawForeground()
-        #self.top.drawForeground(painter, rect)
+        '''
+
+        super().drawForeground(painter, rect)
         pass
 
     def drawBackground(self, painter, rect):
         """Responsible for rendering grid lines, axis ticks"""
-        super().drawBackground()
+        super().drawBackground(painter, rect)
         self.top.drawBackground(painter, rect)
+
 
     def resizeEvent(self, *args, **kwargs):
         self.top.width = self.width()
@@ -76,7 +79,7 @@ class PlotView(QtGui.QGraphicsView):
         #pg = self.current_plot_group
         pg = None
         # Create a new plot object
-        plot = Plot(parent=pg, width=1.0*self.width(), x_scale=self.x_scale, view=self)
+        plot = Plot(parent=pg, width=1.0*self.width(), height=self.height()*1.0, x_scale=self.x_scale, view=self)
 
         # Plot the data
         plot.plot(name=name, *args, **kwargs)
