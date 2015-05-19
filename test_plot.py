@@ -2,6 +2,7 @@ import os
 os.environ['QT_API'] = 'pyside'
 
 from jase.plotting.plot_window import PlotWidget
+from jase.plotting.plot_view import PlotView
 from jase.plotting.plot import Plot
 from jase.plotting.scale import Scale
 from jase.qt_bindings import QtGui
@@ -14,10 +15,10 @@ try:
 except:
     app = QtGui.QApplication.instance()
 
-pw = PlotWidget(name="main")
-pw.setGeometry(100,100, 1000, 800)
-
 if False:
+    pw = PlotWidget(name="main")
+    pw.setGeometry(100,100, 1000, 800)
+
     p = Plot()
     scale = Scale(plot=p)
 
@@ -52,12 +53,10 @@ def test_multiple_plots():
         pw.plot(x=[0,10], y=[-12, 5], strip="Wave", name="3", color="blue")
         pw.plot(x=[0,10], y=[0, 0], strip="Wave", name="4", color="yellow")
 
-
     if True:
         states = ["Unknown", "Reset", "Idle", "Active", "Gen1"]
         pw.plot(x=[0,1,4,5,10], y=states, style="state", name="state_plot", strip="Wave")
         pw.plot(x=[0,4,15,20, 21], y=states, style="state", name="state_plot2", strip="Wave")
-
 
     if True:
         x = np.linspace(0, 20, 100)
@@ -92,11 +91,22 @@ def test_single_plot():
         pw.plot(x=x, y=y, style="line", strip="Wave", name="sin")
 
 
+def test_plot_view():
+    pv = PlotView()
+    x = np.arange(100)
+    y = np.random.random(100)
+    pv.plot(x=x, y=y, style="line")
+    pv.show()
+
+
+
 #multiple_plots()
 
 #test_small_scales()
 #test_multiple_plots()
 #test_single_plot()
-test_empty_plot()
-pw.show()
+#test_empty_plot()
+
+test_plot_view()
+#pw.show()
 sys.exit(app.exec_())
