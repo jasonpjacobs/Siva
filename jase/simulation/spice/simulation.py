@@ -202,7 +202,6 @@ class Simulation(BaseComponent):
         results = Results(os.path.join(self._work_dir,output_file),'w-')
 
         for results_name, raw_data in sim_results.items():
-            print(raw_data)
             root = results.select(results_name)     #Tran, AC, DC, etc
 
             if results_name == "op":
@@ -210,7 +209,7 @@ class Simulation(BaseComponent):
                 for entry in raw_data:
                     (output_type, path, node) = self.parse_results_entry(entry)
                     full_path = "/".join(path + [node])
-                    # Operating point paths can be a little wierd.  E.g.:  'm.x_dut.m1_p#dbody'
+                    # Operating point paths can be a little weird.  E.g.:  'm.x_dut.m1_p#dbody'
                     # Lets make the path a little friendlier
                     results.add_scalar(path=full_path, name=output_type, value=raw_data[entry][0])
             else:
@@ -219,9 +218,16 @@ class Simulation(BaseComponent):
                 for entry in raw_data:
                     # Entry will be either a keyword:  TIME, FREQ, V etc.
                     if entry.lower() in ("time","frequency"):
+                        # AC simulation data is complex, which doesn't really make sense for the index
+                        # and prevents interpolation methods from working correctly.
+                        if entry.lower() == "frequency":
+                            data = abs(raw_data[entry])
+                        else:
+                            data = raw_data[entry]
+
                         # Set the shared index as a vector in the root of the hierarchy
                         index = results.add_vector(path="/{}".format(results_name),
-                                                   vector=raw_data[entry], name=entry.lower())
+                                                   vector=data, name=entry.lower())
                         index.attrs['name']=entry.lower()
 
                 if index is None:

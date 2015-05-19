@@ -5,7 +5,7 @@ import os
 import h5py
 import numpy as np
 
-from ..wave import Wave
+from ..wave import Wave, Diff
 
 class Results(h5py.File):
     """ A wrapper around an HDF5 data set that stored simulation results.
@@ -65,7 +65,6 @@ class Results(h5py.File):
             self.create_group(name)
 
 
-
     def add_waveform(self, path, x, y, y_name="y", x_name="x", attrs=None):
         """Adds waveform data to the results database.
 
@@ -94,7 +93,7 @@ class Results(h5py.File):
         for name, value in attrs.items():
             group[y_name].attrs[name] = value
 
-        return group
+        return group[x_name], group[y_name]
 
     def add_vector(self, path, vector, name, attrs=None, index_name=None):
         root = self[self.current_analysis]
@@ -111,17 +110,21 @@ class Results(h5py.File):
         for attr_name, value in attrs.items():
             group[name].attrs[attr_name] = value
 
-        return group
+        return group[name]
 
     def add_scalar(self, path, name, value, attrs=None):
         root = self[self.current_analysis]
         group = self.create_path(path)
         group[name] = value
 
-        if attrs is not None:
-            for attr_name, value in attrs.items():
-                group[y_name].attrs[attr_name] = value
+        if attrs is None:
+            attrs = {"type": "scalar"}
+        else:
+            if "type" not in attrs:
+                attrs["type"] = "scalar"
 
+        for attr_name, value in attrs.items():
+            group[name].attrs[attr_name] = value
 
     def create_path(self, path):
         root = self[self.current_analysis]
@@ -135,42 +138,58 @@ class Results(h5py.File):
     # ---------------------------------------------------------
 
 
-    def get(self, path, analysis=None, name=None):
+    def get(self, path, analysis=None, output=None):
         if analysis is None:
             analysis = self.current_analysis
 
         root = self[analysis]
 
         if type(path) is str:
+            if "." in path:
+                # result.v("dut.i0.m1.g"
+                path = path.replace(".", "/")
+            if ":" in path:
+                # result.v("dut.i0.m1:g"
+                path = path.replace(":", "/")
             # result.v("dut/i0/m1/g")
             group = root[path]
         elif hasattr(path, 'path_components'):
             # results.v(dut.i0.m1.g)
-            group = "/".join(path.path_components())
+            path = "/".join(path.path_components())
+            group = root[path]
+        else:
+            raise ValueError("Cannot interpret path: {}".format(path))
+
+        # Combing the path with the output type being requested
 
         # Look up the dataset from the group
-        x_ds = root[name]
+        x_ds = group[output]
 
         # Get it as Numpy array
         if x_ds.attrs['type'] == 'scalar':
             rv = x_ds.value
         elif x_ds.attrs['type'] == 'vector':
             rv = np.array(x_ds[:])
-
         elif x_ds.attrs['type'] == 'waveform':
-            x = np.array(x_ds[:])
-            y = group[x.attrs['index']]
+            y = np.array(x_ds[:])
+            x = np.array(group[x_ds.attrs['index']])
 
-            rv = Wave(x=x, y=y, name=node, interp='linear')
+            rv = Wave(x=x, y=y, name=path, interp='linear')
         return rv
 
     def v(self, node, analysis=None):
-        self.get(node, analysis=analysis, results='v')
+        return self.get(node, analysis=analysis, output='v')
+
+    def vdiff(self, pos, neg, analysis=None, output='v'):
+        p = self.get(pos, analysis=analysis, output=output)
+        n = self.get(neg, analysis=analysis, output=output)
+        w = Diff(pos=p.y, neg=n.y, x=p.x)
+        return w
 
     def i(self, pin, analysis=None):
-        self.get(node, analysis=analysis, results='v')
+        return self.get(node, analysis=analysis, output='v')
 
-    def op(self, node, analysis=None):
-        self.get(node, analysis=analysis, results='op')
+    def op(self, node):
+        return self.get(node, analysis='op', output='v')
 
 

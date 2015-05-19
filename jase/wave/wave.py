@@ -128,7 +128,7 @@ class Wave:
 
     @property
     def x(self):
-        if self.build_mode:
+        if self._build_mode:
             if len(self._x):
                 return self._x[-1]
             else:
@@ -137,7 +137,7 @@ class Wave:
 
     @x.setter
     def x(self, value):
-        if self.build_mode:
+        if self._build_mode:
             return self._x.append(value)
         if isinstance(value, Wave):
             self._x = value
@@ -170,7 +170,7 @@ class Wave:
 
     @y.setter
     def y(self, value):
-        if self.build_mode:
+        if self._build_mode:
             return self._x.append(value)
         if isinstance(value, Wave):
             self._y = value
@@ -217,7 +217,7 @@ class Wave:
         return self.x.__len__()
 
     def _binary_operation(self, op, other):
-        if self.build_mode:
+        if self._build_mode:
             return getattr(self.y, op)(other)
 
         if isinstance(other, Wave):
@@ -477,6 +477,7 @@ class Wave:
                       'cubic': 3,
                       'step': 0
                       }
+
         if kind == 'zero':
             f = interpolate.interp1d(self.x,self.y, kind='zero', bounds_error=bounds_error)
         else:
@@ -554,90 +555,6 @@ class Wave:
     def xmin(self):
         ymin = self.y.argmin()
         return self.x[ymin]
-
-
-class Diff(Wave):
-    """A differential waveform, described in terms of positive/negative or differential/common mode components.
-
-    """
-    def __init__(self, data=None, x=None, pos=None, neg=None, diff=None, cm=None,
-                 name=None, desc=None, interp='linear', default=None):
-
-        if pos is not None or neg is not None:
-            if (diff is not None) or (cm is not None):
-                raise ValueError("Differntial signals must be specified with pos/neg or diff/cm components")
-            self._pos = pos
-            self._neg = neg
-
-        if diff is not None or cm is not None:
-            if (pos is not None) or (neg is not None):
-                raise ValueError("Differntial signals must be specified with pos/neg or diff/cm components")
-            self._diff = diff
-            self._cm = cm
-
-        super().__init__(x=x, name=name, desc=desc, interp=interp, default=default)
-
-    @property
-    def y(self):
-        return self.diff
-
-    @y.setter
-    def y(self, value):
-        self.diff = value
-
-    @property
-    def diff(self):
-        if self._diff is None:
-            self._diff = self._pos - self._neg
-        return self._diff
-
-    @diff.setter
-    def diff(self, value):
-        self._diff = value
-
-        # Reset the pos/neg comonents
-        self._pos = None
-        self._neg = None
-
-    @property
-    def cm(self):
-        if self._cm is None:
-            self._cm = (self.p + self.n)/2
-        return self._cm
-
-    @cm.setter
-    def cm(self, value):
-        self._cm = value
-
-        # Reset the pos/neg components
-        self._pos = None
-        self._neg = None
-
-
-    @property
-    def pos(self):
-        if self._pos is None:
-            self._pos = self._diff/2 + self._cm
-        return self._pos
-
-    @pos.setter
-    def pos(self, value):
-        self._pos = value
-
-        # Reset diff/cm components
-        self._cm = None
-        self._diff = None
-
-    @property
-    def neg(self):
-        if self._neg is None:
-            self._neg = -1*(self._diff)/2 + self._cm
-
-        # Reset diff/cm components
-        self._cm = None
-        self._diff = None
-
-
 
 if __name__ == "__main__":
 

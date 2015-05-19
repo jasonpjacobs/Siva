@@ -197,9 +197,11 @@ class BaseComponent(Component):
         try:
             self.measure()
         except Exception as e:
-            self.status = Error
+            self.status = Error("\n".join(e.args))
             ex_type, ex, tb = sys.exc_info()
+            print(e.args)
             self.error("Exception occurred during measurement: {} ({})".format(e.args, self.path))
+            raise
 
         for child in self.children:
             child.clean()   # Child only cleans up if no error was encountered (for debug)
