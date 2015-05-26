@@ -15,6 +15,10 @@ class PlotGroup(Node, QtGui.QGraphicsItemGroup):
         self.expanded = expanded
 
         self.width = width
+        self.height = height
+
+        # Let the plots handle mouse and key events themselves
+        self.setHandlesChildEvents(False)
 
         # Plots are stored in a set of vertical strips
         #self.layout = QtGui.QGraphicsLinearLayout(Qt.Vertical)
@@ -30,7 +34,8 @@ class PlotGroup(Node, QtGui.QGraphicsItemGroup):
         self.addToGroup(item)
         self.children[name] = item
 
-    '''
+        self.layout()
+
     @property
     def height(self):
         """The height of the plot group, in screen coordinates
@@ -46,7 +51,7 @@ class PlotGroup(Node, QtGui.QGraphicsItemGroup):
     def height(self, value):
         self._height = value
         if self.children and self.expanded:
-            h = self.height/len(self.children)
+            h = self._height/len(self.children)
             for child in self.children.values():
                 child.height = h
 
@@ -68,20 +73,26 @@ class PlotGroup(Node, QtGui.QGraphicsItemGroup):
     @spacing.setter
     def spacing(self, value):
         self.__spacing = value
-    '''
-    """
-    def paint(self, painter, option, widget):
-        for plot in self.children.values():
-            painter.save()
-            #painter.translate(plot.pos()*-1)
 
-            ### Debug
-            painter.setPen(QtGui.QPen('blue'))
-            brush = QtGui.QBrush(QtGui.QColor(0,0,100,20))
-            #painter.fillRect(plot.plot_rect, brush)
-            #plot.paint(painter, option, widget)
-            painter.restore()
-        """
+    def layout(self):
+        """Arranges the Plots into the desired height of the plot group"""
+
+        if len(self.children) == 0:
+            ideal_height = self.height
+        else:
+            ideal_height = self.height/len(self.children)
+
+        # Set the height of each plot.  The plots use this value a desired height,
+        # but may make them selves larger or smaller based on min/max size requirements
+        for child in self.children.values():
+            child.height = ideal_height
+
+        # Now set the positions of each plot based on the final height and
+        # position of the plots before it
+        y = 0
+        for child in self.children.values():
+            child.setPos(QtCore.QPoint(0,y))
+            y = y + child.height + self.spacing
 
     def drawForeground(self, painter, rect):
         for child in self.children.values():
@@ -91,10 +102,17 @@ class PlotGroup(Node, QtGui.QGraphicsItemGroup):
         for child in self.children.values():
             child.drawBackground(painter, rect)
 
-    def boundingRect(self):
+    def boundingRect2(self):
         rect = QtCore.QRectF()
         for plot in self.children.values():
             item_rect = plot.boundingRect()
             rect = rect.unite(item_rect)
         return rect
+
+    def handle_event(self, event, type, pos=None):
+        for child in self.children.values():
+            if child.contains(pos):
+                # Translate the view coordinate to the child's coordinate
+                pos = QtCore.QPoint(pos.x() - child.pos().x(), pos.y() - child.pos().y())
+                child.handle_event(event=event, type=type, pos=pos)
 

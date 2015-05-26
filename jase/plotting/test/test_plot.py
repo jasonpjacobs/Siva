@@ -83,8 +83,6 @@ def test_line_plot(widget):
     assert r.height() == 100
 
 
-    #widget.scene.addItem(QtGui.QGraphicsRectItem(0,0,400,50))
-
     if INTERACTIVE:
         widget.add_plot(plot)
         widget.show()

@@ -64,6 +64,9 @@ class Plot(QtGui.QGraphicsItemGroup):
         # It is the size of the plot after allocating space for title, axes, and legends.
         self.set_plot_rect(QtCore.QRect(0, 0, width, height))
 
+        self.create_event_handers()
+        self.pan_active = False
+
     @property
     def margins(self):
         margins = {"left": 40, "right": 10, "top": 20, "bottom": 20}
@@ -85,7 +88,7 @@ class Plot(QtGui.QGraphicsItemGroup):
 
     def drawForeground(self, painter, rect):
         """Renders axes, title, and annotations on the foreground.
-        Part of the QGraphicsWidget implementation.
+
         """
         plot_rect = self.set_plot_rect(rect)
         if plot_rect.isEmpty():
@@ -95,7 +98,9 @@ class Plot(QtGui.QGraphicsItemGroup):
         self.fill_margins(painter, rect)
 
         if self.title is None:
-            title = self.name
+            title = ''
+            if hasattr(self, 'name'):
+                title = self.name
         else:
             title = self.title
 
@@ -114,7 +119,7 @@ class Plot(QtGui.QGraphicsItemGroup):
         so axis ticks and labels can be clearly read.
         """
         #TODO:  Parameterize the background color
-        color = QtGui.QColor(Qt.yellow)
+        color = QtGui.QColor(Qt.white)
 
         # Find the portion of the plot area that is visible.
         bounding_rect = self.boundingRect()
@@ -220,13 +225,13 @@ class Plot(QtGui.QGraphicsItemGroup):
     #    Pan/Zoom Methods
     # --------------------------------------------------------
     def zoom_fit(self):
-        """ Sets the zoom so the entire sheet fits in the view port"""
-        self.x_scale.fit(self.plot_rect)
-        self.y_scale.fit(self.plot_rect)
+        """ Sets the zoom so the entire plot fits in the view port"""
+        rect = self.plot_rect
 
-        #self.viewport().update()
+        # The plot rect is in view coordinates.  The scales will fit based on a rect relative
+        self.x_scale.fit(s1=rect.left() - self.pos().x(), s2= rect.right() - self.pos().x())
+        self.y_scale.fit(s1=rect.top() - 0*self.pos().y(), s2=rect.bottom() - 0*self.pos().y())
         self.update()
-        #self.viewChanged.emit()
 
     def zoom(self, x, y=None, center=None):
         """ Zooms (scales) the window by the given ratio.
@@ -237,11 +242,14 @@ class Plot(QtGui.QGraphicsItemGroup):
         # Need to get the current center of the view
         # so we can recenter the view after zooming
         if center is None:
-            center = self.mapToScene(self.rect()).boundingRect().center()
+            # Calculate center in item coords from boundingRect (scene coords)
+            center = self.boundingRect().center() - self.pos()
 
-        # Convert scene coords to data coords
-        dx = self.x_scale.to_data(center.x())
-        dy = self.y_scale.to_data(center.y())
+            # Convert item coords to data coords
+            dx = self.x_scale.to_data(center.x())
+            dy = self.y_scale.to_data(center.y())
+        else:
+            dx, dy = center
 
         # Move the center to the origin
         self.pan(x=-1 * dx, y=-1 * dy, mode="absolute")
@@ -268,29 +276,19 @@ class Plot(QtGui.QGraphicsItemGroup):
     # --------------------------------------------------------
     def coords(self, event):
         '''Converts event (screen) coordinates to data space coordinates'''
-        pos = self.mapToScene(event.pos())
-        x = self.x_scale.to_data(pos.x())
-        y = self.y_scale.to_data(pos.y())
+        sx = event.pos().x() - self.pos().x()
+        sy = event.pos().y() - self.pos().y()
+        x = self.x_scale.to_data(sx)
+        y = self.y_scale.to_data(sy)
         return x,y
-
-    def mouseMoveEvent(self, event):
-        end = event.pos()
-        delta = self.start - end
-        hsb = self.view.horizontalScrollBar()
-        vsb = self.view.verticalScrollBar()
-        hsb.setValue(hsb.value() + delta.x())
-        vsb.setValue(vsb.value() + delta.y())
 
     def mousePressEvent(self, event):
         if (event.buttons() & Qt.LeftButton):
-            #item = self.parent.itemAt(event.pos())
-            #if item is not None:
-            #    return False
-
             self.setCursor(Qt.ClosedHandCursor)
             self.pan_active = True
             self.start = event.pos()
             self.pan_start = self.coords(event)
+
 
             # Don't consume the mouse click, since it may have been intended
             # for items underneath the cursor
@@ -308,7 +306,6 @@ class Plot(QtGui.QGraphicsItemGroup):
             self.pan_start = self.coords(event)
             return True
         else:
-            #item = self.itemAt(event.pos())
             item = None
             if item is not None:
                 self.setCursor(Qt.ArrowCursor)
@@ -324,8 +321,28 @@ class Plot(QtGui.QGraphicsItemGroup):
         else:
             return False
 
+    def handle_event(self, event, type, pos):
+        if type == 'mouseMoveEvent':
+            self.mouseMoveEvent(event)
+
+        if type == 'keyPressEvent':
+            if event.key() == Qt.Key_D:
+                self.debug_info(pos, event)
+            elif event.key() == Qt.Key_B:
+                pass # Used for forcing a breakpoint during interactive debug
+            else:
+                self.keyPressEvent(event)
+
+        if type == 'mouseReleaseEvent':
+            self.mouseReleaseEvent(event)
+
+        if type == 'mousePressEvent':
+            self.mousePressEvent(event)
+
+        if type == 'wheelEvent':
+            self.wheelEvent(event)
+
     def keyPressEvent(self, event):
-        print('Key')
         handler = self.keypress_event_handlers.get(event.key(), None)
         if handler:
             result = handler(event)
@@ -337,15 +354,15 @@ class Plot(QtGui.QGraphicsItemGroup):
         return result
 
     def wheelEvent(self, event):
-        center = self.mapToScene(event.pos())
+        center = self.coords(event)
         if event.orientation() == Qt.Vertical:
             d = event.delta() / 8
             ratio = abs((d / 15.0) * 1.25)
             if d < 0:
-                scale = 1 / ratio
+                zoom_factor = 1 / ratio
             else:
-                scale = ratio
-            self.zoom(scale, center=center)
+                zoom_factor = ratio
+            self.zoom(zoom_factor, center=center)
             return True
 
     def create_event_handers(self):
@@ -356,7 +373,8 @@ class Plot(QtGui.QGraphicsItemGroup):
             Qt.Key_Down : self.key_pan_zoom,
             Qt.Key_Plus : self.key_pan_zoom,
             Qt.Key_Minus : self.key_pan_zoom,
-            Qt.Key_F : self.key_pan_zoom
+            Qt.Key_F : self.key_pan_zoom,
+            Qt.Key_D : self.debug_info
         }
 
     def key_pan_zoom(self, event):
@@ -397,11 +415,37 @@ class Plot(QtGui.QGraphicsItemGroup):
                 return True
         return False
 
+    def debug_info(self, pos, event):
+        print("\n")
+        print("Plot: {}".format(self.name))
+        screen = self.mapToScene(pos)
+        x = self.x_scale.to_data(pos.x())
+        y = self.x_scale.to_data(pos.y())
+
+        print("Screen pos: {},{}   Scene pos: {},{}".format(pos.x(), pos.y(), screen.x(), screen.y()))
+        print("Plot pos: {},{}".format(self.pos().x(), self.pos().y()))
+        print("X scale:  scale={} offset={}".format(self.x_scale.scale, self.x_scale.offset))
+        print("Y scale:  scale={} offset={}".format(self.y_scale.scale, self.y_scale.offset))
+
+        event.pos = pos
+        event = QtGui.QGraphicsSceneMouseEvent()
+        event.setPos(pos)
+        print("Data: {}".format(self.coords(event)))
+        x = self.x_scale.to_data(pos.x())
+        y = self.x_scale.to_data(pos.y())
+
+        for item in self.childItems():
+            print("Item rect: {}".format(item.boundingRect()))
+
+
     # --------------------------------------------------------
     #    QGraphicsWidget Implementation
     # --------------------------------------------------------
+
+
     def boundingRect(self, *args, **kwargs):
         """Returns the bounding rectangle plot in scene coordinates"""
+        #TODO:  Cache the bounding rect
         return QtCore.QRectF(self.pos().x(), self.pos().y(), self.width, self.height)
 
     def __repr__(self):
@@ -410,5 +454,7 @@ class Plot(QtGui.QGraphicsItemGroup):
     def sizeHint(self, *args, **kwargs):
         #TODO:  Compute size hint based on plot area and margins
         return QtCore.QSizeF(self.width, self.height)
+
+
 
 

@@ -75,13 +75,24 @@ class PlotItem(QtGui.QGraphicsItem):
                 kwargs['line_color'] = color
             self.style = Style(antialias=True, width=1, **kwargs)
 
-    def boundingRect(self, *args, **kwargs):
-        x = self.data[0]
-        y = self.data[1]
-        x = self.plot.x_scale.to_screen(x)
-        y = self.plot.y_scale.to_screen(y)
+    def boundingRect(self):
+        """ Default implementation of boundingRect that returns that bounding rect
+        of the data points of the plot, relative to the plot origin.
+
+        Subclasses should extend this to account for pen width, fills, and any
+        additional oraments (e.g., the stems in stem plots, or the origin in a
+        closed line plot.
+
+        """
+        # TODO: Cache bounding rect calculation
         if self._bounding_rect is None or True:
-            self._bounding_rect = QtCore.QRectF(np.min(x), -1*np.min(y), np.ptp(x), np.ptp(y))
+            x = self.data[0]
+            y = self.data[1]
+            x = self.plot.x_scale.to_screen(x)
+            y = self.plot.y_scale.to_screen(y)
+
+            rect = QtCore.QRectF(np.min(x), np.min(y), np.ptp(x), np.ptp(y))
+            self._bounding_rect = rect
         return self._bounding_rect
 
     def create_painter_paths(self):
@@ -126,7 +137,7 @@ class LinePlot(PlotItem):
             self.path.addPath(path)
         return
 
-    def boundingRect(self, *args, **kwargs):
+    def boundingRect2(self, *args, **kwargs):
         #TODO:  Correctly cache path, based on scale and offset
         if not self.painter_paths:
             self.create_painter_paths()
@@ -252,6 +263,7 @@ class LogicPlot(PlotItem):
         y = np.array([self.plot.y_scale.to_screen(0), self.h])
 
         if self._bounding_rect is None or True:
+            self.prepareGeometryChange()
             self._bounding_rect = QtCore.QRectF(np.min(x), -1*np.min(y), np.ptp(x), np.ptp(y))
         return self._bounding_rect
 

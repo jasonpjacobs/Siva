@@ -57,5 +57,5 @@ class Module(metaclass=ModuleMeta):
 
     def _finalize(self):
         for signal in self.__signals__.values():
-            signal.build_mode = False
+            signal._build_mode = False
 

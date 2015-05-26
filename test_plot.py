@@ -93,9 +93,13 @@ def test_single_plot():
 
 def test_plot_view():
     pv = PlotView()
-    x = np.arange(100)
-    y = np.random.random(100)
+    x = np.arange(1000)
+    y = np.random.random(1000)
     pv.plot(x=x, y=y, style="line")
+
+    y = np.random.random(1000)
+    pv.plot(x=x, y=y, style="line")
+
     pv.show()
 
 

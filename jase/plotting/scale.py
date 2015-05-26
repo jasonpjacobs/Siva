@@ -57,10 +57,6 @@ class Scale(QtCore.QObject):
 
     def __init__(self, plot, axis="x", domain=None):
         """
-
-        :param plot:
-        :param axis:
-        :return:
         """
 
         super().__init__()
@@ -71,7 +67,6 @@ class Scale(QtCore.QObject):
         self.domain = domain
         self.scale = 1.0
         self.offset = 0
-
 
         self.min = None
         self.max = None
@@ -87,7 +82,6 @@ class Scale(QtCore.QObject):
     @range.setter
     def range(self):
         pass
-
 
     @property
     def scale(self):
@@ -172,7 +166,7 @@ class Scale(QtCore.QObject):
             scale = matrix.m22()
         return scale
 
-    def scene_visible_range_DELETE_ME(self):
+    def scene_visible_range(self):
         """
         Returns the visible ranges of the scene visible in the plot in data coordinates
         """
@@ -187,20 +181,17 @@ class Scale(QtCore.QObject):
         return (self.to_data(x), self.to_data(y))
 
 
-    def fit(self, v1=None, v2=None):
+    def fit(self, v1=None, v2=None, s1=None, s2=None):
         """ Changes the scale and offset so the two data space values v1, v2 fit within the view
         :param v1:
         :param v2:
         :return:
         """
-
         # Get the plot area in screen coordinates
-        plot_rect = self.plot.plot_rect
-        if self.axis == "x":
-            s_range = plot_rect.left(), plot_rect.right()
-        else:
-            s_range = plot_rect.top(), plot_rect.bottom()
-            s_range = plot_rect.height(), 0
+        assert s1 is not None
+        assert s2 is not None
+
+        s_range = (s1, s2)
 
         # Compute the data range
         if v1 is not None and v2 is not None:
