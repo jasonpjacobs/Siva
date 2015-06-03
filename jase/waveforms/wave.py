@@ -1,3 +1,11 @@
+"""
+
+
+TODO:  Create a wave class whose y-values correspond to an pair of x values.
+    - E.g., a waveform of clock periods would have y[n] represent the period between the time at x[n] and x[n+1]
+    - Used for the output of discrete differences, histograms, etc.
+
+"""
 import numpy as np
 import collections
 
@@ -40,7 +48,7 @@ def wrap_methods(cls):
 
 @wrap_methods
 class Wave:
-    """ A wave (waveform) is an 2D data structure containing x and y vectors.  The x,y pairs may be ordered or unordered.
+    """ A waveforms (waveform) is an 2D data structure containing x and y vectors.  The x,y pairs may be ordered or unordered.
 
     """
     BIN_OPS = ('__add__', '__sub__','__mul__', '__floordiv__','__mod__',
@@ -62,7 +70,8 @@ class Wave:
     UNARY_VALUE_OPS = ('ptp', 'min', 'max', 'sum', 'mean', 'var', 'std', 'prod',
                        'all', 'any')
 
-    def __init__(self,data=None, x=None, y=None, name=None, desc=None, interp='linear', default=None):
+    def __init__(self,data=None, x=None, y=None, name=None, desc=None, interp='linear', default=None,
+                 threshold=None):
         self.name = name
         self.desc = desc
         self.interp = interp
@@ -79,9 +88,7 @@ class Wave:
         else:
             self._parse_inputs(data, x, y)
 
-
     def _parse_inputs(self, data, x, y):
-
         if data is not None and x is None and y is None:
             # If data is a sequence with elements of length 1, assume
             # that no X is given, and create one
@@ -116,6 +123,8 @@ class Wave:
             y = np.array(y)
 
         self.x, self.y = x, y
+
+
 
     def __repr__(self):
         txt = []
@@ -554,6 +563,18 @@ class Wave:
     def xmin(self):
         ymin = self.y.argmin()
         return self.x[ymin]
+
+    def pdf(self):
+        pass
+
+    def cdf(self):
+        pass
+
+    def histogram(self):
+        pass
+
+    def rms(self):
+        pass
 
 if __name__ == "__main__":
 

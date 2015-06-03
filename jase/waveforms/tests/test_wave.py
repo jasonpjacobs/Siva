@@ -1,7 +1,7 @@
 import unittest
 import numpy as np
 
-from jase.wave.wave import Wave
+from jase.waveforms.wave import Wave
 
 import pdb
 
