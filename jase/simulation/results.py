@@ -5,7 +5,7 @@ import os
 import h5py
 import numpy as np
 
-from ..wave import Wave, Diff
+from ..waveforms import Wave, Diff
 
 class Results(h5py.File):
     """ A wrapper around an HDF5 data set that stored simulation results.

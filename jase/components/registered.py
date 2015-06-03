@@ -125,7 +125,6 @@ class Registered:
     def _store_as_key_value_pair(self, class_dct, registry_name):
         """ The registered component is stored in a dictionary
 
-
         parent_dct["registry_name"][self.name] = self
 
         E.g.:
