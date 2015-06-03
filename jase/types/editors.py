@@ -3,7 +3,7 @@ import sys, os, pdb
 from pdb import set_trace as db
 
 # Third party imports
-from ...qt_bindings import QtCore, QtGui, Qt
+from ..qt_bindings import QtCore, QtGui, Qt
 
 
 # ================================================================

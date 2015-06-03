@@ -56,13 +56,11 @@ class Test(unittest.TestCase):
         self.assertEqual(self.b1.get_name(), 'b1')
         self.assertEqual(self.c1.get_name(), 'c1')
         
-        
     def testGetParent(self):
         self.assertEqual(self.root.get_parent(), None, "Root node's parents are None")
         self.assertEqual(self.b1.get_parent(), self.root)
         self.assertEqual(self.c1.get_parent(), self.b1)
-        
-        
+
     def testGetChildByIndex(self):
         self.assertEqual(self.root.get_child_by_index(0), self.b1)
         self.assertEqual(self.b1.get_child_by_index(0), self.c1)

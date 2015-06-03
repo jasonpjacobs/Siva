@@ -4,7 +4,7 @@ from ..list_model import ListModel, ListView
 from ..types import Typed, Str
 from jase.types.test.mock import green_icon, blue_icon
 from .modeltest import ModelTest
-from ..qt_binding import Qt, QtCore, QtGui, QTest
+from ...qt_bindings import Qt, QtCore, QtGui, QTest
 
 
 class NameType(Str):
@@ -143,7 +143,7 @@ def test_edit(list_view):
 
 
 
-def XXXtest_model(list_model):
+def Xtest_model(list_model):
     top = list_model.index ( 0, 0, QtCore.QModelIndex() )
     assert top == list_model.index ( 0, 0, QtCore.QModelIndex() )
     tester = ModelTest(model=list_model)

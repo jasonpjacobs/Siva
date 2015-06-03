@@ -3,7 +3,7 @@ import pytest
 from ..table_model import TableModel, TableView
 from jase.types.test.mock import Mock
 from .modeltest import ModelTest
-from ..qt_binding import Qt, QtCore, QtGui, QTest
+from ...qt_bindings import Qt, QtCore, QtGui, QTest
 
 
 class MockIndex:
@@ -147,7 +147,7 @@ def test_delayed_table_model(table):
 
 def test_item_roles(table_view):
     # Set to true during development so you can see the test being run
-    interactive = False
+    interactive = True
 
     if interactive:
         table_view.setGeometry(100,100,800,400)

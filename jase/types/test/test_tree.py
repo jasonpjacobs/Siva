@@ -5,7 +5,7 @@ from ..tree_model import TreeModel, TreeView
 from ..hierarchy import Node
 from jase.types.test.mock import blue_icon, green_icon
 from .modeltest import ModelTest
-from ..qt_binding import Qt, QtCore, QtGui, QTest
+from ...qt_bindings import Qt, QtCore, QtGui, QTest
 
 
 class ContractorType(Bool):
@@ -51,7 +51,7 @@ def people():
     david = Person(name='David', age=33, id=4, title="VP, Marketing", salary=3500.0)
     elena = Person(name='Elena', age=34, id=5, title="VP, Engineering", salary=3500.0)
     frank = Person(name='Frank', age=35, id=6, title="Engineering Manager", salary=3000.0)
-    gina = Person(name='Gina', age=36, id=7, title="Princicple Engineer", salary=3000.0)
+    gina = Person(name='Gina', age=36, id=7, title="Principle Engineer", salary=3000.0)
     helen = Person(name='Helen', age=37, id=8, title="Engineer", salary=3000.0)
     ian = Person(name='Ian', age=38, id=9, title="Engineer", salary=2500.0, contractor=True)
 
@@ -189,7 +189,7 @@ def test_tree_creation(tree):
 
 def test_tree_view(tree_view):
 
-    interactive = False
+    interactive = True
 
     if interactive:
         app = QtGui.QApplication.instance()
