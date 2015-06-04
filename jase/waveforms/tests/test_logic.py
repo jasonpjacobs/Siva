@@ -150,4 +150,18 @@ def test_logic_bit_select():
     with pytest.raises(IndexError):
         Logic(-3, signed=True, width=4)[4]
 
+
+    assert Logic(0b001100)[3:] == Logic(0b1100)
     assert Logic(0b001100)[3:2] == Logic(0b11)
+
+
+    assert Logic(0b10001011)[3:0] == Logic(0b1011)
+    assert Logic(0b10001011)[3:]  == Logic(0b1011)
+    assert Logic(0b10001011)[:1]  == Logic(0b1000101)
+    assert Logic(0b10001011)[7:4]  == Logic(0b1000)
+
+    assert Logic(0b10101010)[7:4:2] == Logic(0b11)
+    assert Logic(0b10101010)[7::2] == Logic(0b1111)
+
+
+    # assert Logic(0b10101010)[:0:2] == Logic(0b0000)

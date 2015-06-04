@@ -194,19 +194,38 @@ class Logic():
         """ Slices the logic value according to Verilog bit selection rules.
 
         These are different than normal Python based slicing.
-        1. The individual bits are ordered from the MSB down to the LSB.  E.g., value[6:3] is 6 down to 3
+        1. The individual bits are indexed from the MSB down to the LSB.  E.g., value[6:3] is 6 down to 3
         2. Python slices consist of a start/stop/step combo, but the stop value is NOT included in the range.
             This isn't the case for Verilog.  bus[3:0]
 
         """
         if isinstance(key, slice):
             step  = key.step if key.step is not None else 1
-            start = key.stop if key.stop else 0
-            stop  = key.start + 1 if key.start else len(self)
 
-            bits = self.bits[::-1]
+            if key.start and key.stop:
+                if key.start > key.stop:
+                    downto = True
+                else:
+                    downto = False
+            elif key.start or key.stop:
+                downto = True
+            elif key.step > 0:
+                downto = False
+            else:
+                downto = True
+
+            # MSB down to LSB
+            if downto:
+                step = -1*abs(step)
+                start = key.start if key.start else len(self) - 1
+                stop  = key.stop - 1 if key.stop else -1
+                bits = self.bits[::-1]
+            else:
+                start = key.start if key.start else 0
+                stop = key.stop + 1 if key.stop else len(self)
+                bits = self.bits
+
             slices = [bits[i] for i in range(start, stop ,step)]
-
             return Logic(bits_to_int(slices))
         else:
             if key < len(self):
