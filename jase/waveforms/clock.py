@@ -1,8 +1,7 @@
 import numpy as np
 from ..waveforms import Wave
 class ClockBase:
-    """ Base class for all clocks.
-
+    """ A mixin class for adding clock like behavior to a waveform.
 
     """
 
@@ -20,7 +19,6 @@ class ClockBase:
         name = "Periods({})".format(self.name)
         w = Wave(name=name, x=x, y=y)
         return w
-
 
     def phase(self):
         """Returns the phase of this clock as a waveform.  The Y values of the waveform
@@ -45,7 +43,6 @@ class ClockBase:
         clock and the corresponding edge of the ideal clock.
 
         """
-
 
         # Get a list of all the clock crossings
         ticks = self.ticks(edge=edge)
@@ -75,9 +72,6 @@ class ClockBase:
         w = Wave(name=name, x=x, y=y)
 
         return w
-
-
-
 
 class ClockSource(ClockBase):
     def __init__(self, period=None, frequency=None, phase=0, duty=0.5, stop=None, name=None):

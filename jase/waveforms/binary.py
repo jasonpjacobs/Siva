@@ -94,7 +94,7 @@ def bits_to_int(b, format="unsigned"):
 
 
 @wrap_methods
-class Logic():
+class Binary():
 
     BIN_OPS = ('__add__', '__sub__','__mul__', '__floordiv__','__mod__',
                '__divmod__', '__pow__','__lshift__', '__rshift__', '__and__',
@@ -130,7 +130,7 @@ class Logic():
         if width is None:
             self.value = value
         else:
-            bits = int_to_bits(value, width)
+            bits = int_to_bits(int(value), width)
             if len(bits) > width:
                 # Truncate to the last *width* bits
                 v = bits_to_int(bits[-(width):])
@@ -142,14 +142,14 @@ class Logic():
     def _unary_wave_operation(self, op):
         method = getattr(self.value, op)
         value = method()
-        return Logic(value, width=self.width)
+        return Binary(value, width=self.width)
 
     def _unary_value_operation(self, op):
         method = getattr(int, op)
         return method()
 
     def _binary_operation(self, op, other):
-        if type(other) is Logic:
+        if type(other) is Binary:
             other = int(other)
         if op in self.INPLACE_OPS:
             # '__iadd__' --> '__add__'
@@ -163,7 +163,7 @@ class Logic():
         else:
             method = getattr(int, op)
             result = method(int(self), other)
-        return Logic(result, width=self.width)
+        return Binary(result, width=self.width)
 
     #def __eq__(self, other):
     #    return int(self) == int(other)
@@ -184,7 +184,7 @@ class Logic():
             return self.width
 
     def __invert__(self):
-        return Logic(~self.value & 2**(len(self))-1, width=self.width)
+        return Binary(~self.value & 2**(len(self))-1, width=self.width)
 
     @property
     def bits(self):
@@ -226,7 +226,7 @@ class Logic():
                 bits = self.bits
 
             slices = [bits[i] for i in range(start, stop ,step)]
-            return Logic(bits_to_int(slices))
+            return Binary(bits_to_int(slices))
         else:
             if key < len(self):
                 return self.bits[key]
@@ -240,3 +240,5 @@ class Logic():
                         return 0
 
 
+    def __repr__(self):
+        return "Binary({})".format(int(self.value))

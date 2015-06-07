@@ -1,5 +1,5 @@
 import pytest
-from jase.waveforms.logic import Logic, int_to_bits, bits_to_int
+from jase.waveforms.binary import Binary, int_to_bits, bits_to_int
 
 
 """
@@ -63,105 +63,105 @@ def test_bits_to_int():
 
 def test_logic_instance():
 
-    n = Logic(0b101)
+    n = Binary(0b101)
     assert n == 5
 
     n += 1
     assert n == 6
 
-    a = Logic(0b1)
+    a = Binary(0b1)
     assert ~a == 0
 
 
 def test_len():
-    assert len(Logic(0b0)) == 1
-    assert len(Logic(0b1)) == 1
+    assert len(Binary(0b0)) == 1
+    assert len(Binary(0b1)) == 1
 
-    assert len(Logic(0b00)) == 1
-    assert len(Logic(0b11)) == 2
+    assert len(Binary(0b00)) == 1
+    assert len(Binary(0b11)) == 2
 
 
-    assert len(Logic(0b0, width=4)) == 4
-    assert len(Logic(0b1, width=4)) == 4
+    assert len(Binary(0b0, width=4)) == 4
+    assert len(Binary(0b1, width=4)) == 4
 
 
 
 def test_casting():
 
-    assert int(Logic(0b0)) == 0
-    assert int(Logic(0b1)) == 1
+    assert int(Binary(0b0)) == 0
+    assert int(Binary(0b1)) == 1
 
-    assert int(Logic(-1)) == 1
-    assert int(Logic(-1, width=10)) == 1
+    assert int(Binary(-1)) == 1
+    assert int(Binary(-1, width=10)) == 1
 
 
 
 def test_truncation():
 
-    assert Logic(0b1100, width=2) == 0
-    assert Logic(0b1101, width=2) == 1
+    assert Binary(0b1100, width=2) == 0
+    assert Binary(0b1101, width=2) == 1
 
-    assert Logic(0b1111, width=10) == Logic(15)
+    assert Binary(0b1111, width=10) == Binary(15)
 
 
 def test_int():
-    assert int(Logic(0b1) == 1)
-    assert int(Logic(0b11) == 3)
+    assert int(Binary(0b1) == 1)
+    assert int(Binary(0b11) == 3)
 
-    assert int(Logic(-2, signed=False) == 2)
+    assert int(Binary(-2, signed=False) == 2)
 
 
-    assert int(Logic(-2, signed=True) == -2)
+    assert int(Binary(-2, signed=True) == -2)
 
 
 def test_logic_methods():
 
-    assert Logic(0b1) << 2 == Logic(0b100)
-    assert Logic(0b1000) >> 2 == Logic(0b10)
+    assert Binary(0b1) << 2 == Binary(0b100)
+    assert Binary(0b1000) >> 2 == Binary(0b10)
 
     # And/or/nand/nor
-    assert Logic(0b1000) & Logic(0b001) == Logic(0b0000)
-    assert Logic(0b1000) | Logic(0b001) == Logic(0b1001)
+    assert Binary(0b1000) & Binary(0b001) == Binary(0b0000)
+    assert Binary(0b1000) | Binary(0b001) == Binary(0b1001)
 
     # XOR
-    assert Logic(0b1001) ^ Logic(0b0110) == Logic(0b1111)
+    assert Binary(0b1001) ^ Binary(0b0110) == Binary(0b1111)
 
 
     # Inversion
-    assert ~Logic(0b1001) == Logic(0b0110)
-    assert ~Logic(0b0000) == Logic(1)
+    assert ~Binary(0b1001) == Binary(0b0110)
+    assert ~Binary(0b0000) == Binary(1)
 
 
 def test_logic_bit_select():
 
-    assert Logic(0b0001)[0] == 1
+    assert Binary(0b0001)[0] == 1
 
-    assert Logic(0b0001)[3] == 0
+    assert Binary(0b0001)[3] == 0
 
     # Unsized logic will just sign extend
-    assert Logic(0b0001)[4] == 0
+    assert Binary(0b0001)[4] == 0
 
-    assert Logic(-3, signed=True)[100] == 1
+    assert Binary(-3, signed=True)[100] == 1
 
     # Sized logic values should raise an index error
     with pytest.raises(IndexError):
-        Logic(0b0001, width=4)[4]
+        Binary(0b0001, width=4)[4]
 
     with pytest.raises(IndexError):
-        Logic(-3, signed=True, width=4)[4]
+        Binary(-3, signed=True, width=4)[4]
 
 
-    assert Logic(0b001100)[3:] == Logic(0b1100)
-    assert Logic(0b001100)[3:2] == Logic(0b11)
+    assert Binary(0b001100)[3:] == Binary(0b1100)
+    assert Binary(0b001100)[3:2] == Binary(0b11)
 
 
-    assert Logic(0b10001011)[3:0] == Logic(0b1011)
-    assert Logic(0b10001011)[3:]  == Logic(0b1011)
-    assert Logic(0b10001011)[:1]  == Logic(0b1000101)
-    assert Logic(0b10001011)[7:4]  == Logic(0b1000)
+    assert Binary(0b10001011)[3:0] == Binary(0b1011)
+    assert Binary(0b10001011)[3:]  == Binary(0b1011)
+    assert Binary(0b10001011)[:1]  == Binary(0b1000101)
+    assert Binary(0b10001011)[7:4]  == Binary(0b1000)
 
-    assert Logic(0b10101010)[7:4:2] == Logic(0b11)
-    assert Logic(0b10101010)[7::2] == Logic(0b1111)
+    assert Binary(0b10101010)[7:4:2] == Binary(0b11)
+    assert Binary(0b10101010)[7::2] == Binary(0b1111)
 
 
     # assert Logic(0b10101010)[:0:2] == Logic(0b0000)

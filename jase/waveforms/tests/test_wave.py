@@ -70,8 +70,6 @@ class TestWave(unittest.TestCase):
         self.assertEqual(self.ones.std(), 0)
         self.assertEqual(self.ones.var(), 0)
 
-
-
     def test_math_ops(self):
         from operator import mul, truediv, abs
         a, b = self.c, self.c
@@ -138,7 +136,6 @@ class TestWave(unittest.TestCase):
         self.assertEqual(w(0.2)[0].y, 0.0)
         self.assertEqual(w(1.8)[0].y, 1.0)
 
-
     def test_sample(self):
 
         w = Wave([0,1])
@@ -150,7 +147,6 @@ class TestWave(unittest.TestCase):
         for i in range(1,13):
             v = 1/i
             self.assertTrue( n(v).y - w(v).y < epsilon)
-
 
     def test_minmax(self):
         a = self.a

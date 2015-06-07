@@ -97,7 +97,7 @@ class Diff(Wave):
     def diff(self, value):
         self._diff = value
 
-        # Reset the pos/neg comonents
+        # Reset the pos/neg components
         self._pos = None
         self._neg = None
 
