@@ -125,7 +125,6 @@ class Wave:
         self.x, self.y = x, y
 
 
-
     def __repr__(self):
         txt = []
         txt.append("{}([".format(str(self.__class__.__name__)))

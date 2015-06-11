@@ -219,7 +219,6 @@ class TreeModel(QtCore.QAbstractItemModel):
         else:
             return self.root
 
-
     def get_descriptor(self, index):
         attr = self.headers[index.column()]
         descriptor = self.descriptors[attr]
