@@ -1,5 +1,5 @@
-import jase
+import siva
 
-class Symbol(jase.Symbol):
+class Symbol(siva.Symbol):
     def width(self):
         return 2

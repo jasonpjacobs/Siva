@@ -1,11 +1,11 @@
 import os
 os.environ['QT_API'] = 'pyside'
 
-from jase.plotting.plot_window import PlotWidget
-from jase.plotting.plot_view import PlotView
-from jase.plotting.plot import Plot
-from jase.plotting.scale import Scale
-from jase.qt_bindings import QtGui
+from siva.plotting.plot_window import PlotWidget
+from siva.plotting.plot_view import PlotView
+from siva.plotting.plot import Plot
+from siva.plotting.scale import Scale
+from siva.qt_bindings import QtGui
 import sys
 import numpy as np
 import pdb
