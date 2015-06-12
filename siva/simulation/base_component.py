@@ -206,7 +206,6 @@ class BaseComponent(Component):
         for child in self.children:
             child.clean()   # Child only cleans up if no error was encountered (for debug)
 
-
     def initialize(self):
         """ The first step in a simulation.
         * Initialize local variables.
@@ -238,7 +237,6 @@ class BaseComponent(Component):
                 raise ValueError("Component must have a name: {}".format(self))
 
         subdirs = [comp.inst_name for comp in self.path_components]
-
 
         # Ensure the work area of variants are sub directories of their master
         #  ['loop1', 'sim3', 'ac_sim_1'] --> ['loop1', 'sim3', 'ac_sim', 'ac_sim1']
@@ -323,15 +321,15 @@ class BaseComponent(Component):
             return
 
         # Remove all files from the work directory
-        files = glob.glob(self._work_dir + "/*")
-        _num_tries = 3
-        i = 0
-        for file in files:
-            try:
-                if os.path.exists(file):
-                    disk_utils.remove(file, num_tries=3)
-            except PermissionError as e:
-                raise
+        if self._work_dir:
+            files = glob.glob(self._work_dir + "/*")
+            i = 0
+            for file in files:
+                try:
+                    if os.path.exists(file):
+                        disk_utils.remove(file, num_tries=3)
+                except PermissionError as e:
+                    raise
 
         # This should delete the directory and release the resource
         if self._work_dir_resource:
@@ -351,7 +349,6 @@ class BaseComponent(Component):
                 self.error("Could not remove file: {} ({})".format(file, self.path))
             except PermissionError as e:
                 self.error("Could not remove file: {} ({})".format(file, self.path))
-
 
     def __iter__(self):
         self._i = 0

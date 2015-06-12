@@ -1,7 +1,6 @@
 """
 Created on Jun 2, 2014
 
-@author: Jase
 """
 
 from ..qt_bindings import QtGui, QtCore, Qt
@@ -22,6 +21,7 @@ class Color(QtGui.QColor):
         'w' : (255, 255, 255),
         'k' : (0, 0, 0)
     }
+
     def __init__(self, *args, alpha=None):
 
         # If a Qt color enum is given, just initialize the parent class

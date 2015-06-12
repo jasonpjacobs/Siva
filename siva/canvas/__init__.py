@@ -1,9 +1,5 @@
 '''
 Created on May 22, 2014
-
-@author: Jase
-
-..  automodule:: Canvas.canvas
 '''
 
 from .canvas import Canvas, ConnectionTool, MoveTool, SelectionTool

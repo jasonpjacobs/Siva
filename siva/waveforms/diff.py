@@ -2,10 +2,8 @@ from .wave import Wave
 import numpy as np
 import numbers
 
-
 class Diff(Wave):
     """A differential waveform, described in terms of positive/negative or differential/common mode components.
-
     """
     def __init__(self, x=None, pos=None, neg=None, diff=None, cm=None,
                  name=None, desc=None, interp='linear', default=None):
@@ -114,7 +112,6 @@ class Diff(Wave):
         # Reset the pos/neg components
         self._pos = None
         self._neg = None
-
 
     @property
     def pos(self):
