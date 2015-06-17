@@ -24,22 +24,36 @@ class Status:
     name = "BaseStatus"
 
 class Uninitialized(Status):
+    """ Initial state:  Component has not been initialized or run.
+    """
     name = "Uninitialized"
 
 class Initialized(Status):
+    """ Component has been reset or initialized.
+    """
     name = "Initialized"
 
 class Running(Status):
+    """ Component has been started, but results are not ready.
+    """
     name = "Running"
 
 class Measured(Status):
+    """ Measurements have been taken, but not evaluated.
+    """
     name = "Measured"
 
 class Finalized(Status):
+    """ Component has completed.
+    """
     name = "Finalized"
 
 class Error(Status):
+    """ An error has been encountered during the components run.
+    """
     name = "Error"
+
+
 
 class ExecutionError(Exception):
     '''An exception raised when a Component encounters a problem during execution'''
