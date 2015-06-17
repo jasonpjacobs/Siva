@@ -8,7 +8,7 @@ from .ui.main import Main
 # Packages for custom UIs
 from .canvas import Canvas, ConnectionTool, MoveTool, SelectionTool, CanvasWidget
 from .canvas import Polygon, Polyline, Line, Rect, Circle, Ellipse, Text, Group
-from .types import PropertyTable, TableModel, TreeModel, Int, Str, Float, Bool, Typed,
+from .types import PropertyTable, TableModel, TreeModel, Int, Str, Float, Bool, Typed
 
 # Packages for scripted design flows
 from .design_database import Library, Cell, View
