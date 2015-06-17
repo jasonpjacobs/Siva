@@ -1,8 +1,8 @@
 import pytest
 
-from ..design import Design
-from ..connections import Pin, Input, Output, Net
-from ...components import Parameter
+from siva.design.design import Design
+from siva.design.connections import Pin, Input, Output, Net
+from siva.components import Parameter
 
 
 
