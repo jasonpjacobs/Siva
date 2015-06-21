@@ -1,5 +1,6 @@
 import numpy as np
 from ..waveforms import Wave
+
 class ClockBase:
     """ A mixin class for adding clock like behavior to a waveform.
 
@@ -34,7 +35,6 @@ class ClockBase:
     def jitter(self, ideal=None, n=None, edge="rising", type="period", n_cycles=1):
         """ Calculates different types of clock jitter.
 
-
         period:  Period jitter is measured as the difference between a given clock period and the ideal period.
 
         cycle: (Cycle-cycle jitter) is measured as the difference between two adjacent periods
@@ -57,7 +57,7 @@ class ClockBase:
 
             y = periods - ideal
 
-            # y[n] representes the period between x[n] and x[n+1].
+            # y[n] represents the period between x[n] and x[n+1].
             # Repeat the last yvalue so the x and y vectors have the same length
             np.append(y, y[-1])
 

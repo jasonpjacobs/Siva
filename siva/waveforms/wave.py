@@ -80,6 +80,7 @@ class Wave:
         self._x = []
         self._y = []
         self.build_mode = False
+        self._build_mode = False
 
         if data is None and x is None and y is None:
             # Create an empty Wave that can be built incrementally
@@ -87,6 +88,8 @@ class Wave:
             self.build_mode = True
         else:
             self._parse_inputs(data, x, y)
+
+        self.threshold = threshold
 
     def _parse_inputs(self, data, x, y):
         if data is not None and x is None and y is None:
@@ -124,7 +127,6 @@ class Wave:
 
         self.x, self.y = x, y
 
-
     def __repr__(self):
         txt = []
         txt.append("{}([".format(str(self.__class__.__name__)))
@@ -160,7 +162,7 @@ class Wave:
             if dx[0] > 0:
                 self.order = 'ascending'
             else:
-                self.order = 'decending'
+                self.order = 'descending'
         else:
             self.dx = None
             self.order = None
@@ -184,7 +186,6 @@ class Wave:
         else:
             self._y = np.array(value)
 
-
     def append(self, x,y):
         if self.build_mode:
             self._x.append(x)
@@ -192,7 +193,6 @@ class Wave:
         else:
             np.append(self._x, x)
             np.append(self._y, y)
-
 
     @property
     def build_mode(self):
@@ -209,7 +209,6 @@ class Wave:
             self._y = np.array(self._y)
         self._build_mode = value
 
-
     @property
     def points(self):
         return np.dstack((self.x,self.y))[0]
@@ -218,7 +217,6 @@ class Wave:
     def points(self, points):
         self.x = points[:,0]
         self.y = points[:,1]
-
 
     def __len__(self):
         return self.x.__len__()
@@ -236,7 +234,7 @@ class Wave:
             else:
                 # Find a common domain, interpolate
                 # and perform the operation
-                print(self.x, other.x)
+                # print(self.x, other.x)
                 raise(NotImplementedError)
         else:
             x = self.x
@@ -311,7 +309,6 @@ class Wave:
         x = np.linspace(self.x[0], len(y)*a.dx, len(y))
         pdb.set_trace()
         return Wave(x=x, y=y)
-
 
     def cross(self, value, edge="either"):
         """ Returns an array of values where the waveform crosses the given y-value.
@@ -464,10 +461,20 @@ class Wave:
         integral = self.integrate(start=start, end=end)
         return integral.sum()
 
+    @property
+    def interp(self):
+        """ Property describing the default type of interpolation to perform.
+        """
+        return self._interp
+
+    @interp.setter
+    def interp(self, value):
+        assert( value in ('linear', 'nearest', 'zero', 'slinear', 'quadratic', 'cubic', 'step'))
+        self._interp = value
+
     def interpolate(self, values, kind=None, bounds_error=False):
         import scipy
         from scipy import interpolate
-
 
         if kind is None:
             kind = self.interp
@@ -499,7 +506,7 @@ class Wave:
             values = np.array(values)
 
         y = f(values)
-        w = Wave(x=values, y=y)
+        w = self.__class__(x=values, y=y)
         return w
 
     def irfft(self):
@@ -514,8 +521,17 @@ class Wave:
         y = np.fft.rfft(w.y)
         return Wave(x=x,y=y)
 
-    def sample(self, period=None, freq=None, start=None):
-        if period is None and freq is None:
+    def sample(self, clock=None, period=None, freq=None, start=None):
+        """ Samples the waveform using a givek clock signal, or
+        by specifying a period or frequency.
+
+        :param clock: A Wave that implements the clock protocol (ticks)
+        :param period: Sample period, in seconds.
+        :param freq:  Sample frequency, in Hertz
+        :param start: Start time for the sampling.
+        :return:
+        """
+        if period is None and freq is None and clock is None:
             raise(TypeError, "Either period or frequency should be provided.")
         elif period is not None and freq is not None:
             raise(TypeError, "Either period or frequency should be provided, not both.")
@@ -526,10 +542,15 @@ class Wave:
         if start is None:
             start = self.x[0]
 
-        # arange does not include the stop point,
-        # so add a half step to ensure it is included
-        stop = self.x[-1] + period/2
-        x = np.arange(start, stop, period)
+        if not clock:
+            # arange does not include the stop point,
+            # so add a half step to ensure it is included
+            stop = self.x[-1] + period/2
+            x = np.arange(start, stop, period)
+        else:
+            stop = self.x[-1]
+            x = clock.ticks(stop=stop)
+
         return self(x)
         #return Wave(x=x,y=y, name=self.name + "(Sampled at {}".format(period))
 
@@ -574,6 +595,60 @@ class Wave:
 
     def rms(self):
         pass
+
+    def slice(self, levels=None, values=[0,1]):
+        """ Slices the waveform into discrete Binary values using the provided **levels** and **values**.
+
+        :param thresholds: Y levels at which to slice.  If **None**, will use the waveform's threshold attribute.
+        This can be a single item for PAM-2 coded data or a list of size log(N) for PAM-N data.
+
+        Items in the list can be numerical values or a waveform.
+
+        :param levels: A list of integer values that are sliced by the thresholds. Must be greater than the number
+        of thresholds by 1.
+
+        return: Returns a Binary version of the waveform, by slicing at the given thresholds and mapping the
+        output to the given
+
+        For example to slice a differential NRZ value, levels would be [0], and values would be [-1,1].   To slice
+        CMOS logic waveforms, supply VDD/2 for the levels argument, and [0,1] for its values.
+        """
+
+        # If levels
+
+        if levels is None:
+            if self.threshold is not None:
+                levels = (self.threshold,)
+            else:
+                raise ValueError("Need to provide slicing threshold.")
+
+        # Handle the PAM-2 case since it is much easier to handle and will be the most common form.
+        if len(levels) == 1:
+
+            x0 = self.x[0]
+            y0 = values[0] if self.y[0] <= levels[0] else values[1]
+
+            x_rising = self.cross(levels[0], edge="rising")
+            x_falling = self.cross(levels[0], edge="falling")
+
+            y_rising  = np.array(int(values[1])).repeat(len(x_rising))
+            y_falling = np.array(int(values[0])).repeat(len(x_falling))
+
+            x = np.concatenate([[x0], x_rising, x_falling])
+            y = np.concatenate([[y0], y_rising, y_falling])
+
+            indices = x.argsort()
+            x = x[indices]
+            y = y[indices]
+
+        else:
+            raise NotImplementedError
+            rising = [ self.cross(level, edge="rising") for level in levels]
+            falling = [ self.cross(level, edge="falling") for level in levels]
+        from .logic import Logic
+
+        return Logic(x=x, y=y)
+
 
 if __name__ == "__main__":
 

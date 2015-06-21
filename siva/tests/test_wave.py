@@ -1,7 +1,8 @@
 import unittest
 import numpy as np
 
-from siva.waveforms.wave import Wave
+#from siva.waveforms.wave import Wave
+from ..waveforms.wave import Wave
 
 import pdb
 
@@ -139,7 +140,7 @@ class TestWave(unittest.TestCase):
     def test_sample(self):
 
         w = Wave([0,1])
-        n = w.sample(0.1)
+        n = w.sample(period=0.1)
 
         self.assertEqual(len(n), 11)
         self.assertEqual(n.x[1] - n.x[0], 0.1)
@@ -196,8 +197,35 @@ class TestWave(unittest.TestCase):
         d = sin-dy
         self.assertTrue( (d.x[:-1] == b.x).all())
 
+    def test_slice(self):
+        # Create a sin wave of frequency 4.5 Hz from zero to 2*pi and treat it like a clock with a zero crossing of 0V
+        f = 2
+        t = np.linspace(0, 2,2000)
+        dt = t[1] - t[0]
+        y = np.sin(2*np.pi*f*t)
+        clk = Wave(t, y, name="sin", threshold=0.0)
 
+        l = clk.slice()
+        assert l is not None
 
+        assert len(l) == 9
+
+        assert (np.diff(l.x)- 0.25 < dt/100).all()
+
+        # Check for zero crossings.
+        for x in l.x:
+            # self.assertLessEqual(abs(clk(x).y), 4*epsilon)
+
+            dx = dt/10
+            x_vals = [x - dx, x, x + dx]
+
+            if x > 0:
+                # Now compare Y values with its logical representation
+                y_vals = clk(x_vals).y
+                bits = l(x_vals).y
+
+                assert (y_vals[0] > 0) == (bits[0] > 0)
+                assert (y_vals[2] > 0) == (bits[2] > 0)
 
 
 

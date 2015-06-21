@@ -18,8 +18,8 @@ class Diff(Wave):
         self._cm = None
         self._pos = None
         self._neg = None
-        self._build_mode = False
 
+        self._build_mode = False
         if (x, pos, neg, diff, cm) == (None, None, None, None, None):
             # Create an empty Wave that can be built incrementally
             # (via simulation, for example)
@@ -35,7 +35,7 @@ class Diff(Wave):
 
         if pos is not None or neg is not None:
             if (diff is not None) or (cm is not None):
-                raise ValueError("Differntial signals must be specified with pos/neg or diff/cm components")
+                raise ValueError("Differential signals must be specified with pos/neg or diff/cm components")
 
             if not isinstance(pos, np.ndarray):
                 if isinstance(pos, numbers.Number):
