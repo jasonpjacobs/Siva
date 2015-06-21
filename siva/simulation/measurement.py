@@ -1,5 +1,4 @@
 import collections
-from ..components.component import Registry
 from ..components.registered import Registered
 
 class Measurement(Registered):
@@ -28,7 +27,5 @@ class Measurement(Registered):
             self.value = eval(self.expr, globals(), namespace)
         except Exception as e:
             self.value = e.args
-            #raise
+            raise
         return self.value
-
-

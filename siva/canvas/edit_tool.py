@@ -36,7 +36,6 @@ class EditTool(Tool):
                 return True
 
 
-
     class ReadyToDragState(ToolState):
         def mouseMoveEvent(self, event):
             coords = self.tool.coords(event)
@@ -53,7 +52,6 @@ class EditTool(Tool):
             if handle.callback is not None:
                 handle.callback(pos=item_pos, coords=handle.parent.mapFromScene(coords))
             return True
-
 
         def mouseReleaseEvent(self, event):
             self.tool.item = None
