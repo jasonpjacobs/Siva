@@ -7,7 +7,14 @@ class Bus(Registered):
     """
     registry_name = "ports"
     
-    def __init__(self):
+    def __init__(self, *sigs, **kwsigs):
+        """
+
+        :param args:
+        :param kwargs:
+        :return:
+        """
         pass
+
 
 

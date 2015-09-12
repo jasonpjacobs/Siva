@@ -40,7 +40,6 @@ class Simulation(BaseComponent):
             self.saves = []
             # raise ValueError("No simulation outputs were requested")
 
-
     def netlist(self):
         assert self.simulator_path is not None
         txt = []
@@ -73,7 +72,6 @@ class Simulation(BaseComponent):
                 for inst in self.instances.values():
                     txt.extend(inst.card())
                 txt.append('')
-
 
             txt.append("** Subcircuit Definitions **")
             for inst_list in self.instance_designs().values():
@@ -142,9 +140,8 @@ class Simulation(BaseComponent):
         self.create_netlist()
         self.log_file = os.path.join(self._work_dir, "sim.log")
 
-
         # The component is leaking file descriptors somewhere.  Perhaps the STDERR and STDOUT used by
-        # the subprocess modeul are the problem.
+        # the subprocess model are the problem.
         # Creating explicit STDERR and STDOUT files so they can be manually closed after the simulation is run.
         err_path = os.path.join(self._work_dir, "sim.err")
         out_path = os.path.join(self._work_dir, "sim.out")
@@ -249,6 +246,7 @@ class Simulation(BaseComponent):
     def parse_results_entry(entry):
         """ Extracts output type, hierarchy, and node/net info from the labels in the Spice results file
         and converts the hierarchy to the expected path description used by the Design module
+
         V(XDUT.XI0.R1:p) --> (V, [dut, i0, r1], p)
 
         v(m.x_dut.m1_p#body) --> v (dut, m1_p, body)
@@ -284,9 +282,8 @@ class Simulation(BaseComponent):
 
             return (output_type.lower(), path, node_net.lower())
 
-
     def load_raw_results(self, results_file, format="binary",):
-        """Reads the raw simulation data and converts it into a low level, simulator specific,
+        """Parse the Spice output file and converts it into a low level, simulator specific,
         native Python format (Numpy arrays)
         """
         results_path = os.path.join(self._work_dir, results_file)
@@ -310,14 +307,12 @@ class Simulation(BaseComponent):
                 blocks.append(byte_block[locs[i]:locs[i-1]])
             blocks.append(byte_block[locs[-1]:])
 
-
             results = {}
             for block in blocks:
                 name, data = self.parse_byte_block(block)
                 results[name] = data
 
         return results
-
 
     def parse_byte_block(self, byte_block):
         marker = bytes('Binary:\n', "utf-8")

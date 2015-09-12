@@ -12,7 +12,7 @@ from siva.plotting.plot_view import PlotView
 from siva.plotting.plot_items import LinePlot, LogicPlot, BarPlot, StemPlot, StatePlot
 from siva.plotting.scale import Scale
 
-INTERACTIVE = False
+INTERACTIVE = True
 
 if QtGui.QApplication.instance():
     app = QtGui.QApplication.instance()
@@ -46,8 +46,8 @@ def widget():
 def test_plot(widget):
 
     view = PlotView()
-    N=20
-    view.plot(x=np.arange(N), y=np.random.random(N), line_color='blue')
+    N=2000
+    view.plot(x=np.arange(N), y=10*np.random.random(N), line_color='blue')
     view.plot(x=np.arange(N), y=np.random.random(N), line_color='red')
 
     if INTERACTIVE:

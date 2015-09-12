@@ -9,7 +9,7 @@ import tempfile
 work_dir = tempfile.mkdtemp()
 os.chdir(work_dir)
 
-
+"""
 @pytest.fixture
 def app():
     if QtGui.QApplication.instance():
@@ -18,12 +18,17 @@ def app():
 
     app = App()
     return app
+    """
 
 
-@pytest.mark.skipif(True, reason="Only works interactively.")
+#@pytest.mark.skipif(False, reason="Only works interactively.")
 def test_test():
     app = App()
     main = Main(app=app)
+    print('hi')
     main.show()
 
     app.exec_()
+
+
+test_test()

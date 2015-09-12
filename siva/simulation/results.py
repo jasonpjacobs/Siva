@@ -53,7 +53,6 @@ class Results(h5py.File):
 
         self.current_analysis = None
 
-
     def select(self, name):
         if name not in self._analyses:
             raise ValueError("Analysis {} is not supported.")
@@ -63,7 +62,6 @@ class Results(h5py.File):
             self.current_group = self[name]
         else:
             self.create_group(name)
-
 
     def add_waveform(self, path, x, y, y_name="y", x_name="x", attrs=None):
         """Adds waveform data to the results database.
@@ -96,6 +94,14 @@ class Results(h5py.File):
         return group[x_name], group[y_name]
 
     def add_vector(self, path, vector, name, attrs=None, index_name=None):
+        """ Adds a vector (1d array) to the results database
+        :param path:
+        :param vector:
+        :param name:
+        :param attrs:
+        :param index_name:
+        :return:
+        """
         root = self[self.current_analysis]
         group = self.create_path(path)
 
@@ -136,8 +142,6 @@ class Results(h5py.File):
     # ---------------------------------------------------------
     #                      Access methods
     # ---------------------------------------------------------
-
-
     def get(self, path, analysis=None, output=None):
         if analysis is None:
             analysis = self.current_analysis

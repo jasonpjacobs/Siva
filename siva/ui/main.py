@@ -8,19 +8,19 @@ import logging
 import pdb
 
 # Third party imports
-from ..qt_bindings import QtCore, QtGui, Qt
+from siva.qt_bindings import QtCore, QtGui, Qt
 # Local Imports
-from ..editors import SchematicEditor
-from ..utilities.logging import WidgetHandler
-from ..ui.console import Console
-from ..ui.tab_widget import TabWidget
-from ..ui.design_hierarchy_widget import DesignHierarchyWidget
-from ..ui.device_selector_widget import DeviceSelectorWidget
-from ..ui.properties_widget import PropertiesWidget
-from .app import App
+from siva.editors import SchematicEditor
+from siva.utilities.logging import WidgetHandler
+from siva.ui.console import Console
+from siva.ui.tab_widget import TabWidget
+from siva.ui.design_hierarchy_widget import DesignHierarchyWidget
+from siva.ui.device_selector_widget import DeviceSelectorWidget
+from siva.ui.properties_widget import PropertiesWidget
+#from siva.app import App
 
-from ..design_database.library import LibDefs
-from ..icons import ICONS
+from siva.design_database.library import LibDefs
+from siva.icons import ICONS
 
 
 # ----------------------------------------------
